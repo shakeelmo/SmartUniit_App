@@ -97,12 +97,12 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    // Check password
-    if (!user.password_hash) {
+    // Check password (support legacy column `password` if present)
+    const passwordField = user.password_hash || user.password;
+    if (!passwordField) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
-    
-    const isValidPassword = await bcrypt.compare(password, user.password_hash);
+    const isValidPassword = await bcrypt.compare(password, passwordField);
     
     if (!isValidPassword) {
       return res.status(401).json({ error: 'Invalid email or password' });

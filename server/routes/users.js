@@ -129,7 +129,7 @@ router.post('/', authenticateToken, requirePermission('users:manage'), async (re
     // Create user
     const userId = 'user-' + Date.now();
     await run(
-      `INSERT INTO users (id, email, name, password, role, status, phone, department) 
+      `INSERT INTO users (id, email, name, password_hash, role, status, phone, department) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [userId, email, name, hashedPassword, role, status, phone, department]
     );
