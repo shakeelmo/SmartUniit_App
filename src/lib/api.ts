@@ -499,6 +499,51 @@ class ApiService {
     });
     return response;
   }
+
+  // Expenses endpoints
+  async getExpenses(params?: string) {
+    const queryString = params ? `?${params}` : '';
+    return this.request<{ expenses: any[]; pagination: any }>(`/expenses${queryString}`);
+  }
+
+  async getExpense(id: string) {
+    return this.request<{ expense: any }>(`/expenses/${id}`);
+  }
+
+  async createExpense(data: any) {
+    return this.request<{ expense: any }>('/expenses', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateExpense(id: string, data: any) {
+    return this.request<{ expense: any }>(`/expenses/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteExpense(id: string) {
+    return this.request<{ message: string }>(`/expenses/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  async getExpenseCategories(type?: string) {
+    const queryString = type ? `?type=${type}` : '';
+    return this.request<{ categories: any[] }>(`/expenses/categories/all${queryString}`);
+  }
+
+  async getCashFlowSummary(params?: string) {
+    const queryString = params ? `?${params}` : '';
+    return this.request<any>(`/expenses/reports/cash-flow${queryString}`);
+  }
+
+  async exportExpenses(params?: string) {
+    const queryString = params ? `?${params}` : '';
+    return this.request<any>(`/expenses/export/excel${queryString}`);
+  }
 }
 
 export const api = new ApiService(API_BASE_URL); 

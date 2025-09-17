@@ -325,42 +325,22 @@ export function LoginForm() {
             </button>
           </div>
 
-          {/* Demo Accounts Section - Only show for login */}
+          {/* Quick-fill Account - Only show for login */}
           {!isSignUp && (
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-dark-600 mb-3 font-medium">Demo Accounts:</p>
+              <p className="text-sm text-dark-600 mb-3 font-medium">Quick Account:</p>
               <div className="space-y-2">
                 <button
                   type="button"
-                  onClick={() => handleDemoLogin('admin@smartuniit.com')}
+                  onClick={() => handleDemoLogin('admin@example.com')}
                   className="w-full text-left px-3 py-2 text-xs bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors"
                 >
                   <div className="font-medium text-dark-700">Admin</div>
-                  <div className="text-dark-500">admin@smartuniit.com</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDemoLogin('manager@smartuniit.com')}
-                  className="w-full text-left px-3 py-2 text-xs bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors"
-                >
-                  <div className="font-medium text-dark-700">Manager</div>
-                  <div className="text-dark-500">manager@smartuniit.com</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDemoLogin('tech@smartuniit.com')}
-                  className="w-full text-left px-3 py-2 text-xs bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors"
-                >
-                  <div className="font-medium text-dark-700">Technician</div>
-                  <div className="text-dark-500">tech@smartuniit.com</div>
+                  <div className="text-dark-500">admin@example.com</div>
                 </button>
                 <div className="text-xs text-dark-500 mt-2 px-3">
-                  <span className="font-medium">Password:</span> password123
+                  <span className="font-medium">Password:</span> admin123
                 </div>
-              </div>
-              
-              <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
-                <strong>Quick Fix:</strong> To use demo mode, comment out the Supabase credentials in your .env file and refresh the page.
               </div>
             </div>
           )}

@@ -32,6 +32,8 @@ export interface Quote {
   currency?: string;
   notes?: string;
   notesAr?: string;
+  scopeOfWork?: string;
+  scopeOfWorkAr?: string;
   terms?: string;
   termsAr?: string;
   assignedTo?: string;

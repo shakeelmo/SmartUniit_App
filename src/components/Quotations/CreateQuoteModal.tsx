@@ -42,8 +42,10 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
     validUntil: '',
     notes: '',
     notesAr: '',
-            terms: 'Payment terms: 30 days from invoice date\nAll prices are in Saudi Riyals (SAR)\nVAT is included in all prices\nThis quotation is valid for 30 days\nDelivery will be made within 7-14 business days',
-    termsAr: 'شروط الدفع: 30 يوم من تاريخ الفاتورة\nجميع الأسعار بالريال السعودي\nضريبة القيمة المضافة مشمولة في جميع الأسعار\nهذا العرض صالح لمدة 30 يوم\nسيتم التسليم خلال 7-14 يوم عمل',
+    scopeOfWork: '',
+    scopeOfWorkAr: '',
+            terms: 'Payment terms: 30 days from invoice date\nAll prices are in Saudi Riyals (SAR)\nVAT is included in all prices\nDelivery will be made within 7-14 business days',
+    termsAr: 'شروط الدفع: 30 يوم من تاريخ الفاتورة\nجميع الأسعار بالريال السعودي\nضريبة القيمة المضافة مشمولة في جميع الأسعار\nسيتم التسليم خلال 7-14 يوم عمل',
     assignedTo: user?.id || '',
     discountType: 'percentage' as 'percentage' | 'fixed',
     discountValue: 0,
@@ -69,6 +71,8 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
         validUntil: editQuote.validUntil.toISOString().split('T')[0],
         notes: editQuote.notes || '',
         notesAr: editQuote.notesAr || '',
+        scopeOfWork: editQuote.scopeOfWork || '',
+        scopeOfWorkAr: editQuote.scopeOfWorkAr || '',
         terms: editQuote.terms || '',
         termsAr: editQuote.termsAr || '',
         assignedTo: editQuote.assignedTo || user?.id || '',
@@ -94,8 +98,10 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
         validUntil: defaultValidUntil.toISOString().split('T')[0],
         notes: '',
         notesAr: '',
-        terms: 'Payment terms: 30 days from invoice date\nAll prices are in Saudi Riyals (SAR)\nVAT is included in all prices\nThis quotation is valid for 30 days\nDelivery will be made within 7-14 business days',
-        termsAr: 'شروط الدفع: 30 يوم من تاريخ الفاتورة\nجميع الأسعار بالريال السعودي\nضريبة القيمة المضافة مشمولة في جميع الأسعار\nهذا العرض صالح لمدة 30 يوم\nسيتم التسليم خلال 7-14 يوم عمل',
+        scopeOfWork: '',
+        scopeOfWorkAr: '',
+        terms: 'Payment terms: 30 days from invoice date\nAll prices are in Saudi Riyals (SAR)\nVAT is included in all prices\nDelivery will be made within 7-14 business days',
+        termsAr: 'شروط الدفع: 30 يوم من تاريخ الفاتورة\nجميع الأسعار بالريال السعودي\nضريبة القيمة المضافة مشمولة في جميع الأسعار\nسيتم التسليم خلال 7-14 يوم عمل',
         assignedTo: user?.id || '',
         discountType: 'percentage',
         discountValue: 0,
@@ -768,6 +774,76 @@ Warranty: 12 months from delivery date"
                   <p className="text-xs text-gray-500">• الدفع: 30/60/90 يوم</p>
                   <p className="text-xs text-gray-500">• الصلاحية: 15/30/60 يوم</p>
                   <p className="text-xs text-gray-500">• التسليم: 7-14/15-30 يوم عمل</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Scope of Work - Fully Customizable */}
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <h3 className="text-lg font-semibold text-dark-900 mb-3 flex items-center">
+              🔧 Scope of Work - Fully Customizable
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Define the scope of work for this project. You can detail deliverables, milestones, exclusions, etc.
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-dark-700 mb-2">
+                  Scope of Work (English)
+                </label>
+                <textarea
+                  value={formData.scopeOfWork}
+                  onChange={(e) => setFormData(prev => ({ ...prev, scopeOfWork: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  rows={4}
+                  placeholder="Project deliverables:
+• System installation and configuration
+• User training and documentation
+• 3 months post-implementation support
+
+Exclusions:
+• Hardware procurement
+• Third-party software licenses
+• Ongoing maintenance after warranty period
+
+Timeline: 4-6 weeks from project approval"
+                />
+                <div className="mt-2 space-y-1">
+                  <p className="text-xs text-gray-500">💡 <strong>Common scope items:</strong></p>
+                  <p className="text-xs text-gray-500">• Deliverables & milestones</p>
+                  <p className="text-xs text-gray-500">• Exclusions & limitations</p>
+                  <p className="text-xs text-gray-500">• Timeline & dependencies</p>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-dark-700 mb-2">
+                  Scope of Work (Arabic) / نطاق العمل
+                </label>
+                <textarea
+                  value={formData.scopeOfWorkAr}
+                  onChange={(e) => setFormData(prev => ({ ...prev, scopeOfWorkAr: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  rows={4}
+                  placeholder="مخرجات المشروع:
+• تثبيت وتكوين النظام
+• تدريب المستخدمين والتوثيق
+• دعم لمدة 3 أشهر بعد التنفيذ
+
+الاستثناءات:
+• شراء الأجهزة
+• تراخيص البرامج الخارجية
+• الصيانة المستمرة بعد فترة الضمان
+
+الجدول الزمني: 4-6 أسابيع من موافقة المشروع"
+                  dir="rtl"
+                />
+                <div className="mt-2 space-y-1">
+                  <p className="text-xs text-gray-500">💡 <strong>نصائح:</strong></p>
+                  <p className="text-xs text-gray-500">• المخرجات والمراحل</p>
+                  <p className="text-xs text-gray-500">• الاستثناءات والقيود</p>
+                  <p className="text-xs text-gray-500">• الجدول الزمني والتبعيات</p>
                 </div>
               </div>
             </div>

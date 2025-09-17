@@ -122,7 +122,6 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
     'Payment terms: 30 days from invoice date',
             'All prices are in Saudi Riyals (SAR)',
     'VAT is included in all prices',
-    'This quotation is valid for 30 days',
     'Delivery will be made within 7-14 business days'
   ];
 
@@ -600,9 +599,71 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
             addText(`${formatCurrency(total)} SAR`, tableCenterX + tableWidth - 5, currentY, { fontSize: 12, fontStyle: 'bold', color: [30, 64, 175], align: 'right' });
     currentY += 10;
 
-    // Quotation validity - directly under totals, aligned with table
-    addText('This quotation is valid for 30 days', totalsStartX, currentY, { fontSize: 9, fontStyle: 'italic', color: [102, 102, 102] });
+    // Quotation validity removed - users can customize validity in terms
     currentY += 6;
+  };
+
+  // Function to add scope of work section
+  const addScopeOfWork = () => {
+    // Check if scope of work exists
+    if (!quote.scopeOfWork && !quote.scopeOfWorkAr) {
+      return; // Skip if no scope of work
+    }
+
+    // Calculate space needed for scope section
+    const scopeHeight = 20; // Header + some space
+    
+    // Only break page if scope absolutely won't fit
+    if (currentY + scopeHeight + 35 > pageHeight - margin) {
+      addNewPage();
+    }
+
+    // Add gap before scope
+    currentY += 8;
+    
+    // Subtle separator line aligned with table
+    pdf.setDrawColor(200, 200, 200);
+    pdf.setLineWidth(0.2);
+    const tableWidth = 175; // Match the table width from addItemsTable
+    const tableCenterX = (pageWidth - tableWidth) / 2;
+    pdf.line(tableCenterX, currentY, tableCenterX + tableWidth, currentY);
+    currentY += 6;
+
+    // Scope of Work header
+    addText('Scope of Work:', tableCenterX, currentY, { fontSize: 11, fontStyle: 'bold', color: [30, 64, 175] });
+    currentY += 7;
+    
+    // Add English scope of work if available
+    if (quote.scopeOfWork) {
+      const scopeLines = quote.scopeOfWork.split('\n');
+      scopeLines.forEach((line: string) => {
+        const lines = pdf.splitTextToSize(`• ${line}`, tableWidth - 10);
+        lines.forEach((wrappedLine: string, lineIndex: number) => {
+          const fontSize = lineIndex === 0 ? 9.5 : 9;
+          addText(wrappedLine, tableCenterX + 3, currentY, { fontSize, fontStyle: 'normal', color: [51, 51, 51] });
+          currentY += 4.5;
+        });
+        currentY += 1;
+      });
+    }
+    
+    // Add Arabic scope of work if available
+    if (quote.scopeOfWorkAr) {
+      currentY += 3; // Add some space between English and Arabic
+      addText('نطاق العمل:', tableCenterX + tableWidth - 5, currentY, { fontSize: 11, fontStyle: 'bold', color: [30, 64, 175], align: 'right' });
+      currentY += 7;
+      
+      const scopeArLines = quote.scopeOfWorkAr.split('\n');
+      scopeArLines.forEach((line: string) => {
+        const lines = pdf.splitTextToSize(`• ${line}`, tableWidth - 10);
+        lines.forEach((wrappedLine: string, lineIndex: number) => {
+          const fontSize = lineIndex === 0 ? 9.5 : 9;
+          addText(wrappedLine, tableCenterX + tableWidth - 5, currentY, { fontSize, fontStyle: 'normal', color: [51, 51, 51], align: 'right' });
+          currentY += 4.5;
+        });
+        currentY += 1;
+      });
+    }
   };
 
   // Function to add terms and conditions with banking details side by side
@@ -775,6 +836,7 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
     addItemsTable(); // This ensures totals ONLY come after complete table
     addTotalsSection(); // Totals come immediately after complete table
     addTermsAndConditions(); // Terms come after totals
+    addScopeOfWork(); // Scope of work comes after terms
     addFooter(); // Footer is added to all pages
 
     // Return as blob
@@ -835,4 +897,5 @@ export async function testPDFGeneration() {
     console.error('PDF Generation Test - Error:', error);
     throw error;
   }
-}
+    // RIGHT PART: Quotation Details Box - Positioned at top right corner with proper separation
+    const quoteBoxWidth = 120;}

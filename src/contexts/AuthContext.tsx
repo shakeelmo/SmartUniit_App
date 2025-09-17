@@ -29,12 +29,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: profile.email,
         name: profile.name,
         role: profile.role,
-        avatar: profile.avatar_url,
+        avatar: profile.avatar_url || profile.avatar,
         phone: profile.phone,
         department: profile.department,
         status: profile.status,
-        createdAt: new Date(profile.created_at),
-        updatedAt: new Date(profile.updated_at),
+        createdAt: new Date(profile.createdAt || profile.created_at),
+        updatedAt: new Date(profile.updatedAt || profile.updated_at),
       });
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -58,12 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: profile.email,
         name: profile.name,
         role: profile.role,
-        avatar: profile.avatar_url,
+        avatar: profile.avatar_url || profile.avatar,
         phone: profile.phone,
         department: profile.department,
         status: profile.status,
-        createdAt: new Date(profile.created_at),
-        updatedAt: new Date(profile.updated_at),
+        createdAt: new Date(profile.createdAt || profile.created_at),
+        updatedAt: new Date(profile.updatedAt || profile.updated_at),
       });
     } catch (error) {
       console.error('Login error:', error);

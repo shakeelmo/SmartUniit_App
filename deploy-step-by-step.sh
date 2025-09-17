@@ -175,3 +175,8 @@ echo "   • Restart app: ssh root@109.199.116.107 'pm2 restart smartuniit-taskf
 echo ""
 echo "🚀 Deployment completed successfully!"
 
+
+
+
+
+

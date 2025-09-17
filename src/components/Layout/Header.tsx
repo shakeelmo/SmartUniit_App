@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Bell, Search, User, LogOut, Settings } from 'lucide-react';
+import { Bell, Search, User, LogOut, Settings, Menu } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotifications } from '../../hooks/useNotifications';
 import { SMART_UNIVERSE_LOGO_BASE64 } from '../../utils/logoBase64';
 
-export function Header() {
+export function Header({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user, logout } = useAuth();
   const { notifications, unreadCount } = useNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -13,9 +13,16 @@ export function Header() {
 
 
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4">
+    <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
+          <button
+            className="md:hidden mr-2 text-gray-700 hover:text-gray-900"
+            onClick={onMenuClick}
+            aria-label="Open menu"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
           <div className="logo-container">
             {/* User's Exact SMART UNIVERSE Logo */}
             <img 
@@ -31,9 +38,9 @@ export function Header() {
               }}
             />
             <div className="ml-3">
-              <h1 className="text-xl smart-text">SMART</h1>
-              <h2 className="text-lg universe-text -mt-1">UNIVERSE</h2>
-              <p className="tagline-text">FOR COMMUNICATIONS AND INFORMATION TECHNOLOGY</p>
+              <h1 className="text-lg sm:text-xl smart-text">SMART</h1>
+              <h2 className="text-base sm:text-lg universe-text -mt-1">UNIVERSE</h2>
+              <p className="tagline-text hidden sm:block">FOR COMMUNICATIONS AND INFORMATION TECHNOLOGY</p>
             </div>
           </div>
         </div>

@@ -204,6 +204,47 @@ const initDatabase = async () => {
       )
     `);
 
+    // Create expense_categories table
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS expense_categories (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT,
+        type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
+        is_active BOOLEAN DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create expenses table
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS expenses (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT,
+        amount REAL NOT NULL,
+        type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
+        category_id TEXT NOT NULL,
+        payment_method TEXT DEFAULT 'bank_transfer',
+        reference_number TEXT,
+        vendor_id TEXT,
+        project_id TEXT,
+        user_id TEXT NOT NULL,
+        expense_date TEXT NOT NULL,
+        due_date TEXT,
+        status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'paid')),
+        receipt_url TEXT,
+        notes TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (category_id) REFERENCES expense_categories(id),
+        FOREIGN KEY (vendor_id) REFERENCES vendors(id),
+        FOREIGN KEY (project_id) REFERENCES projects(id),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+
     // Insert default admin user
     const bcrypt = require('bcryptjs');
     const hashedPassword = await bcrypt.hash('admin123', 10);
@@ -224,6 +265,34 @@ const initDatabase = async () => {
       INSERT OR IGNORE INTO vendors (id, name, email, phone)
       VALUES (?, ?, ?, ?)
     `, ['vendor-123', 'Sample Vendor 1', 'vendor@example.com', '+966501234568']);
+
+    // Insert default expense categories
+    const expenseCategories = [
+      // Income categories
+      ['cat-inc-1', 'Sales Revenue', 'Revenue from product sales', 'income'],
+      ['cat-inc-2', 'Service Revenue', 'Revenue from services provided', 'income'],
+      ['cat-inc-3', 'Investment Income', 'Income from investments', 'income'],
+      ['cat-inc-4', 'Other Income', 'Miscellaneous income sources', 'income'],
+      
+      // Expense categories
+      ['cat-exp-1', 'Office Supplies', 'Office supplies and stationery', 'expense'],
+      ['cat-exp-2', 'Rent & Utilities', 'Office rent and utility bills', 'expense'],
+      ['cat-exp-3', 'Marketing & Advertising', 'Marketing and advertising expenses', 'expense'],
+      ['cat-exp-4', 'Travel & Transportation', 'Business travel and transportation', 'expense'],
+      ['cat-exp-5', 'Equipment & Software', 'Equipment purchases and software licenses', 'expense'],
+      ['cat-exp-6', 'Professional Services', 'Legal, accounting, and consulting fees', 'expense'],
+      ['cat-exp-7', 'Employee Benefits', 'Employee benefits and compensation', 'expense'],
+      ['cat-exp-8', 'Insurance', 'Business insurance premiums', 'expense'],
+      ['cat-exp-9', 'Maintenance & Repairs', 'Equipment and facility maintenance', 'expense'],
+      ['cat-exp-10', 'Other Expenses', 'Miscellaneous business expenses', 'expense']
+    ];
+
+    for (const [id, name, description, type] of expenseCategories) {
+      await runQuery(`
+        INSERT OR IGNORE INTO expense_categories (id, name, description, type)
+        VALUES (?, ?, ?, ?)
+      `, [id, name, description, type]);
+    }
 
     console.log('✅ Database initialized successfully!');
     

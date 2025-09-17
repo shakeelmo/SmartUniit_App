@@ -13,6 +13,7 @@ import { Tasks } from './pages/Tasks';
 import { Quotations } from './pages/Quotations';
 import { Invoices } from './pages/Invoices';
 import DeliveryNotes from './pages/DeliveryNotes';
+import { Expenses } from './pages/Expenses';
 import { CaseStudies } from './pages/CaseStudies';
 import { Budget } from './pages/Budget';
 import { Reports } from './pages/Reports';
@@ -85,6 +86,11 @@ function AppRoutes() {
       <Route path="/delivery-notes" element={
         <ProtectedRoute>
           <DeliveryNotes />
+        </ProtectedRoute>
+      } />
+      <Route path="/expenses" element={
+        <ProtectedRoute>
+          <Expenses />
         </ProtectedRoute>
       } />
       <Route path="/case-studies" element={

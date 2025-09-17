@@ -77,3 +77,8 @@ echo "   Login: admin@example.com / admin123"
 echo ""
 echo "🚀 Ready to deploy! Follow the steps above."
 
+
+
+
+
+

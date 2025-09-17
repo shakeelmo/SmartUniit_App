@@ -108,6 +108,8 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
       currency, 
       valid_until, 
       terms, 
+      scopeOfWork,
+      scopeOfWorkAr,
       lineItems, 
       customer_id,
       subtotal,
@@ -132,9 +134,9 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
     
     await run(
       `INSERT INTO quotations (
-        id, quotation_number, total_amount, currency, valid_until, terms, created_by, customer_id,
+        id, quotation_number, total_amount, currency, valid_until, terms, scope_of_work, scope_of_work_ar, created_by, customer_id,
         subtotal, discount_type, discount_value, discount_amount, vat_rate, vat_amount
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         quotationId, 
         quoteNumber, 
@@ -142,6 +144,8 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
         currency || 'SAR', 
         valid_until, 
         terms, 
+        scopeOfWork || '',
+        scopeOfWorkAr || '',
         req.user.id, 
         customer_id || null,
         subtotal || numericAmount,
@@ -190,6 +194,8 @@ router.put('/:id', authenticateToken, requirePermission('quotations', 'update'),
       currency, 
       valid_until, 
       terms, 
+      scopeOfWork,
+      scopeOfWorkAr,
       status, 
       customer_id,
       subtotal,
@@ -230,6 +236,16 @@ router.put('/:id', authenticateToken, requirePermission('quotations', 'update'),
     if (terms !== undefined) {
       updateFields.push('terms = ?');
       updateValues.push(terms);
+    }
+
+    if (scopeOfWork !== undefined) {
+      updateFields.push('scope_of_work = ?');
+      updateValues.push(scopeOfWork);
+    }
+
+    if (scopeOfWorkAr !== undefined) {
+      updateFields.push('scope_of_work_ar = ?');
+      updateValues.push(scopeOfWorkAr);
     }
 
     if (status !== undefined) {

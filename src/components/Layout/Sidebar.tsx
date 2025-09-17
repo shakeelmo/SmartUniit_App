@@ -17,7 +17,9 @@ import {
   Calculator,
   Shield,
   Bell,
-  Truck
+  Truck,
+  CreditCard,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { PERMISSIONS } from '../../lib/permissions';
@@ -33,6 +35,7 @@ const navigation = [
   { name: 'Quotations', href: '/quotations', icon: FileText, permission: PERMISSIONS.QUOTATIONS_READ },
   { name: 'Invoices', href: '/invoices', icon: Receipt, permission: PERMISSIONS.INVOICES_READ },
   { name: 'Delivery Notes', href: '/delivery-notes', icon: Truck, permission: PERMISSIONS.DELIVERY_NOTES_READ },
+  { name: 'Expenses', href: '/expenses', icon: CreditCard, permission: 'role:superadmin' },
   { name: 'Case Studies', href: '/case-studies', icon: BookOpen, permission: PERMISSIONS.CASE_STUDIES_READ },
   { name: 'Budget', href: '/budget', icon: Calculator, permission: PERMISSIONS.BUDGET_READ },
   { name: 'Reports', href: '/reports', icon: BarChart3, permission: null },
@@ -45,12 +48,15 @@ const adminNavigation = [
   { name: 'Settings', href: '/settings', icon: Settings, permission: PERMISSIONS.SETTINGS_MANAGE },
 ];
 
-export function Sidebar() {
+export function Sidebar({ onClose }: { onClose?: () => void }) {
   const { user, hasPermission } = useAuth();
 
   const filteredNavigation = navigation.filter(item => {
     if (!item.permission) return true;
-    // Split permission string like 'vendors:read' into ['vendors', 'read']
+    if (item.permission.startsWith('role:')) {
+      const role = item.permission.split(':')[1];
+      return user?.role === role;
+    }
     const [resource, action] = item.permission.split(':');
     return hasPermission(resource, action);
   });
@@ -63,10 +69,21 @@ export function Sidebar() {
   });
 
   return (
-    <div className="w-64 bg-dark-900 text-white flex flex-col">
-      <div className="p-4 border-b border-dark-700">
-        <h2 className="text-lg font-semibold text-white">SmartUniit Task Flow</h2>
-        <p className="text-xs text-gray-400">Business Workflow Management</p>
+    <div className="w-64 bg-dark-900 text-white flex flex-col h-full">
+      <div className="p-4 border-b border-dark-700 flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-white">SmartUniit Task Flow</h2>
+          <p className="text-xs text-gray-400">Business Workflow Management</p>
+        </div>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="md:hidden text-gray-300 hover:text-white p-1 rounded hover:bg-dark-800"
+            aria-label="Close sidebar"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
       </div>
 
       <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
@@ -82,6 +99,7 @@ export function Sidebar() {
                   : 'text-gray-300 hover:bg-dark-800 hover:text-white'
               )
             }
+            onClick={onClose}
           >
             <item.icon className="mr-3 h-5 w-5" />
             {item.name}
@@ -106,6 +124,7 @@ export function Sidebar() {
                       : 'text-gray-300 hover:bg-dark-800 hover:text-white'
                   )
                 }
+                onClick={onClose}
               >
                 <item.icon className="mr-3 h-5 w-5" />
                 {item.name}

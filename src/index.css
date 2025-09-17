@@ -1,9 +1,9 @@
+/* Import Saudi Riyal Symbol Font */
+@import '../node_modules/@abdulrysr/saudi-riyal-new-symbol-font/style.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Import Saudi Riyal Symbol Font */
-@import '../node_modules/@abdulrysr/saudi-riyal-new-symbol-font/style.css';
 
 /* Custom styles for SMART UNIVERSE logo */
 .smart-text {
@@ -51,4 +51,27 @@
 .logo-image:hover {
   transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+}
+
+/* Responsive utilities */
+@layer utilities {
+  .table-container {
+    @apply w-full overflow-x-auto;
+  }
+  .mobile-scroll {
+    @apply overflow-x-auto;
+  }
+  .modal-content-mobile {
+    @apply w-full max-w-full sm:max-w-lg;
+  }
+}
+
+/* Fallback for any wide tables on small screens */
+@media (max-width: 640px) {
+  .force-table-scroll table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }

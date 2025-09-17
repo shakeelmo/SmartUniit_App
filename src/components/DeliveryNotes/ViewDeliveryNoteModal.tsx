@@ -1,4 +1,6 @@
 import React from 'react';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { X, Download } from 'lucide-react';
 import { formatDate } from '../../utils/dateUtils';
 
@@ -10,6 +12,74 @@ interface ViewDeliveryNoteModalProps {
 
 export default function ViewDeliveryNoteModal({ isOpen, onClose, deliveryNote }: ViewDeliveryNoteModalProps) {
   if (!isOpen || !deliveryNote) return null;
+
+  const handleExportPDF = () => {
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+
+    // Header
+    doc.setFontSize(16);
+    doc.text('Delivery Note', 14, 15);
+
+    // Meta details
+    doc.setFontSize(11);
+    const metaLines = [
+      `Customer: ${deliveryNote.customerName || 'Unknown'}`,
+      `Recipient: ${deliveryNote.recipientName || 'Not specified'}`,
+      `Delivery Date: ${formatDate(deliveryNote.deliveryDate)}`,
+      `Created By: ${deliveryNote.createdByName || 'Unknown'}`,
+      `Created At: ${formatDate(deliveryNote.createdAt)}`
+    ];
+    metaLines.forEach((line: string, idx: number) => {
+      doc.text(line, 14, 24 + idx * 6);
+    });
+
+    // Notes block
+    const notes = deliveryNote.notes || '';
+    if (notes) {
+      doc.setFontSize(12);
+      doc.text('Notes:', 14, 56);
+      doc.setFontSize(11);
+      const split = doc.splitTextToSize(notes, 180);
+      doc.text(split, 14, 62);
+    }
+
+    // Items table
+    const tableStartY = notes ? 62 + (doc.getTextDimensions(notes).h || 6) + 6 : 62;
+    autoTable(doc, {
+      startY: tableStartY,
+      head: [['Description', 'Quantity', 'Unit', 'Remarks']],
+      body: (deliveryNote.items || []).map((item: any) => [
+        item.description || '',
+        String(item.quantity ?? ''),
+        item.unit || '',
+        item.remarks || ''
+      ]),
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [243, 244, 246], textColor: 0 },
+      columnStyles: {
+        0: { cellWidth: 90 },
+        1: { halign: 'right', cellWidth: 25 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 50 }
+      }
+    });
+
+    // Signature image if present
+    if (deliveryNote.signature) {
+      let y = (doc as any).lastAutoTable?.finalY || tableStartY + 10;
+      y += 10;
+      doc.setFontSize(12);
+      doc.text('Recipient Signature:', 14, y);
+      try {
+        doc.addImage(deliveryNote.signature, 'PNG', 14, y + 4, 50, 20);
+      } catch {
+        // Ignore image errors silently
+      }
+    }
+
+    const fileName = `Delivery_Note_${deliveryNote.id || ''}.pdf`;
+    doc.save(fileName);
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -129,10 +199,7 @@ export default function ViewDeliveryNoteModal({ isOpen, onClose, deliveryNote }:
               Close
             </button>
             <button
-              onClick={() => {
-                // TODO: Implement PDF export
-                alert('PDF export functionality coming soon!');
-              }}
+              onClick={handleExportPDF}
               className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 flex items-center gap-2"
             >
               <Download size={16} />
