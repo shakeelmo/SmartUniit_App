@@ -107,9 +107,9 @@ router.post('/', authenticateToken, requirePermission('invoices', 'create'), asy
     const invoiceId = Date.now().toString();
     
     await run(
-      `INSERT INTO invoices (id, customer_id, project_id, quotation_id, invoice_number, amount, currency, due_date, created_by) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [invoiceId, customer_id, project_id, quotation_id, invoice_number, amount, currency || 'USD', due_date, req.user.id]
+      `INSERT INTO invoices (id, customer_id, quotation_id, invoice_number, amount, currency, due_date, created_by) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [invoiceId, customer_id, quotation_id, invoice_number, amount, currency || 'SAR', due_date, req.user.id]
     );
     
     // Insert line items if provided

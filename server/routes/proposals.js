@@ -92,7 +92,7 @@ router.get('/:id', authenticateToken, requirePermission('proposals', 'read'), as
 // Create new proposal
 router.post('/', authenticateToken, requirePermission('proposals', 'create'), async (req, res) => {
   try {
-    const { title, description, customerId, vendorId, value } = req.body;
+    const { title, description, customerId } = req.body;
     
     if (!title || !customerId) {
       return res.status(400).json({ error: 'Title and customer are required' });
@@ -101,9 +101,9 @@ router.post('/', authenticateToken, requirePermission('proposals', 'create'), as
     const proposalId = Date.now().toString();
     
     await run(
-      `INSERT INTO proposals (id, title, description, customer_id, vendor_id, value, created_by) 
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [proposalId, title, description, customerId, vendorId, value, req.user.id]
+      `INSERT INTO proposals (id, title, description, customer_id, created_by) 
+       VALUES (?, ?, ?, ?, ?)`,
+      [proposalId, title, description, customerId, req.user.id]
     );
     
     const newProposal = await get('SELECT * FROM proposals WHERE id = ?', [proposalId]);

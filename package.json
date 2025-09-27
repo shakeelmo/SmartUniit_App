@@ -15,7 +15,7 @@
     "@abdulrysr/saudi-riyal-new-symbol-font": "^1.0.8",
     "@hookform/resolvers": "^3.3.2",
     "@supabase/supabase-js": "^2.39.0",
-    "axios": "^1.11.0",
+    "axios": "^1.12.2",
     "bcryptjs": "^2.4.3",
     "clsx": "^2.0.0",
     "cors": "^2.8.5",

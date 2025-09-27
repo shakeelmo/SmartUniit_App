@@ -65,8 +65,8 @@ const requirePermission = (resource, action) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    // Admin has all permissions
-    if (req.user.role === 'admin' || req.user.role === 'superadmin') {
+    // Superadmin has all permissions
+    if (req.user.role === 'superadmin') {
       return next();
     }
 
@@ -84,6 +84,19 @@ const requirePermission = (resource, action) => {
 // Simple permission checking function
 const checkPermission = (role, resource, action) => {
   const permissions = {
+    admin: {
+      users: ['create', 'read', 'update', 'delete', 'manage'],
+      customers: ['create', 'read', 'update', 'delete'],
+      vendors: ['create', 'read', 'update', 'delete'],
+      projects: ['create', 'read', 'update', 'delete'],
+      tasks: ['create', 'read', 'update', 'delete'],
+      proposals: ['create', 'read', 'update', 'delete'],
+      quotations: ['create', 'read', 'update', 'delete'],
+      invoices: ['create', 'read', 'update', 'delete'],
+      budgets: ['create', 'read', 'update', 'delete'],
+      delivery_notes: ['create', 'read', 'update', 'delete'],
+      expenses: ['create', 'read', 'update', 'delete']
+    },
     manager: {
       users: ['read'],
       customers: ['create', 'read', 'update'],

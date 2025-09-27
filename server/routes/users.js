@@ -7,7 +7,7 @@ const { sendNotification } = require('../lib/notify');
 const router = express.Router();
 
 // Get all users (admin only)
-router.get('/', authenticateToken, requirePermission('users:manage'), async (req, res) => {
+router.get('/', authenticateToken, requirePermission('users', 'manage'), async (req, res) => {
   try {
     const { page = 1, limit = 10, search = '', role = '', status = '' } = req.query;
     const offset = (page - 1) * limit;

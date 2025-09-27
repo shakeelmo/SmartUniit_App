@@ -99,9 +99,9 @@ router.post('/', authenticateToken, requirePermission('projects', 'create'), asy
     const projectId = Date.now().toString();
     
     await run(
-      `INSERT INTO projects (id, title, description, customer_id, manager_id, start_date, end_date, budget, priority) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [projectId, title, description, customerId, managerId, startDate, endDate, budget, priority]
+      `INSERT INTO projects (id, name, description, customer_id, created_by) 
+       VALUES (?, ?, ?, ?, ?)`,
+      [projectId, title, description, customerId, req.user.id]
     );
     
     const newProject = await get('SELECT * FROM projects WHERE id = ?', [projectId]);
@@ -120,7 +120,7 @@ router.post('/', authenticateToken, requirePermission('projects', 'create'), asy
 router.put('/:id', authenticateToken, requirePermission('projects', 'update'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, customerId, managerId, startDate, endDate, budget, priority, status, progress } = req.body;
+    const { title, description, customerId, status } = req.body;
     
     // Check if project exists
     const existingProject = await get('SELECT id FROM projects WHERE id = ?', [id]);
@@ -130,9 +130,9 @@ router.put('/:id', authenticateToken, requirePermission('projects', 'update'), a
     
     await run(
       `UPDATE projects 
-       SET title = ?, description = ?, customer_id = ?, manager_id = ?, start_date = ?, end_date = ?, budget = ?, priority = ?, status = ?, progress = ?, updated_at = CURRENT_TIMESTAMP 
+       SET name = ?, description = ?, customer_id = ?, status = ?, updated_at = CURRENT_TIMESTAMP 
        WHERE id = ?`,
-      [title, description, customerId, managerId, startDate, endDate, budget, priority, status, progress, id]
+      [title, description, customerId, status, id]
     );
     
     const updatedProject = await get('SELECT * FROM projects WHERE id = ?', [id]);

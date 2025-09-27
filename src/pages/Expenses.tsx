@@ -250,9 +250,9 @@ export function Expenses() {
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('ar-SA', {
       style: 'currency',
-      currency: 'USD'
+      currency: 'SAR'
     }).format(amount);
   };
 
@@ -289,14 +289,16 @@ export function Expenses() {
           <p className="text-gray-600">Track income, expenses, and cash flow</p>
         </div>
         <div className="flex space-x-3">
-          <button
-            onClick={handleExport}
-            className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </button>
-          {hasPermission('expenses', 'create') && (
+          {user?.role === 'superadmin' && (
+            <button
+              onClick={handleExport}
+              className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </button>
+          )}
+          {user?.role === 'superadmin' && (
             <button
               onClick={() => setShowCreateModal(true)}
               className="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"

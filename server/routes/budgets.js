@@ -96,7 +96,7 @@ router.get('/:id', authenticateToken, requirePermission('budgets', 'read'), asyn
 // Create new budget
 router.post('/', authenticateToken, requirePermission('budgets', 'create'), async (req, res) => {
   try {
-    const { project_id, amount, currency, categories } = req.body;
+    const { project_id, amount, categories } = req.body;
     
     if (!project_id || !amount) {
       return res.status(400).json({ error: 'Project ID and amount are required' });
@@ -105,9 +105,9 @@ router.post('/', authenticateToken, requirePermission('budgets', 'create'), asyn
     const budgetId = Date.now().toString();
     
     await run(
-      `INSERT INTO budgets (id, project_id, amount, currency, created_by) 
-       VALUES (?, ?, ?, ?, ?)`,
-      [budgetId, project_id, amount, currency || 'USD', req.user.id]
+      `INSERT INTO budgets (id, project_id, amount, created_by) 
+       VALUES (?, ?, ?, ?)`,
+      [budgetId, project_id, amount, req.user.id]
     );
     
     // Insert categories if provided
