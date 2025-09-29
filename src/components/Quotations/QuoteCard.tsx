@@ -106,8 +106,19 @@ export function QuoteCard({ quote, customer, onEdit, onDuplicate, onViewPDF }: Q
     }
     
     if (!exportCustomer) {
-      setShowCustomerSelect(true);
-      return;
+      // If no customer is found, use a default customer for PDF export
+      exportCustomer = {
+        id: 'default',
+        name: 'Walk-in Customer',
+        company: 'General Customer',
+        email: 'customer@example.com',
+        phone: '',
+        address: '',
+        status: 'active' as const,
+        createdBy: '',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
     }
     try {
       setIsDownloading(true);

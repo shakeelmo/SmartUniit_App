@@ -129,9 +129,9 @@ router.post('/', authenticateToken, requirePermission('users:manage'), async (re
     // Create user
     const userId = 'user-' + Date.now();
     await run(
-      `INSERT INTO users (id, email, name, password, password_hash, role, status, phone, department) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, email, name, hashedPassword, hashedPassword, role, status, phone, department]
+      `INSERT INTO users (id, email, name, password_hash, role, status, phone, department) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [userId, email, name, hashedPassword, role, status, phone, department]
     );
 
     // Get created user
@@ -285,9 +285,9 @@ router.post('/:id/reset-password', authenticateToken, requirePermission('users:m
     // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Update password
+    // Update password (use password_hash column)
     await run(
-      'UPDATE users SET password = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      'UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       [hashedPassword, userId]
     );
 

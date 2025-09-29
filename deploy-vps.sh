@@ -1,207 +1,135 @@
 #!/bin/bash
 
-# Complete VPS Deployment Script for BoltAPP Workflow Management
-# Run this script on your VPS server
+# VPS Deployment Script for SmartUniIT TaskFlow
+# IP: 109.199.116.107
+# User: root
+# Password: X9mK4LpZq7GtV2Fb
 
-echo "🚀 Starting complete VPS deployment for BoltAPP..."
+set -e
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+echo "🚀 Starting VPS Deployment..."
 
-# Function to print colored output
-print_status() {
-    echo -e "${GREEN}[INFO]${NC} $1"
+# VPS Configuration
+VPS_IP="109.199.116.107"
+VPS_USER="root"
+VPS_PASSWORD="X9mK4LpZq7GtV2Fb"
+APP_DIR="/var/www/smartuniit-taskflow"
+
+# SSH connection function
+ssh_connect() {
+    sshpass -p "$VPS_PASSWORD" ssh -o StrictHostKeyChecking=no "$VPS_USER@$VPS_IP" "$@"
 }
 
-print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
+# SCP function
+scp_connect() {
+    sshpass -p "$VPS_PASSWORD" scp -o StrictHostKeyChecking=no "$@"
 }
 
-print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
+echo "📦 Pulling latest changes from GitHub..."
+ssh_connect "cd $APP_DIR && git pull origin main"
 
-# Update system
-print_status "Updating system packages..."
-sudo apt update && sudo apt upgrade -y
+echo "🔧 Installing/updating dependencies..."
+ssh_connect "cd $APP_DIR && npm install"
+ssh_connect "cd $APP_DIR/server && npm install"
 
-# Install Node.js 18.x
-print_status "Installing Node.js 18.x..."
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt-get install -y nodejs
+echo "🏗️ Building frontend..."
+ssh_connect "cd $APP_DIR && npm run build"
 
-# Install Git
-print_status "Installing Git..."
-sudo apt install git -y
+echo "🗄️ Setting up database schema..."
+ssh_connect "cd $APP_DIR/server && node -e \"
+const sqlite3 = require('sqlite3').verbose();
+const db = new sqlite3.Database('./database.sqlite');
 
-# Install PM2 globally
-print_status "Installing PM2..."
-sudo npm install -g pm2
+// Create budgets table if it doesn't exist
+db.run(\`
+  CREATE TABLE IF NOT EXISTS budgets (
+    id TEXT PRIMARY KEY,
+    project_id TEXT,
+    category TEXT,
+    description TEXT,
+    amount REAL,
+    spent REAL DEFAULT 0,
+    remaining REAL,
+    status TEXT DEFAULT 'active',
+    created_by TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (project_id) REFERENCES projects(id),
+    FOREIGN KEY (created_by) REFERENCES users(id)
+  )
+\`, (err) => {
+  if (err) console.error('Error creating budgets table:', err);
+  else console.log('Budgets table created/verified');
+});
 
-# Install Nginx
-print_status "Installing Nginx..."
-sudo apt install nginx -y
+// Add missing columns to users table
+db.run('ALTER TABLE users ADD COLUMN status TEXT DEFAULT \\'active\\'', (err) => {
+  if (err && !err.message.includes('duplicate column name')) {
+    console.error('Error adding status column:', err);
+  }
+});
 
-# Verify installations
-print_status "Verifying installations..."
-echo "Node.js version: $(node --version)"
-echo "npm version: $(npm --version)"
-echo "Git version: $(git --version)"
-echo "PM2 version: $(pm2 --version)"
+db.run('ALTER TABLE users ADD COLUMN phone TEXT', (err) => {
+  if (err && !err.message.includes('duplicate column name')) {
+    console.error('Error adding phone column:', err);
+  }
+});
 
-# Navigate to web directory
-print_status "Setting up application directory..."
-cd /var/www
+db.run('ALTER TABLE users ADD COLUMN department TEXT', (err) => {
+  if (err && !err.message.includes('duplicate column name')) {
+    console.error('Error adding department column:', err);
+  }
+});
 
-# Remove existing directory if it exists
-if [ -d "-boltAPPworkmgmt_V1.1" ]; then
-    print_warning "Removing existing application directory..."
-    sudo rm -rf "-boltAPPworkmgmt_V1.1"
-fi
+db.run('ALTER TABLE users ADD COLUMN avatar_url TEXT', (err) => {
+  if (err && !err.message.includes('duplicate column name')) {
+    console.error('Error adding avatar_url column:', err);
+  }
+});
 
-# Clone your repository
-print_status "Cloning repository from GitHub..."
-git clone https://github.com/shakeelmo/-boltAPPworkmgmt_V1.1.git
-cd "-boltAPPworkmgmt_V1.1"
+db.run('ALTER TABLE users ADD COLUMN updated_at DATETIME DEFAULT CURRENT_TIMESTAMP', (err) => {
+  if (err && !err.message.includes('duplicate column name')) {
+    console.error('Error adding updated_at column:', err);
+  }
+});
 
-# Set proper permissions
-print_status "Setting proper permissions..."
-sudo chown -R $USER:$USER /var/www/-boltAPPworkmgmt_V1.1
+// Add missing columns to quotations table
+db.run('ALTER TABLE quotations ADD COLUMN scope_of_work TEXT', (err) => {
+  if (err && !err.message.includes('duplicate column name')) {
+    console.error('Error adding scope_of_work column:', err);
+  }
+});
 
-# Install frontend dependencies
-print_status "Installing frontend dependencies..."
-npm install
+db.run('ALTER TABLE quotations ADD COLUMN scope_of_work_ar TEXT', (err) => {
+  if (err && !err.message.includes('duplicate column name')) {
+    console.error('Error adding scope_of_work_ar column:', err);
+  }
+});
 
-# Install backend dependencies
-print_status "Installing backend dependencies..."
-cd server && npm install && cd ..
+db.close();
+console.log('Database schema updated successfully');
+\""
 
-# Create ecosystem.config.js for PM2
-print_status "Creating PM2 ecosystem configuration..."
-cat > ecosystem.config.js << 'EOF'
-module.exports = {
-  apps: [
-    {
-      name: 'smartuniit-backend',
-      script: './server/index.js',
-      cwd: '/var/www/-boltAPPworkmgmt_V1.1',
-      instances: 1,
-      autorestart: true,
-      watch: false,
-      max_memory_restart: '1G',
-      env: {
-        NODE_ENV: 'production',
-        PORT: 3001
-      }
-    }
-  ]
-};
-EOF
+echo "🔄 Restarting services..."
+ssh_connect "pm2 restart smartuniit-backend"
+ssh_connect "systemctl reload nginx"
 
-# Initialize database
-print_status "Initializing database..."
-cd server
-node scripts/initDb.js
-cd ..
+echo "⏳ Waiting for services to start..."
+sleep 5
 
-# Build frontend
-print_status "Building frontend application..."
-npm run build
+echo "🔍 Checking service status..."
+ssh_connect "pm2 status"
+ssh_connect "systemctl status nginx --no-pager"
 
-# Create Nginx configuration
-print_status "Configuring Nginx..."
-sudo tee /etc/nginx/sites-available/work.smartuniit.com > /dev/null <<EOF
-server {
-    listen 80;
-    server_name work.smartuniit.com;
+echo "🏥 Health check..."
+ssh_connect "curl -sS http://127.0.0.1:3001/api/health || echo 'Backend health check failed'"
+ssh_connect "curl -sS http://work.smartuniit.com/api/health || echo 'Public health check failed'"
 
-    # Frontend
-    location / {
-        root /var/www/-boltAPPworkmgmt_V1.1/dist;
-        try_files \$uri \$uri/ /index.html;
-    }
-
-    # Backend API
-    location /api {
-        proxy_pass http://localhost:3001;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_cache_bypass \$http_upgrade;
-    }
-}
-EOF
-
-# Enable Nginx site
-print_status "Enabling Nginx site..."
-sudo ln -sf /etc/nginx/sites-available/work.smartuniit.com /etc/nginx/sites-enabled/
-
-# Remove default Nginx site
-sudo rm -f /etc/nginx/sites-enabled/default
-
-# Test Nginx configuration
-print_status "Testing Nginx configuration..."
-sudo nginx -t
-
-# Restart Nginx
-print_status "Restarting Nginx..."
-sudo systemctl restart nginx
-
-# Setup firewall
-print_status "Configuring firewall..."
-sudo ufw allow 22
-sudo ufw allow 80
-sudo ufw allow 443
-sudo ufw --force enable
-
-# Start application with PM2
-print_status "Starting application with PM2..."
-pm2 delete all 2>/dev/null || true
-pm2 start ecosystem.config.js --env production
-pm2 save
-pm2 startup
-
-# Install Certbot for SSL
-print_status "Installing Certbot for SSL..."
-sudo apt install certbot python3-certbot-nginx -y
-
-# Get SSL certificate
-print_status "Obtaining SSL certificate..."
-sudo certbot --nginx -d work.smartuniit.com --non-interactive --agree-tos --email shakeelvcd@gmail.com
-
-# Final status check
-print_status "Performing final status checks..."
+echo "✅ Deployment completed!"
+echo "🌐 Application URL: https://work.smartuniit.com"
+echo "🔧 Backend API: https://work.smartuniit.com/api"
 echo ""
-echo "📊 Application Status:"
-pm2 status
-echo ""
-echo "🌐 Nginx Status:"
-sudo systemctl status nginx --no-pager -l
-echo ""
-echo "🔒 SSL Certificate Status:"
-sudo certbot certificates
-
-echo ""
-echo "🎉 DEPLOYMENT COMPLETED SUCCESSFULLY!"
-echo ""
-echo "🌐 Your application is now available at:"
-echo "   HTTPS: https://work.smartuniit.com"
-echo "   HTTP:  http://work.smartuniit.com"
-echo ""
-echo "📝 Default login credentials:"
-echo "   Email: admin@smartuniit.com"
-echo "   Password: admin123"
-echo ""
-echo "📊 Useful commands:"
-echo "   Check PM2 status: pm2 status"
-echo "   View logs: pm2 logs"
-echo "   Restart app: pm2 restart all"
-echo "   Update app: cd /var/www/-boltAPPworkmgmt_V1.1 && ./deploy.sh"
-echo "" 
+echo "📋 Next steps:"
+echo "1. Test authentication: https://work.smartuniit.com"
+echo "2. Create superadmin user via API"
+echo "3. Verify all modules are working"

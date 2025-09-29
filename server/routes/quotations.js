@@ -132,29 +132,61 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
     const quotationId = Date.now().toString();
     const quoteNumber = await generateQuoteNumber();
     
+    // Detect legacy columns for backward compatibility on existing VPS DBs
+    const columnsInfo = await all('PRAGMA table_info(quotations)');
+    const columnNames = new Set(columnsInfo.map(c => c.name));
+
+    // Some deployments have NOT NULL customer_name and an items JSON column
+    const includeCustomerName = columnNames.has('customer_name');
+    const includeItems = columnNames.has('items');
+
+    // Resolve customer name when customer_id provided
+    let legacyCustomerName = null;
+    if (includeCustomerName && customer_id) {
+      const customerRow = await get('SELECT name FROM customers WHERE id = ?', [customer_id]);
+      legacyCustomerName = (customerRow && customerRow.name) ? customerRow.name : 'Unknown';
+    }
+
+    // Build a portable INSERT matching the live schema
+    const insertColumns = [
+      'id','quotation_number','total_amount','currency','valid_until','terms',
+      'scope_of_work','scope_of_work_ar','created_by','customer_id',
+      'subtotal','discount_type','discount_value','discount_amount','vat_rate','vat_amount'
+    ];
+
+    const insertValues = [
+      quotationId,
+      quoteNumber,
+      numericAmount,
+      (currency || 'SAR'),
+      valid_until,
+      terms,
+      (scopeOfWork || ''),
+      (scopeOfWorkAr || ''),
+      req.user.id,
+      (customer_id || null),
+      (subtotal !== undefined ? subtotal : numericAmount),
+      (discountType !== undefined ? discountType : 'percentage'),
+      (discountValue !== undefined ? discountValue : 0),
+      (discountAmount !== undefined ? discountAmount : 0),
+      (vatRate !== undefined ? vatRate : 15),
+      (vatAmount !== undefined ? vatAmount : 0)
+    ];
+
+    if (includeCustomerName) {
+      insertColumns.push('customer_name');
+      insertValues.push(legacyCustomerName ?? 'Unknown');
+    }
+
+    if (includeItems) {
+      insertColumns.push('items');
+      insertValues.push(JSON.stringify(Array.isArray(lineItems) ? lineItems : []));
+    }
+
+    const placeholders = insertColumns.map(() => '?').join(',');
     await run(
-      `INSERT INTO quotations (
-        id, quotation_number, total_amount, currency, valid_until, terms, scope_of_work, scope_of_work_ar, created_by, customer_id,
-        subtotal, discount_type, discount_value, discount_amount, vat_rate, vat_amount
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        quotationId, 
-        quoteNumber, 
-        numericAmount, 
-        currency || 'SAR', 
-        valid_until, 
-        terms, 
-        scopeOfWork || '',
-        scopeOfWorkAr || '',
-        req.user.id, 
-        customer_id || null,
-        subtotal || numericAmount,
-        discountType || 'percentage',
-        discountValue || 0,
-        discountAmount || 0,
-        vatRate || 15,
-        vatAmount || 0
-      ]
+      `INSERT INTO quotations (${insertColumns.join(',')}) VALUES (${placeholders})`,
+      insertValues
     );
     
     if (lineItems && lineItems.length > 0) {

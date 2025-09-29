@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Calculator, Upload } from 'lucide-react';
+import { X, Plus, Trash2, Calculator } from 'lucide-react';
 import { Quote, QuoteLineItem } from '../../types/quotation';
 import { Customer } from '../../types';
 import { useAuth } from '../../contexts/AuthContext';
@@ -22,7 +22,7 @@ const RiyalSymbol = ({ className = "w-4 h-4" }: { className?: string }) => (
 
 export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: CreateQuoteModalProps) {
   const { user } = useAuth();
-  const { customers, services, settings, addCustomer } = useQuotations();
+  const { customers, services, settings } = useQuotations();
   
   // Function to generate unique quotation number: DD-MM-YYYY-HHMM (22 characters)
   const generateQuotationNumber = () => {
@@ -221,10 +221,7 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.customerId) {
-      alert('Please select a customer.');
-      return;
-    }
+    // Make customer selection optional - allow creating quotations without customer
     if (lineItems.length === 0 || lineItems.every(item => item.quantity <= 0)) {
       alert('Please add at least one valid line item (with quantity > 0).');
       return;
@@ -406,9 +403,8 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
                     value={formData.customerId}
                     onChange={(e) => setFormData(prev => ({ ...prev, customerId: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    required
                   >
-                    <option value="">Select Customer</option>
+                    <option value="">Select Customer (Optional)</option>
                     {customers.map((customer) => (
                       <option key={customer.id} value={customer.id}>
                         {customer.company} - {customer.name}

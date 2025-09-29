@@ -84,6 +84,19 @@ const requirePermission = (resource, action) => {
 // Simple permission checking function
 const checkPermission = (role, resource, action) => {
   const permissions = {
+    superadmin: {
+      users: ['create', 'read', 'update', 'delete', 'manage'],
+      customers: ['create', 'read', 'update', 'delete'],
+      vendors: ['create', 'read', 'update', 'delete'],
+      projects: ['create', 'read', 'update', 'delete'],
+      tasks: ['create', 'read', 'update', 'delete'],
+      proposals: ['create', 'read', 'update', 'delete'],
+      quotations: ['create', 'read', 'update', 'delete'],
+      invoices: ['create', 'read', 'update', 'delete'],
+      budgets: ['create', 'read', 'update', 'delete'],
+      delivery_notes: ['create', 'read', 'update', 'delete'],
+      expenses: ['create', 'read', 'update', 'delete']
+    },
     admin: {
       users: ['create', 'read', 'update', 'delete', 'manage'],
       customers: ['create', 'read', 'update', 'delete'],
