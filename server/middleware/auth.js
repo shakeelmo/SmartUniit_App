@@ -5,10 +5,21 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 
 // Middleware to verify JWT token
 const authenticateToken = async (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+  const authHeader = req.headers['authorization'] || req.headers['Authorization'] || req.get('authorization') || req.get('Authorization');
+  const normalizedHeader = Array.isArray(authHeader) ? authHeader[0] : authHeader;
+  const token = normalizedHeader && normalizedHeader.toLowerCase().startsWith('bearer ')
+    ? normalizedHeader.slice(7).trim()
+    : null;
 
   if (!token) {
+    console.error('Authentication failed: missing bearer token', {
+      method: req.method,
+      path: req.originalUrl,
+      hasAuthorizationHeader: Boolean(normalizedHeader),
+      headerKeys: Object.keys(req.headers || {}),
+      xForwardedFor: req.headers['x-forwarded-for'] || null,
+      origin: req.headers.origin || null,
+    });
     return res.status(401).json({ error: 'Access token required' });
   }
 

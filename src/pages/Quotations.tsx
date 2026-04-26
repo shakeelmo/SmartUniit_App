@@ -19,7 +19,7 @@ const RiyalSymbol = ({ className = "w-4 h-4" }: { className?: string }) => (
 );
 
 export function Quotations() {
-  const { quotes, customers, addQuote, updateQuote, duplicateQuote, isLoading } = useQuotations();
+  const { quotes, customers, addQuote, updateQuote, duplicateQuote, deleteQuote, isLoading } = useQuotations();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -37,21 +37,17 @@ export function Quotations() {
 
   const handleCreateQuote = async (quoteData: any) => {
     try {
-      console.log('handleCreateQuote called with:', { editingQuote: !!editingQuote, quoteData });
-      
       if (editingQuote) {
-        console.log('Updating quote with ID:', editingQuote.id);
-        console.log('Update data:', quoteData);
         await updateQuote(editingQuote.id, quoteData);
+        toast.success('Quotation updated successfully');
         setEditingQuote(null);
       } else {
-        console.log('Creating new quote');
         await addQuote(quoteData);
+        toast.success('Quotation created successfully');
       }
       setIsCreateModalOpen(false);
     } catch (error) {
       toast.error('Failed to save quote. Please try again.');
-      // Optionally, log error or show more details
       console.error('Error saving quote:', error);
     }
   };
@@ -254,6 +250,7 @@ export function Quotations() {
               customer={customer}
               onEdit={handleEditQuote}
               onDuplicate={handleDuplicateQuote}
+              onDelete={deleteQuote}
               onViewPDF={handleViewPDF}
             />
           );

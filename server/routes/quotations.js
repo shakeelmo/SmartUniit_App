@@ -6,9 +6,14 @@ const { run, all, get } = require('../db');
 // Generate quote number
 const generateQuoteNumber = async () => {
   const result = await get('SELECT COUNT(*) as count FROM quotations');
-  const count = result.count + 1;
+  const count = Number(result?.count || 0) + 1;
   const year = new Date().getFullYear();
   return `Q-${year}-${count.toString().padStart(4, '0')}`;
+};
+
+const toNumber = (value, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
 };
 
 // Get all quotations
@@ -108,10 +113,12 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
       currency, 
       valid_until, 
       terms, 
+      notes,
       scopeOfWork,
       scopeOfWorkAr,
       lineItems, 
       customer_id,
+      customerId,
       subtotal,
       discountType,
       discountValue,
@@ -121,13 +128,15 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
       total
     } = req.body;
     
-    const finalAmount = amount || total_amount || total;
+    const finalAmount = amount ?? total_amount ?? total;
     
     if (!finalAmount || isNaN(finalAmount)) {
       return res.status(400).json({ error: 'Valid amount is required' });
     }
     
     const numericAmount = parseFloat(finalAmount);
+    const normalizedCustomerId = customer_id ?? customerId ?? null;
+    const normalizedTerms = terms ?? notes ?? '';
     
     const quotationId = Date.now().toString();
     const quoteNumber = await generateQuoteNumber();
@@ -142,36 +151,40 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
 
     // Resolve customer name when customer_id provided
     let legacyCustomerName = null;
-    if (includeCustomerName && customer_id) {
-      const customerRow = await get('SELECT name FROM customers WHERE id = ?', [customer_id]);
+    if (includeCustomerName && normalizedCustomerId) {
+      const customerRow = await get('SELECT name FROM customers WHERE id = ?', [normalizedCustomerId]);
       legacyCustomerName = (customerRow && customerRow.name) ? customerRow.name : 'Unknown';
     }
 
     // Build a portable INSERT matching the live schema
-    const insertColumns = [
-      'id','quotation_number','total_amount','currency','valid_until','terms',
-      'scope_of_work','scope_of_work_ar','created_by','customer_id',
-      'subtotal','discount_type','discount_value','discount_amount','vat_rate','vat_amount'
+    const portableFields = [
+      { candidates: ['quotation_number', 'quote_number'], value: quoteNumber },
+      { candidates: ['total_amount', 'amount'], value: numericAmount },
+      { candidates: ['currency'], value: currency || 'SAR' },
+      { candidates: ['valid_until'], value: valid_until },
+      { candidates: ['terms', 'notes'], value: normalizedTerms },
+      { candidates: ['scope_of_work'], value: scopeOfWork || '' },
+      { candidates: ['scope_of_work_ar'], value: scopeOfWorkAr || '' },
+      { candidates: ['created_by'], value: req.user.id },
+      { candidates: ['customer_id'], value: normalizedCustomerId },
+      { candidates: ['subtotal'], value: subtotal !== undefined ? toNumber(subtotal, numericAmount) : numericAmount },
+      { candidates: ['discount_type'], value: discountType !== undefined ? discountType : 'percentage' },
+      { candidates: ['discount_value'], value: discountValue !== undefined ? toNumber(discountValue, 0) : 0 },
+      { candidates: ['discount_amount'], value: discountAmount !== undefined ? toNumber(discountAmount, 0) : 0 },
+      { candidates: ['vat_rate'], value: vatRate !== undefined ? toNumber(vatRate, 15) : 15 },
+      { candidates: ['vat_amount'], value: vatAmount !== undefined ? toNumber(vatAmount, 0) : 0 },
     ];
 
-    const insertValues = [
-      quotationId,
-      quoteNumber,
-      numericAmount,
-      (currency || 'SAR'),
-      valid_until,
-      terms,
-      (scopeOfWork || ''),
-      (scopeOfWorkAr || ''),
-      req.user.id,
-      (customer_id || null),
-      (subtotal !== undefined ? subtotal : numericAmount),
-      (discountType !== undefined ? discountType : 'percentage'),
-      (discountValue !== undefined ? discountValue : 0),
-      (discountAmount !== undefined ? discountAmount : 0),
-      (vatRate !== undefined ? vatRate : 15),
-      (vatAmount !== undefined ? vatAmount : 0)
-    ];
+    const insertColumns = ['id'];
+    const insertValues = [quotationId];
+
+    for (const field of portableFields) {
+      const column = field.candidates.find(candidate => columnNames.has(candidate));
+      if (column) {
+        insertColumns.push(column);
+        insertValues.push(field.value);
+      }
+    }
 
     if (includeCustomerName) {
       insertColumns.push('customer_name');
@@ -195,7 +208,16 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
         await run(
           `INSERT INTO quotation_line_items (id, quotation_id, description, quantity, unit, custom_unit, unit_price, total_price) 
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [itemId, quotationId, item.description || item.name || '', item.quantity, item.unit || 'piece', item.customUnit || null, item.unitPrice, item.total]
+          [
+            itemId,
+            quotationId,
+            item.description || item.name || '',
+            toNumber(item.quantity, 0),
+            item.unit || 'piece',
+            item.customUnit || null,
+            toNumber(item.unitPrice, 0),
+            toNumber(item.total, toNumber(item.quantity, 0) * toNumber(item.unitPrice, 0))
+          ]
         );
       }
     }
@@ -226,10 +248,12 @@ router.put('/:id', authenticateToken, requirePermission('quotations', 'update'),
       currency, 
       valid_until, 
       terms, 
+      notes,
       scopeOfWork,
       scopeOfWorkAr,
       status, 
       customer_id,
+      customerId,
       subtotal,
       discountType,
       discountValue,
@@ -239,7 +263,7 @@ router.put('/:id', authenticateToken, requirePermission('quotations', 'update'),
       total
     } = req.body;
 
-    const finalAmount = amount || total_amount || total;
+    const finalAmount = amount ?? total_amount ?? total;
     console.log('Final amount calculated:', finalAmount, 'from:', { amount, total_amount, total });
     
     if (finalAmount && isNaN(finalAmount)) {
@@ -247,87 +271,65 @@ router.put('/:id', authenticateToken, requirePermission('quotations', 'update'),
       return res.status(400).json({ error: 'Valid amount is required' });
     }
 
+    const columnsInfo = await all('PRAGMA table_info(quotations)');
+    const columnNames = new Set(columnsInfo.map(c => c.name));
     const updateFields = [];
     const updateValues = [];
+    const normalizedCustomerId = customer_id ?? customerId;
+    const normalizedTerms = terms ?? notes;
 
-    if (finalAmount !== undefined) {
-      updateFields.push('total_amount = ?');
-      updateValues.push(parseFloat(finalAmount));
+    const setIfColumnExists = (candidates, value, transform = (v) => v) => {
+      if (value === undefined) return;
+      const column = candidates.find(candidate => columnNames.has(candidate));
+      if (!column) return;
+      updateFields.push(`${column} = ?`);
+      updateValues.push(transform(value));
+    };
+
+    setIfColumnExists(['total_amount', 'amount'], finalAmount, (v) => parseFloat(v));
+    setIfColumnExists(['currency'], currency);
+    setIfColumnExists(['valid_until'], valid_until);
+    setIfColumnExists(['terms', 'notes'], normalizedTerms, (v) => v ?? '');
+    setIfColumnExists(['scope_of_work'], scopeOfWork, (v) => v ?? '');
+    setIfColumnExists(['scope_of_work_ar'], scopeOfWorkAr, (v) => v ?? '');
+    setIfColumnExists(['status'], status);
+    setIfColumnExists(['customer_id'], normalizedCustomerId);
+    setIfColumnExists(['subtotal'], subtotal, (v) => toNumber(v, 0));
+    setIfColumnExists(['discount_type'], discountType);
+    setIfColumnExists(['discount_value'], discountValue, (v) => toNumber(v, 0));
+    setIfColumnExists(['discount_amount'], discountAmount, (v) => toNumber(v, 0));
+    setIfColumnExists(['vat_rate'], vatRate, (v) => toNumber(v, 15));
+    setIfColumnExists(['vat_amount'], vatAmount, (v) => toNumber(v, 0));
+
+    if (columnNames.has('customer_name') && normalizedCustomerId !== undefined) {
+      let legacyCustomerName = 'Unknown';
+      if (normalizedCustomerId) {
+        const customerRow = await get('SELECT name FROM customers WHERE id = ?', [normalizedCustomerId]);
+        if (customerRow?.name) {
+          legacyCustomerName = customerRow.name;
+        }
+      }
+      updateFields.push('customer_name = ?');
+      updateValues.push(legacyCustomerName);
     }
 
-    if (currency !== undefined) {
-      updateFields.push('currency = ?');
-      updateValues.push(currency);
-    }
-
-    if (valid_until !== undefined) {
-      updateFields.push('valid_until = ?');
-      updateValues.push(valid_until);
-    }
-
-    if (terms !== undefined) {
-      updateFields.push('terms = ?');
-      updateValues.push(terms);
-    }
-
-    if (scopeOfWork !== undefined) {
-      updateFields.push('scope_of_work = ?');
-      updateValues.push(scopeOfWork);
-    }
-
-    if (scopeOfWorkAr !== undefined) {
-      updateFields.push('scope_of_work_ar = ?');
-      updateValues.push(scopeOfWorkAr);
-    }
-
-    if (status !== undefined) {
-      updateFields.push('status = ?');
-      updateValues.push(status);
-    }
-
-    if (customer_id !== undefined) {
-      updateFields.push('customer_id = ?');
-      updateValues.push(customer_id);
-    }
-
-    if (subtotal !== undefined) {
-      updateFields.push('subtotal = ?');
-      updateValues.push(parseFloat(subtotal));
-    }
-
-    if (discountType !== undefined) {
-      updateFields.push('discount_type = ?');
-      updateValues.push(discountType);
-    }
-
-    if (discountValue !== undefined) {
-      updateFields.push('discount_value = ?');
-      updateValues.push(parseFloat(discountValue));
-    }
-
-    if (discountAmount !== undefined) {
-      updateFields.push('discount_amount = ?');
-      updateValues.push(parseFloat(discountAmount));
-    }
-
-    if (vatRate !== undefined) {
-      updateFields.push('vat_rate = ?');
-      updateValues.push(parseFloat(vatRate));
-    }
-
-    if (vatAmount !== undefined) {
-      updateFields.push('vat_amount = ?');
-      updateValues.push(parseFloat(vatAmount));
+    if (columnNames.has('items') && req.body.lineItems !== undefined) {
+      updateFields.push('items = ?');
+      updateValues.push(JSON.stringify(Array.isArray(req.body.lineItems) ? req.body.lineItems : []));
     }
 
     if (updateFields.length === 0) {
       return res.status(400).json({ error: 'No valid fields to update' });
     }
 
+    if (columnNames.has('updated_at')) {
+      updateFields.push('updated_at = CURRENT_TIMESTAMP');
+    }
+
     updateValues.push(id);
 
     await run(
-      `UPDATE quotations SET ${updateFields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      `UPDATE quotations SET ${updateFields.join(', ')} WHERE id = ?`,
       updateValues
     );
 
@@ -342,7 +344,16 @@ router.put('/:id', authenticateToken, requirePermission('quotations', 'update'),
         await run(
           `INSERT INTO quotation_line_items (id, quotation_id, description, quantity, unit, custom_unit, unit_price, total_price) 
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [itemId, id, item.description || item.name || '', item.quantity, item.unit || 'piece', item.customUnit || null, item.unitPrice, item.total]
+          [
+            itemId,
+            id,
+            item.description || item.name || '',
+            toNumber(item.quantity, 0),
+            item.unit || 'piece',
+            item.customUnit || null,
+            toNumber(item.unitPrice, 0),
+            toNumber(item.total, toNumber(item.quantity, 0) * toNumber(item.unitPrice, 0))
+          ]
         );
       }
     }

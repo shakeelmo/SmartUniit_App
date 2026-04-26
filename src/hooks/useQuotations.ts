@@ -74,40 +74,62 @@ export function useQuotations() {
       setIsLoading(true);
       const { quotations } = await api.getQuotations();
       setQuotes(quotations.map((q: any) => {
-        // Calculate totals from line items if not provided
-        const lineItems = (q.lineItems || q.line_items || []).map((item: any) => ({
-          id: item.id,
-          serviceId: item.service_id || item.serviceId || '',
-          name: item.name || item.description || '',
-          nameAr: item.nameAr || item.name_ar || '',
-          description: item.description || '',
-          descriptionAr: item.descriptionAr || item.description_ar || '',
-          quantity: item.quantity || 0,
-          unitPrice: item.unit_price || item.unitPrice || 0,
-          total: item.total || 0,
-        }));
+        const rawLineItems = q.lineItems || q.line_items || [];
 
-        const subtotal = lineItems.reduce((sum: number, item: any) => sum + (item.total || 0), 0);
-        const vatRate = q.vat_rate || q.vatRate || 15;
-        const vatAmount = q.vat_amount || q.vatAmount || (subtotal * vatRate / 100);
-        const total = q.total || q.amount || (subtotal + vatAmount);
+        const lineItems = rawLineItems.map((item: any) => {
+          const quantity = Number(item.quantity) || 0;
+          const unitPrice = Number(item.unit_price ?? item.unitPrice) || 0;
+          const itemTotal = Number(item.total_price ?? item.total) || (quantity * unitPrice);
+
+          return {
+            id: item.id,
+            serviceId: item.service_id || item.serviceId || '',
+            name: item.name || item.description || '',
+            nameAr: item.nameAr || item.name_ar || '',
+            description: item.description || '',
+            descriptionAr: item.descriptionAr || item.description_ar || '',
+            quantity,
+            unit: item.unit || 'piece',
+            customUnit: item.custom_unit || item.customUnit || '',
+            unitPrice,
+            total: itemTotal,
+          };
+        });
+
+        const derivedSubtotal = lineItems.reduce((sum: number, item: any) => sum + (Number(item.total) || 0), 0);
+        const subtotal = Number(q.subtotal ?? q.sub_total) || derivedSubtotal;
+        const discountValue = Number(q.discount_value ?? q.discountValue) || 0;
+        const discountAmount = Number(q.discount_amount ?? q.discountAmount) || 0;
+        const vatRate = Number(q.vat_rate ?? q.vatRate) || 15;
+        const computedVatBase = Math.max(subtotal - discountAmount, 0);
+        const vatAmount = Number(q.vat_amount ?? q.vatAmount) || (computedVatBase * vatRate / 100);
+        const total = Number(q.total_amount ?? q.total ?? q.amount) || (computedVatBase + vatAmount);
+        const notes = q.notes ?? q.terms ?? '';
+        const terms = q.terms ?? q.terms_text ?? q.notes ?? '';
+        const scopeOfWork = q.scope_of_work || q.scopeOfWork || '';
+        const scopeOfWorkAr = q.scope_of_work_ar || q.scopeOfWorkAr || '';
+        const quoteNumber = q.quotation_number || q.quote_number || q.quoteNumber || (q.id ? `Q-${new Date().getFullYear()}-${String(q.id).padStart(4, '0')}` : 'DRAFT');
 
         return {
           id: q.id,
-          quoteNumber: q.quote_number || q.quoteNumber || `Q-${q.id}`,
+          quoteNumber,
           customerId: String(q.customer_id || q.customerId || ''),
           status: q.status || 'draft',
           lineItems,
           subtotal,
           discountType: q.discount_type || q.discountType || 'percentage',
-          discountValue: q.discount_value || q.discountValue || 0,
-          discountAmount: q.discount_amount || q.discountAmount || 0,
+          discountValue,
+          discountAmount,
           vatRate,
           vatAmount,
           total,
           validUntil: q.valid_until ? new Date(q.valid_until) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          notes: q.terms || q.notes || '',
+          notes,
           notesAr: q.notesAr || q.notes_ar || '',
+          scopeOfWork,
+          scopeOfWorkAr,
+          terms,
+          termsAr: q.termsAr || q.terms_ar || '',
           assignedTo: q.assignedTo || q.assigned_to || '',
           createdBy: q.created_by || q.createdBy || '',
           createdAt: new Date(q.created_at || q.createdAt || Date.now()),
@@ -180,17 +202,25 @@ export function useQuotations() {
   const addQuote = async (quote: Omit<Quote, 'id' | 'createdAt' | 'updatedAt' | 'quoteNumber'>) => {
     try {
       const payload = {
-        proposal_id: null, // No proposal linking for now
+        proposal_id: null,
         customerId: quote.customerId,
         customer_id: quote.customerId,
         amount: quote.total,
-        currency: 'SAR',
+        total_amount: quote.total,
+        total: quote.total,
+        currency: quote.currency || 'SAR',
         valid_until: quote.validUntil,
-        terms: quote.notes,
+        terms: quote.terms ?? quote.notes ?? '',
+        notes: quote.notes ?? quote.terms ?? '',
+        scopeOfWork: quote.scopeOfWork ?? '',
+        scopeOfWorkAr: quote.scopeOfWorkAr ?? '',
         lineItems: quote.lineItems,
+        subtotal: quote.subtotal,
         discountType: quote.discountType,
         discountValue: quote.discountValue,
         discountAmount: quote.discountAmount,
+        vatRate: quote.vatRate,
+        vatAmount: quote.vatAmount,
       };
       const { quotation } = await api.createQuotation(payload);
       await fetchQuotes();
@@ -231,11 +261,21 @@ export function useQuotations() {
         ...updates,
         customerId: updates.customerId,
         customer_id: updates.customerId,
-        amount: amount, // Use the processed amount
-        total_amount: amount, // Also send as total_amount for compatibility
+        amount: amount,
+        total_amount: amount,
+        total: amount,
+        currency: updates.currency || 'SAR',
+        terms: updates.terms ?? updates.notes ?? '',
+        notes: updates.notes ?? updates.terms ?? '',
+        scopeOfWork: updates.scopeOfWork ?? '',
+        scopeOfWorkAr: updates.scopeOfWorkAr ?? '',
+        subtotal: updates.subtotal,
         discountType: updates.discountType,
         discountValue: updates.discountValue,
         discountAmount: updates.discountAmount,
+        vatRate: updates.vatRate,
+        vatAmount: updates.vatAmount,
+        lineItems: updates.lineItems,
       };
       
       console.log('Updating quotation with payload:', payload);
