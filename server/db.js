@@ -2,9 +2,11 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
 // Database file path
+const fs = require('fs');
 const primaryDbPath = path.join(__dirname, '../data/smartuniit_taskflow.db');
 const legacyDbPath = path.join(__dirname, '../data/workflow.db');
-const dbPath = require('fs').existsSync(primaryDbPath) ? primaryDbPath : legacyDbPath;
+const shouldUsePrimary = fs.existsSync(primaryDbPath) && fs.statSync(primaryDbPath).size > 0;
+const dbPath = shouldUsePrimary ? primaryDbPath : legacyDbPath;
 
 // Create database connection
 const db = new sqlite3.Database(dbPath, (err) => {
