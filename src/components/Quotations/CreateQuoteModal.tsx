@@ -251,11 +251,14 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
       validUntil: new Date(formData.validUntil),
       notes: formData.notes,
       notesAr: formData.notesAr,
+      scopeOfWork: formData.scopeOfWork,
+      scopeOfWorkAr: formData.scopeOfWorkAr,
       terms: formData.terms,
       termsAr: formData.termsAr,
       assignedTo: formData.assignedTo,
       quoteNumber: editQuote ? editQuote.quoteNumber : generateQuotationNumber(),
       createdBy: user?.id || '',
+      currency: 'SAR',
     };
     
     console.log('Final quoteData:', quoteData);
@@ -302,12 +305,15 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
       validUntil: new Date(formData.validUntil),
       notes: formData.notes,
       notesAr: formData.notesAr,
+      scopeOfWork: formData.scopeOfWork,
+      scopeOfWorkAr: formData.scopeOfWorkAr,
       terms: formData.terms,
       termsAr: formData.termsAr,
       assignedTo: formData.assignedTo,
       createdBy: user?.id || '',
       createdAt: editQuote?.createdAt || new Date(),
       updatedAt: new Date(),
+      currency: 'SAR',
     };
     const pdfBlob = await generateQuotationPDF(quoteData, settings || {
       vatRate: 15,
