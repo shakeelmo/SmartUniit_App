@@ -119,13 +119,16 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
               <thead>
                 <tr className="bg-primary-50">
                   <th className="border border-gray-300 px-4 py-3 text-center text-sm font-semibold">
-                    #
+                    S#
+                  </th>
+                  <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">
+                    Item
                   </th>
                   <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">
                     Description / الوصف
                   </th>
                   <th className="border border-gray-300 px-4 py-3 text-center text-sm font-semibold">
-                    Quantity / الكمية
+                    Qty / الكمية
                   </th>
                   <th className="border border-gray-300 px-4 py-3 text-right text-sm font-semibold">
                     Unit Price / سعر الوحدة (${SAR_SYMBOL})
@@ -146,11 +149,12 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
                         {index + 1}
                       </td>
                       <td className="border border-gray-300 px-4 py-3 text-sm">
+                        {item.code || item.itemCode || item.sku || item.partNumber || '-'}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-3 text-sm">
                         <div>
-                          <p className="font-medium text-dark-900">{item.name || item.description}</p>
-                          {item.nameAr && <p className="text-dark-600 text-xs" dir="rtl">{item.nameAr}</p>}
-                          <p className="text-dark-600 text-xs mt-1">{item.description}</p>
-                          {item.descriptionAr && <p className="text-dark-600 text-xs" dir="rtl">{item.descriptionAr}</p>}
+                          <p className="font-medium text-dark-900">{item.description || item.name}</p>
+                          {item.descriptionAr && <p className="text-dark-600 text-xs mt-1" dir="rtl">{item.descriptionAr}</p>}
                         </div>
                       </td>
                       <td className="border border-gray-300 px-4 py-3 text-center text-sm">
