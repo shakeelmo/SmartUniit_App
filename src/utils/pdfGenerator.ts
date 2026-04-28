@@ -70,11 +70,11 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
           (item: any, index: number) => `
             <tr>
               <td class="center">${index + 1}</td>
-              <td>${escapeHtml(item.itemCode || item.code || item.sku || item.partNumber || '')}</td>
-              <td>${escapeHtml(item.description || item.name || '')}</td>
+              <td class="center">${escapeHtml(item.itemCode || item.code || item.sku || item.partNumber || '')}</td>
+              <td class="center">${escapeHtml(item.description || item.name || '')}</td>
               <td class="center">${escapeHtml(item.quantity)}</td>
-              <td class="money"><span class="sar icon-saudi_riyal">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>${formatCurrency(item.unitPrice)}</td>
-              <td class="money total-cell"><span class="sar icon-saudi_riyal">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>${formatCurrency(item.total)}</td>
+              <td class="center money"><span class="sar icon-saudi_riyal">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>${formatCurrency(item.unitPrice)}</td>
+              <td class="center money total-cell"><span class="sar icon-saudi_riyal">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>${formatCurrency(item.total)}</td>
             </tr>`
         )
         .join('')
@@ -116,7 +116,7 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
         tbody td { border: 1px solid #d1d5db; padding: 8px 8px; font-size: 12px; color: #1f2937; vertical-align: middle; }
         tbody tr:nth-child(even) { background: #f9fafb; }
         .center { text-align: center; }
-        .money { text-align: right; white-space: nowrap; font-weight: 600; }
+        .money { white-space: nowrap; font-weight: 600; }
         .total-cell { font-weight: 700; }
         .sar { display: inline-block; margin-right: 6px; color: #1e40af; font-size: 15px; line-height: 1; vertical-align: -1px; }
         .empty { text-align: center; color: #6b7280; font-style: italic; }

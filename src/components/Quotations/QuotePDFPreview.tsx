@@ -121,10 +121,10 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
                   <th className="border border-gray-300 px-4 py-3 text-center text-sm font-semibold">
                     S#
                   </th>
-                  <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">
+                  <th className="border border-gray-300 px-4 py-3 text-center text-sm font-semibold">
                     Item
                   </th>
-                  <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold">
+                  <th className="border border-gray-300 px-4 py-3 text-center text-sm font-semibold">
                     Description / الوصف
                   </th>
                   <th className="border border-gray-300 px-4 py-3 text-center text-sm font-semibold">
@@ -148,10 +148,10 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
                       <td className="border border-gray-300 px-4 py-3 text-center text-sm">
                         {index + 1}
                       </td>
-                      <td className="border border-gray-300 px-4 py-3 text-sm">
+                      <td className="border border-gray-300 px-4 py-3 text-center text-sm">
                         {item.itemCode || item.code || item.sku || item.partNumber || '-'}
                       </td>
-                      <td className="border border-gray-300 px-4 py-3 text-sm">
+                      <td className="border border-gray-300 px-4 py-3 text-center text-sm">
                         <div>
                           <p className="font-medium text-dark-900">{item.description || item.name}</p>
                           {item.descriptionAr && <p className="text-dark-600 text-xs mt-1" dir="rtl">{item.descriptionAr}</p>}
@@ -160,10 +160,10 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
                       <td className="border border-gray-300 px-4 py-3 text-center text-sm">
                         {item.quantity}
                       </td>
-                      <td className="border border-gray-300 px-4 py-3 text-right text-sm">
+                      <td className="border border-gray-300 px-4 py-3 text-center text-sm">
                         ${SAR_SYMBOL} {item.unitPrice?.toLocaleString() || '0'}
                       </td>
-                      <td className="border border-gray-300 px-4 py-3 text-right text-sm font-medium">
+                      <td className="border border-gray-300 px-4 py-3 text-center text-sm font-medium">
                         ${SAR_SYMBOL} {itemTotal.toLocaleString()}
                       </td>
                     </tr>
