@@ -7,14 +7,13 @@ const { run, all, get } = require('../db');
 const generateQuoteNumber = async () => {
   const year = new Date().getFullYear();
   const rows = await all(
-    `SELECT quotation_number, quote_number FROM quotations
-     WHERE COALESCE(quotation_number, quote_number, '') LIKE ?`,
+    `SELECT quotation_number FROM quotations WHERE quotation_number LIKE ?`,
     [`Q-${year}-%`]
   );
 
   let maxSequence = 0;
   for (const row of rows) {
-    const value = row.quotation_number || row.quote_number || '';
+    const value = row.quotation_number || '';
     const match = value.match(new RegExp(`^Q-${year}-(\\d+)$`));
     if (!match) continue;
     const sequence = Number(match[1]);
