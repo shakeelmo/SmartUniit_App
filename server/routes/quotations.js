@@ -173,7 +173,11 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
     const normalizedTerms = terms ?? notes ?? '';
     let normalizedCreatedBy = req.user?.id || null;
 
-    if (normalizedCustomerId !== null && normalizedCustomerId !== undefined && normalizedCustomerId !== '') {
+    if (normalizedCustomerId !== null && normalizedCustomerId !== undefined) {
+      normalizedCustomerId = String(normalizedCustomerId).trim();
+    }
+
+    if (normalizedCustomerId) {
       const existingCustomer = await get('SELECT id, name FROM customers WHERE id = ?', [normalizedCustomerId]);
       if (!existingCustomer) {
         console.warn('Quotation create: customer_id not found, falling back to null:', normalizedCustomerId);
@@ -330,8 +334,21 @@ router.put('/:id', authenticateToken, requirePermission('quotations', 'update'),
     const columnNames = new Set(columnsInfo.map(c => c.name));
     const updateFields = [];
     const updateValues = [];
-    const normalizedCustomerId = customer_id ?? customerId;
+    let normalizedCustomerId = customer_id ?? customerId;
     const normalizedTerms = terms ?? notes;
+
+    if (normalizedCustomerId !== undefined && normalizedCustomerId !== null) {
+      normalizedCustomerId = String(normalizedCustomerId).trim();
+      if (normalizedCustomerId) {
+        const existingCustomer = await get('SELECT id FROM customers WHERE id = ?', [normalizedCustomerId]);
+        if (!existingCustomer) {
+          console.warn('Quotation update: customer_id not found, falling back to null:', normalizedCustomerId);
+          normalizedCustomerId = null;
+        }
+      } else {
+        normalizedCustomerId = null;
+      }
+    }
 
     const setIfColumnExists = (candidates, value, transform = (v) => v) => {
       if (value === undefined) return;
