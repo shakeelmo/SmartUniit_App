@@ -16,9 +16,27 @@ const toNumber = (value, fallback = 0) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const ensureQuotationLineItemColumns = async () => {
+  const columns = await all('PRAGMA table_info(quotation_line_items)');
+  const columnNames = new Set(columns.map((column) => column.name));
+
+  if (!columnNames.has('item_code')) {
+    await run('ALTER TABLE quotation_line_items ADD COLUMN item_code TEXT');
+  }
+
+  if (!columnNames.has('unit')) {
+    await run("ALTER TABLE quotation_line_items ADD COLUMN unit TEXT DEFAULT 'piece'");
+  }
+
+  if (!columnNames.has('custom_unit')) {
+    await run('ALTER TABLE quotation_line_items ADD COLUMN custom_unit TEXT');
+  }
+};
+
 // Get all quotations
 router.get('/', authenticateToken, requirePermission('quotations', 'read'), async (req, res) => {
   try {
+    await ensureQuotationLineItemColumns();
     const { page = 1, limit = 10, status, customer_id } = req.query;
     const offset = (page - 1) * limit;
     
@@ -76,6 +94,7 @@ router.get('/', authenticateToken, requirePermission('quotations', 'read'), asyn
 // Get single quotation
 router.get('/:id', authenticateToken, requirePermission('quotations', 'read'), async (req, res) => {
   try {
+    await ensureQuotationLineItemColumns();
     const { id } = req.params;
     
     const quotation = await get(`
@@ -107,6 +126,7 @@ router.get('/:id', authenticateToken, requirePermission('quotations', 'read'), a
 // Create quotation
 router.post('/', authenticateToken, requirePermission('quotations', 'create'), async (req, res) => {
   try {
+    await ensureQuotationLineItemColumns();
     const { 
       amount, 
       total_amount, 
@@ -135,8 +155,16 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
     }
     
     const numericAmount = parseFloat(finalAmount);
-    const normalizedCustomerId = customer_id ?? customerId ?? null;
+    let normalizedCustomerId = customer_id ?? customerId ?? null;
     const normalizedTerms = terms ?? notes ?? '';
+
+    if (normalizedCustomerId) {
+      const existingCustomer = await get('SELECT id, name FROM customers WHERE id = ?', [normalizedCustomerId]);
+      if (!existingCustomer) {
+        console.warn('Quotation create: customer_id not found, falling back to null:', normalizedCustomerId);
+        normalizedCustomerId = null;
+      }
+    }
     
     const quotationId = Date.now().toString();
     const quoteNumber = await generateQuoteNumber();
@@ -206,11 +234,12 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
       for (const item of lineItems) {
         const itemId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
         await run(
-          `INSERT INTO quotation_line_items (id, quotation_id, description, quantity, unit, custom_unit, unit_price, total_price) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO quotation_line_items (id, quotation_id, item_code, description, quantity, unit, custom_unit, unit_price, total_price) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             itemId,
             quotationId,
+            item.itemCode || item.item_code || item.code || item.sku || item.partNumber || '',
             item.description || item.name || '',
             toNumber(item.quantity, 0),
             item.unit || 'piece',
@@ -238,6 +267,7 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
 // Update quotation
 router.put('/:id', authenticateToken, requirePermission('quotations', 'update'), async (req, res) => {
   try {
+    await ensureQuotationLineItemColumns();
     const { id } = req.params;
     console.log('Update quotation request for ID:', id);
     console.log('Request body:', req.body);
@@ -342,11 +372,12 @@ router.put('/:id', authenticateToken, requirePermission('quotations', 'update'),
       for (const item of req.body.lineItems) {
         const itemId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
         await run(
-          `INSERT INTO quotation_line_items (id, quotation_id, description, quantity, unit, custom_unit, unit_price, total_price) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO quotation_line_items (id, quotation_id, item_code, description, quantity, unit, custom_unit, unit_price, total_price) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             itemId,
             id,
+            item.itemCode || item.item_code || item.code || item.sku || item.partNumber || '',
             item.description || item.name || '',
             toNumber(item.quantity, 0),
             item.unit || 'piece',
