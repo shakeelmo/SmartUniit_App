@@ -84,55 +84,55 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
       </tr>`;
 
   const html = `
-    <div id="quotation-pdf-root" style="width: 1120px; min-height: 1580px; background: #ffffff; color: #111827; font-family: Arial, Helvetica, sans-serif; padding: 36px 44px 28px; box-sizing: border-box; display: flex; flex-direction: column;">
+    <div id="quotation-pdf-root" style="width: 1120px; min-height: 1580px; background: #ffffff; color: #111827; font-family: Arial, Helvetica, sans-serif; padding: 28px 34px 22px; box-sizing: border-box; display: flex; flex-direction: column;">
       <style>
         @import '@abdulrysr/saudi-riyal-new-symbol-font/style.css';
-        .header { display: flex; justify-content: space-between; align-items: stretch; gap: 10px; border-bottom: 3px solid #dbe4f0; padding-bottom: 18px; position: relative; }
-        .header::after { content: ''; position: absolute; left: 0; right: 0; bottom: -3px; height: 1px; background: #1e40af; opacity: 0.18; }
-        .left { width: 56%; display: flex; gap: 16px; }
-        .logo { width: 92px; height: 92px; object-fit: contain; border-radius: 18px; background: #ffffff; box-shadow: 0 4px 18px rgba(30, 64, 175, 0.08); }
-        .brand { flex: 1; padding-top: 2px; }
-        .brand h1 { margin: 0; font-size: 34px; line-height: 1.01; color: #1d4ed8; letter-spacing: 0.1px; }
-        .brand h2 { margin: 8px 0 14px; font-size: 18px; line-height: 1.2; color: #1d4ed8; font-weight: 700; text-transform: uppercase; max-width: 430px; }
-        .brand p { margin: 6px 0; font-size: 16px; color: #374151; }
+        .header { display: flex; justify-content: space-between; align-items: stretch; gap: 8px; border-bottom: 2px solid #dbe4f0; padding-bottom: 14px; position: relative; }
+        .header::after { content: ''; position: absolute; left: 0; right: 0; bottom: -2px; height: 1px; background: #1e40af; opacity: 0.16; }
+        .left { width: 56%; display: flex; gap: 12px; }
+        .logo { width: 74px; height: 74px; object-fit: contain; border-radius: 14px; background: #ffffff; box-shadow: 0 3px 12px rgba(30, 64, 175, 0.06); }
+        .brand { flex: 1; padding-top: 0; }
+        .brand h1 { margin: 0; font-size: 28px; line-height: 1.01; color: #1d4ed8; letter-spacing: 0.1px; }
+        .brand h2 { margin: 6px 0 10px; font-size: 15px; line-height: 1.15; color: #1d4ed8; font-weight: 700; text-transform: uppercase; max-width: 430px; }
+        .brand p { margin: 4px 0; font-size: 13px; color: #374151; }
         .right { width: 44%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; }
-        .ar-block { width: 100%; text-align: right; direction: rtl; font-family: 'Tahoma', 'Arial', sans-serif; background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%); border: 1px solid #dbe4f0; border-radius: 16px; padding: 14px 18px 12px; box-sizing: border-box; max-width: 430px; }
-        .ar-name { color: #1e40af; font-weight: 700; font-size: 32px; line-height: 1.18; margin: 0; }
-        .ar-meta-wrap { margin-top: 14px; padding-top: 12px; border-top: 1px solid #cfd8e3; }
-        .ar-meta { color: #374151; font-size: 18px; line-height: 1.75; font-weight: 700; margin: 0; }
-        .quote-card { margin-top: 14px; width: 100%; max-width: 320px; border: 1px solid #dbe4f0; border-radius: 16px; background: #f8fafc; position: relative; box-sizing: border-box; box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06); overflow: hidden; }
+        .ar-block { width: 100%; text-align: right; direction: rtl; font-family: 'Tahoma', 'Arial', sans-serif; background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%); border: 1px solid #dbe4f0; border-radius: 14px; padding: 10px 14px 9px; box-sizing: border-box; max-width: 430px; }
+        .ar-name { color: #1e40af; font-weight: 700; font-size: 24px; line-height: 1.12; margin: 0; }
+        .ar-meta-wrap { margin-top: 10px; padding-top: 8px; border-top: 1px solid #cfd8e3; }
+        .ar-meta { color: #374151; font-size: 14px; line-height: 1.5; font-weight: 700; margin: 0; }
+        .quote-card { margin-top: 10px; width: 100%; max-width: 280px; border: 1px solid #dbe4f0; border-radius: 14px; background: #f8fafc; position: relative; box-sizing: border-box; box-shadow: 0 8px 16px rgba(15, 23, 42, 0.05); overflow: hidden; }
         .quote-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 8px; background: linear-gradient(180deg, #2563eb 0%, #1e40af 100%); }
-        .quote-card-inner { padding: 16px 18px 14px 22px; }
-        .quote-row { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 12px; font-size: 14px; }
+        .quote-card-inner { padding: 12px 14px 11px 18px; }
+        .quote-row { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 8px; font-size: 12px; }
         .quote-row:last-child { margin-bottom: 0; }
         .quote-label { color: #111827; font-weight: 700; }
         .quote-value { color: #1e40af; font-weight: 700; text-align: right; }
-        .document-title { margin: 18px 0 6px; color: #1e40af; font-size: 28px; font-weight: 700; }
-        .section-title { margin: 24px 0 10px; color: #1e40af; font-size: 18px; font-weight: 700; }
-        .customer-box { border: 1px solid #e5e7eb; border-radius: 14px; background: #fcfcfd; padding: 16px 18px; margin-bottom: 18px; }
-        .customer-box p { margin: 5px 0; font-size: 13px; color: #374151; }
-        table { width: 100%; border-collapse: collapse; margin-top: 8px; overflow: hidden; border-radius: 14px; }
-        thead th { background: linear-gradient(180deg, #2563eb 0%, #1e40af 100%); color: #ffffff; padding: 13px 10px; font-size: 13px; border: 1px solid #dbe4f0; }
-        tbody td { border: 1px solid #d1d5db; padding: 11px 10px; font-size: 13px; color: #1f2937; vertical-align: middle; }
+        .document-title { margin: 14px 0 4px; color: #1e40af; font-size: 24px; font-weight: 700; }
+        .section-title { margin: 18px 0 8px; color: #1e40af; font-size: 16px; font-weight: 700; }
+        .customer-box { border: 1px solid #e5e7eb; border-radius: 12px; background: #fcfcfd; padding: 12px 14px; margin-bottom: 14px; }
+        .customer-box p { margin: 4px 0; font-size: 12px; color: #374151; }
+        table { width: 100%; border-collapse: collapse; margin-top: 6px; overflow: hidden; border-radius: 12px; }
+        thead th { background: linear-gradient(180deg, #2563eb 0%, #1e40af 100%); color: #ffffff; padding: 10px 8px; font-size: 12px; border: 1px solid #dbe4f0; }
+        tbody td { border: 1px solid #d1d5db; padding: 8px 8px; font-size: 12px; color: #1f2937; vertical-align: middle; }
         tbody tr:nth-child(even) { background: #f9fafb; }
         .center { text-align: center; }
         .money { text-align: right; white-space: nowrap; font-weight: 600; }
         .total-cell { font-weight: 700; }
-        .sar { display: inline-block; margin-right: 8px; color: #1e40af; font-size: 18px; line-height: 1; vertical-align: -1px; }
+        .sar { display: inline-block; margin-right: 6px; color: #1e40af; font-size: 15px; line-height: 1; vertical-align: -1px; }
         .empty { text-align: center; color: #6b7280; font-style: italic; }
-        .totals { width: 380px; margin-left: auto; margin-top: 18px; border-top: 3px solid #1e40af; padding-top: 12px; }
-        .totals-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; font-size: 14px; }
+        .totals { width: 340px; margin-left: auto; margin-top: 14px; border-top: 2px solid #1e40af; padding-top: 10px; }
+        .totals-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 12px; }
         .totals-row .label { font-weight: 700; color: #374151; }
         .totals-row .value { font-weight: 700; color: #111827; }
-        .totals-row.grand { margin-top: 4px; padding-top: 12px; border-top: 1px dashed #cbd5e1; }
-        .totals-row.grand .label, .totals-row.grand .value { color: #1e40af; font-size: 18px; }
-        .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
-        .terms { border: 1px solid #e5e7eb; border-radius: 14px; background: #fafafa; padding: 16px 18px; min-height: 100%; box-sizing: border-box; }
-        .terms p { margin: 0 0 6px; font-size: 13px; color: #374151; line-height: 1.7; white-space: pre-wrap; }
+        .totals-row.grand { margin-top: 3px; padding-top: 8px; border-top: 1px dashed #cbd5e1; }
+        .totals-row.grand .label, .totals-row.grand .value { color: #1e40af; font-size: 16px; }
+        .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
+        .terms { border: 1px solid #e5e7eb; border-radius: 12px; background: #fafafa; padding: 12px 14px; min-height: 100%; box-sizing: border-box; }
+        .terms p { margin: 0 0 4px; font-size: 12px; color: #374151; line-height: 1.5; white-space: pre-wrap; }
         .terms p:last-child { margin-bottom: 0; }
         .content-grow { flex: 1; }
-        .footer { margin-top: 30px; background: linear-gradient(180deg, #1f2937 0%, #111827 100%); color: #ffffff; padding: 18px 22px; text-align: center; font-size: 12px; border-radius: 14px; }
-        .footer strong { display: block; font-size: 14px; margin-bottom: 6px; }
+        .footer { margin-top: 20px; background: linear-gradient(180deg, #1f2937 0%, #111827 100%); color: #ffffff; padding: 14px 18px; text-align: center; font-size: 11px; border-radius: 12px; }
+        .footer strong { display: block; font-size: 12px; margin-bottom: 4px; }
       </style>
 
       <div class="header">
@@ -141,7 +141,7 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
           <div class="brand">
             <h1>Smart Universe</h1>
             <h2>for Communications and<br/>Information Technology</h2>
-            <p>${escapeHtml(companyInfo.address || 'Office # 3 In, Al Dirah Dist, P.O.Box 12633, Riyadh - 11461 KSA')}</p>
+            <p>${escapeHtml(companyInfo.address || 'Office # 3 ln, Al Dirah Dist, P.O.Box 12633, Riyadh - 11461 KSA')}</p>
             <p>Tel: ${escapeHtml(companyInfo.phone || '011-4917295')}</p>
             <p>VAT: 314076518400003</p>
             <p>CR: 1010973808</p>
@@ -241,7 +241,7 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   try {
     const root = container.firstElementChild as HTMLElement;
     const canvas = await html2canvas(root, {
-      scale: 2,
+      scale: 1.35,
       useCORS: true,
       allowTaint: true,
       backgroundColor: '#ffffff',
@@ -258,7 +258,7 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
     const x = (pdfWidth - renderWidth) / 2;
     const y = 0;
 
-    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', x, y, renderWidth, renderHeight);
+    pdf.addImage(canvas.toDataURL('imageJPEG', 0.78), 'JPEG', x, y, renderWidth, renderHeight);
     return pdf.output('blob');
   } finally {
     document.body.removeChild(container);
