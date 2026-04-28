@@ -3,22 +3,6 @@ import { api } from '../lib/api';
 import { Quote, Service, QuotationSettings } from '../types/quotation';
 import { Customer } from '../types';
 
-// Mock data for when Supabase is not connected
-const mockCustomers: Customer[] = [
-  {
-    id: '1',
-    name: 'John Smith',
-    email: 'john@techsolutions.com',
-    phone: '011-4917295',
-    company: 'Tech Solutions Ltd',
-    address: 'Office # 3 ln, Al Dirah Dist, P.O.Box 12633, Riyadh - 11461 KSA',
-    status: 'active',
-    createdAt: new Date('2024-01-01'),
-    updatedAt: new Date('2024-01-01'),
-    createdBy: '1',
-  },
-];
-
 const mockServices: Service[] = [
   {
     id: '1',
@@ -203,10 +187,14 @@ export function useQuotations() {
 
   const addQuote = async (quote: Omit<Quote, 'id' | 'createdAt' | 'updatedAt' | 'quoteNumber'>) => {
     try {
+      const validCustomerId = customers.some(customer => customer.id === String(quote.customerId))
+        ? String(quote.customerId)
+        : null;
+
       const payload = {
         proposal_id: null,
-        customerId: quote.customerId,
-        customer_id: quote.customerId,
+        customerId: validCustomerId,
+        customer_id: validCustomerId,
         amount: quote.total,
         total_amount: quote.total,
         total: quote.total,
@@ -259,10 +247,16 @@ export function useQuotations() {
         throw new Error('Total amount cannot be negative.');
       }
       
+      const validCustomerId = updates.customerId !== undefined
+        ? (customers.some(customer => customer.id === String(updates.customerId))
+            ? String(updates.customerId)
+            : null)
+        : undefined;
+
       const payload = {
         ...updates,
-        customerId: updates.customerId,
-        customer_id: updates.customerId,
+        customerId: validCustomerId,
+        customer_id: validCustomerId,
         amount: amount,
         total_amount: amount,
         total: amount,
