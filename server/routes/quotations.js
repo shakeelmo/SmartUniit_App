@@ -5,10 +5,25 @@ const { run, all, get } = require('../db');
 
 // Generate quote number
 const generateQuoteNumber = async () => {
-  const result = await get('SELECT COUNT(*) as count FROM quotations');
-  const count = Number(result?.count || 0) + 1;
   const year = new Date().getFullYear();
-  return `Q-${year}-${count.toString().padStart(4, '0')}`;
+  const rows = await all(
+    `SELECT quotation_number, quote_number FROM quotations
+     WHERE COALESCE(quotation_number, quote_number, '') LIKE ?`,
+    [`Q-${year}-%`]
+  );
+
+  let maxSequence = 0;
+  for (const row of rows) {
+    const value = row.quotation_number || row.quote_number || '';
+    const match = value.match(new RegExp(`^Q-${year}-(\\d+)$`));
+    if (!match) continue;
+    const sequence = Number(match[1]);
+    if (Number.isFinite(sequence) && sequence > maxSequence) {
+      maxSequence = sequence;
+    }
+  }
+
+  return `Q-${year}-${String(maxSequence + 1).padStart(4, '0')}`;
 };
 
 const toNumber = (value, fallback = 0) => {
