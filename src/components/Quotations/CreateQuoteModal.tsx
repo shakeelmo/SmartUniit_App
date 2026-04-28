@@ -84,6 +84,7 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
       // Ensure line items have proper totals calculated
       const updatedLineItems = editQuote.lineItems.map(item => ({
         ...item,
+        itemCode: item.itemCode || (item as any).item_code || (item as any).code || '',
         total: (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)
       }));
       console.log('Updated line items for editing:', updatedLineItems);
@@ -237,6 +238,7 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
     // Update line items with correct totals before submitting
     const updatedLineItems = lineItems.map(item => ({
       ...item,
+      itemCode: item.itemCode || '',
       total: (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)
     }));
 
@@ -297,7 +299,10 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
       customerId: formData.customerId, // This line is changed as per the edit hint
       customer,
       status: formData.status,
-      lineItems,
+      lineItems: lineItems.map(item => ({
+        ...item,
+        itemCode: item.itemCode || '',
+      })),
       subtotal,
       discountType: formData.discountType,
       discountValue: Number(formData.discountValue) || 0,
