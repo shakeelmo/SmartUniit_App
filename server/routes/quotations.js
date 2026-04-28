@@ -157,12 +157,20 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
     const numericAmount = parseFloat(finalAmount);
     let normalizedCustomerId = customer_id ?? customerId ?? null;
     const normalizedTerms = terms ?? notes ?? '';
+    const normalizedCreatedBy = req.user?.id || null;
 
     if (normalizedCustomerId) {
       const existingCustomer = await get('SELECT id, name FROM customers WHERE id = ?', [normalizedCustomerId]);
       if (!existingCustomer) {
         console.warn('Quotation create: customer_id not found, falling back to null:', normalizedCustomerId);
         normalizedCustomerId = null;
+      }
+    }
+
+    if (normalizedCreatedBy) {
+      const existingUser = await get('SELECT id FROM users WHERE id = ?', [normalizedCreatedBy]);
+      if (!existingUser) {
+        console.warn('Quotation create: created_by not found, falling back to null:', normalizedCreatedBy);
       }
     }
     
@@ -193,7 +201,7 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
       { candidates: ['terms', 'notes'], value: normalizedTerms },
       { candidates: ['scope_of_work'], value: scopeOfWork || '' },
       { candidates: ['scope_of_work_ar'], value: scopeOfWorkAr || '' },
-      { candidates: ['created_by'], value: req.user.id },
+      { candidates: ['created_by'], value: normalizedCreatedBy },
       { candidates: ['customer_id'], value: normalizedCustomerId },
       { candidates: ['subtotal'], value: subtotal !== undefined ? toNumber(subtotal, numericAmount) : numericAmount },
       { candidates: ['discount_type'], value: discountType !== undefined ? discountType : 'percentage' },
