@@ -80,14 +80,15 @@ export function useQuotations() {
           const quantity = Number(item.quantity) || 0;
           const unitPrice = Number(item.unit_price ?? item.unitPrice) || 0;
           const itemTotal = Number(item.total_price ?? item.total) || (quantity * unitPrice);
+          const description = item.description || item.name || '';
 
           return {
             id: item.id,
             serviceId: item.service_id || item.serviceId || '',
             itemCode: item.item_code || item.itemCode || item.code || item.sku || item.partNumber || '',
-            name: item.name || item.description || '',
+            name: item.name || description,
             nameAr: item.nameAr || item.name_ar || '',
-            description: item.description || '',
+            description,
             descriptionAr: item.descriptionAr || item.description_ar || '',
             quantity,
             unit: item.unit || 'piece',

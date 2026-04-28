@@ -25,11 +25,11 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
     .map((item: any) => {
       const quantity = Number(item.quantity || 0);
       const unitPrice = Number(item.unitPrice || 0);
-      const total = Number(item.total || quantity * unitPrice || 0);
+      const total = Number(item.total || item.total_price || quantity * unitPrice || 0);
       const name = String(item.name || item.description || '').trim();
       return { ...item, quantity, unitPrice, total, name };
     })
-    .filter((item: any) => item.name && item.quantity > 0);
+    .filter((item: any) => (item.name || item.description || item.itemCode) && item.quantity > 0);
 
   const subtotal = lineItems.reduce((sum: number, item: any) => sum + item.total, 0);
   const discountType = quote.discountType || 'percentage';
