@@ -176,23 +176,31 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
     }
     
     // Auto-fill service details when service is selected
-    if (field === 'serviceId' && value) {
-      const service = services.find(s => s.id === value);
-      if (service) {
-        const quantity = Number(updatedItems[index].quantity) || 0;
-        const unitPrice = Number(service.defaultPrice) || 0;
-        const newTotal = quantity * unitPrice;
-        
+    if (field === 'serviceId') {
+      if (value) {
+        const service = services.find(s => s.id === value);
+        if (service) {
+          const quantity = Number(updatedItems[index].quantity) || 0;
+          const unitPrice = Number(service.defaultPrice) || 0;
+          const newTotal = quantity * unitPrice;
+          
+          updatedItems[index] = {
+            ...updatedItems[index],
+            itemCode: updatedItems[index].itemCode || '',
+            name: service.name,
+            nameAr: service.nameAr,
+            description: service.description,
+            descriptionAr: service.descriptionAr,
+            unitPrice: service.defaultPrice,
+            total: newTotal,
+          };
+          console.log('Updated line item with service:', updatedItems[index]);
+        }
+      } else {
         updatedItems[index] = {
           ...updatedItems[index],
-          name: service.name,
-          nameAr: service.nameAr,
-          description: service.description,
-          descriptionAr: service.descriptionAr,
-          unitPrice: service.defaultPrice,
-          total: newTotal,
+          serviceId: '',
         };
-        console.log('Updated line item with service:', updatedItems[index]);
       }
     }
     
