@@ -171,20 +171,23 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
     const numericAmount = parseFloat(finalAmount);
     let normalizedCustomerId = customer_id ?? customerId ?? null;
     const normalizedTerms = terms ?? notes ?? '';
-    const normalizedCreatedBy = req.user?.id || null;
+    let normalizedCreatedBy = req.user?.id || null;
 
-    if (normalizedCustomerId) {
+    if (normalizedCustomerId !== null && normalizedCustomerId !== undefined && normalizedCustomerId !== '') {
       const existingCustomer = await get('SELECT id, name FROM customers WHERE id = ?', [normalizedCustomerId]);
       if (!existingCustomer) {
         console.warn('Quotation create: customer_id not found, falling back to null:', normalizedCustomerId);
         normalizedCustomerId = null;
       }
+    } else {
+      normalizedCustomerId = null;
     }
 
     if (normalizedCreatedBy) {
       const existingUser = await get('SELECT id FROM users WHERE id = ?', [normalizedCreatedBy]);
       if (!existingUser) {
         console.warn('Quotation create: created_by not found, falling back to null:', normalizedCreatedBy);
+        normalizedCreatedBy = null;
       }
     }
     
