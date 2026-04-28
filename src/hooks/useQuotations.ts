@@ -84,6 +84,7 @@ export function useQuotations() {
           return {
             id: item.id,
             serviceId: item.service_id || item.serviceId || '',
+            itemCode: item.item_code || item.itemCode || item.code || item.sku || item.partNumber || '',
             name: item.name || item.description || '',
             nameAr: item.nameAr || item.name_ar || '',
             description: item.description || '',

@@ -70,7 +70,7 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
           (item: any, index: number) => `
             <tr>
               <td class="center">${index + 1}</td>
-              <td>${escapeHtml(item.code || item.itemCode || item.sku || item.partNumber || '')}</td>
+              <td>${escapeHtml(item.itemCode || item.code || item.sku || item.partNumber || '')}</td>
               <td>${escapeHtml(item.description || item.name || '')}</td>
               <td class="center">${escapeHtml(item.quantity)}</td>
               <td class="money"><span class="sar icon-saudi_riyal">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>${formatCurrency(item.unitPrice)}</td>

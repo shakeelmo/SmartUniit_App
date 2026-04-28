@@ -54,6 +54,7 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
   const [lineItems, setLineItems] = useState<QuoteLineItem[]>([{
     id: '1',
     serviceId: '',
+    itemCode: '',
     name: '',
     nameAr: '',
     description: '',
@@ -109,6 +110,7 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
       setLineItems([{
         id: '1',
         serviceId: '',
+        itemCode: '',
         name: '',
         nameAr: '',
         description: '',
@@ -201,6 +203,7 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
     const newItem: QuoteLineItem = {
       id: Date.now().toString(),
       serviceId: '',
+      itemCode: '',
       name: '',
       nameAr: '',
       description: '',
@@ -462,7 +465,7 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
             <div className="space-y-4">
               {lineItems.map((item, index) => (
                 <div key={item.id} className="bg-gray-50 p-4 rounded-lg">
-                  <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-dark-700 mb-1">
                         Service
@@ -479,6 +482,18 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
                           </option>
                         ))}
                       </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-dark-700 mb-1">
+                        Item
+                      </label>
+                      <input
+                        type="text"
+                        value={item.itemCode || ''}
+                        onChange={(e) => handleLineItemChange(index, 'itemCode', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        placeholder="Enter item code"
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-dark-700 mb-1">

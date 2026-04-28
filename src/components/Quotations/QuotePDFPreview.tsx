@@ -149,7 +149,7 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
                         {index + 1}
                       </td>
                       <td className="border border-gray-300 px-4 py-3 text-sm">
-                        {item.code || item.itemCode || item.sku || item.partNumber || '-'}
+                        {item.itemCode || item.code || item.sku || item.partNumber || '-'}
                       </td>
                       <td className="border border-gray-300 px-4 py-3 text-sm">
                         <div>

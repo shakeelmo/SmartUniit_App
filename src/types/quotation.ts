@@ -3,6 +3,7 @@ import { Customer } from './index';
 export interface QuoteLineItem {
   id: string;
   serviceId?: string;
+  itemCode?: string;
   name: string;
   nameAr?: string;
   description: string;
