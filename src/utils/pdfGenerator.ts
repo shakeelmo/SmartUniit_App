@@ -12,8 +12,8 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   const lineItems = (quote.lineItems || [])
     .map((item: any) => {
       const quantity = Number(item.quantity || 0);
-      const unitPrice = Number(item.unitPrice ?? item.unit_price || 0);
-      const total = Number(item.total ?? item.total_price || quantity * unitPrice || 0);
+      const unitPrice = Number(item.unitPrice ?? item.unit_price ?? 0);
+      const total = Number(item.total ?? item.total_price ?? (quantity * unitPrice) ?? 0);
       return {
         ...item,
         quantity,
