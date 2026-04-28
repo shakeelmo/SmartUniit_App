@@ -1,17 +1,5 @@
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-import { SMART_UNIVERSE_LOGO_BASE64 } from './logoBase64';
-
-const SAUDI_RIYAL_SYMBOL_ENTITY = '&#xea;';
-
-function escapeHtml(value: any): string {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
+import autoTable from 'jspdf-autotable';
 
 function formatCurrency(amount: number): string {
   return Number(amount || 0).toLocaleString('en-US', {
@@ -24,12 +12,18 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   const lineItems = (quote.lineItems || [])
     .map((item: any) => {
       const quantity = Number(item.quantity || 0);
-      const unitPrice = Number(item.unitPrice || 0);
-      const total = Number(item.total || item.total_price || quantity * unitPrice || 0);
-      const name = String(item.name || item.description || '').trim();
-      return { ...item, quantity, unitPrice, total, name };
+      const unitPrice = Number(item.unitPrice ?? item.unit_price || 0);
+      const total = Number(item.total ?? item.total_price || quantity * unitPrice || 0);
+      return {
+        ...item,
+        quantity,
+        unitPrice,
+        total,
+        itemCode: item.itemCode || item.item_code || item.code || item.sku || item.partNumber || '',
+        description: item.description || item.name || '',
+      };
     })
-    .filter((item: any) => (item.name || item.description || item.itemCode) && item.quantity > 0);
+    .filter((item: any) => (item.description || item.itemCode) && item.quantity > 0);
 
   const subtotal = lineItems.reduce((sum: number, item: any) => sum + item.total, 0);
   const discountType = quote.discountType || 'percentage';
@@ -60,207 +54,140 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
       })
     : '30 days';
 
-  const termsText = Array.isArray(quote.terms)
-    ? quote.terms.join('<br/>')
-    : escapeHtml(quote.terms || 'Payment terms: 30 days from invoice date');
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const rightX = pageWidth - 14;
 
-  const rowsHtml = lineItems.length
-    ? lineItems
-        .map(
-          (item: any, index: number) => `
-            <tr>
-              <td class="center">${index + 1}</td>
-              <td>${escapeHtml(item.itemCode || item.code || item.sku || item.partNumber || '')}</td>
-              <td>${escapeHtml(item.description || item.name || '')}</td>
-              <td class="center">${escapeHtml(item.quantity)}</td>
-              <td class="money"><span class="sar icon-saudi_riyal">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>${formatCurrency(item.unitPrice)}</td>
-              <td class="money total-cell"><span class="sar icon-saudi_riyal">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>${formatCurrency(item.total)}</td>
-            </tr>`
-        )
-        .join('')
-    : `
-      <tr>
-        <td colspan="6" class="empty">No items to display</td>
-      </tr>`;
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(20);
+  pdf.setTextColor(29, 78, 216);
+  pdf.text('Smart Universe', 14, 16);
 
-  const html = `
-    <div id="quotation-pdf-root" style="width: 1120px; min-height: 1580px; background: #ffffff; color: #111827; font-family: Arial, Helvetica, sans-serif; padding: 28px 34px 22px; box-sizing: border-box; display: flex; flex-direction: column;">
-      <style>
-        @import '@abdulrysr/saudi-riyal-new-symbol-font/style.css';
-        .header { display: flex; justify-content: space-between; align-items: stretch; gap: 8px; border-bottom: 2px solid #dbe4f0; padding-bottom: 14px; position: relative; }
-        .header::after { content: ''; position: absolute; left: 0; right: 0; bottom: -2px; height: 1px; background: #1e40af; opacity: 0.16; }
-        .left { width: 56%; display: flex; gap: 12px; }
-        .logo { width: 74px; height: 74px; object-fit: contain; border-radius: 14px; background: #ffffff; box-shadow: 0 3px 12px rgba(30, 64, 175, 0.06); }
-        .brand { flex: 1; padding-top: 0; }
-        .brand h1 { margin: 0; font-size: 28px; line-height: 1.01; color: #1d4ed8; letter-spacing: 0.1px; }
-        .brand h2 { margin: 6px 0 10px; font-size: 15px; line-height: 1.15; color: #1d4ed8; font-weight: 700; text-transform: uppercase; max-width: 430px; }
-        .brand p { margin: 4px 0; font-size: 13px; color: #374151; }
-        .right { width: 44%; display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between; }
-        .ar-block { width: 100%; text-align: right; direction: rtl; font-family: 'Tahoma', 'Arial', sans-serif; background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%); border: 1px solid #dbe4f0; border-radius: 14px; padding: 10px 14px 9px; box-sizing: border-box; max-width: 430px; }
-        .ar-name { color: #1e40af; font-weight: 700; font-size: 24px; line-height: 1.12; margin: 0; }
-        .ar-meta-wrap { margin-top: 10px; padding-top: 8px; border-top: 1px solid #cfd8e3; }
-        .ar-meta { color: #374151; font-size: 14px; line-height: 1.5; font-weight: 700; margin: 0; }
-        .quote-card { margin-top: 10px; width: 100%; max-width: 280px; border: 1px solid #dbe4f0; border-radius: 14px; background: #f8fafc; position: relative; box-sizing: border-box; box-shadow: 0 8px 16px rgba(15, 23, 42, 0.05); overflow: hidden; }
-        .quote-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 8px; background: linear-gradient(180deg, #2563eb 0%, #1e40af 100%); }
-        .quote-card-inner { padding: 12px 14px 11px 18px; }
-        .quote-row { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 8px; font-size: 12px; }
-        .quote-row:last-child { margin-bottom: 0; }
-        .quote-label { color: #111827; font-weight: 700; }
-        .quote-value { color: #1e40af; font-weight: 700; text-align: right; }
-        .document-title { margin: 14px 0 4px; color: #1e40af; font-size: 24px; font-weight: 700; }
-        .section-title { margin: 18px 0 8px; color: #1e40af; font-size: 16px; font-weight: 700; }
-        .customer-box { border: 1px solid #e5e7eb; border-radius: 12px; background: #fcfcfd; padding: 12px 14px; margin-bottom: 14px; }
-        .customer-box p { margin: 4px 0; font-size: 12px; color: #374151; }
-        table { width: 100%; border-collapse: collapse; margin-top: 6px; overflow: hidden; border-radius: 12px; }
-        thead th { background: linear-gradient(180deg, #2563eb 0%, #1e40af 100%); color: #ffffff; padding: 10px 8px; font-size: 12px; border: 1px solid #dbe4f0; }
-        tbody td { border: 1px solid #d1d5db; padding: 8px 8px; font-size: 12px; color: #1f2937; vertical-align: middle; }
-        tbody tr:nth-child(even) { background: #f9fafb; }
-        .center { text-align: center; }
-        .money { text-align: right; white-space: nowrap; font-weight: 600; }
-        .total-cell { font-weight: 700; }
-        .sar { display: inline-block; margin-right: 6px; color: #1e40af; font-size: 15px; line-height: 1; vertical-align: -1px; }
-        .empty { text-align: center; color: #6b7280; font-style: italic; }
-        .totals { width: 340px; margin-left: auto; margin-top: 14px; border-top: 2px solid #1e40af; padding-top: 10px; }
-        .totals-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 12px; }
-        .totals-row .label { font-weight: 700; color: #374151; }
-        .totals-row .value { font-weight: 700; color: #111827; }
-        .totals-row.grand { margin-top: 3px; padding-top: 8px; border-top: 1px dashed #cbd5e1; }
-        .totals-row.grand .label, .totals-row.grand .value { color: #1e40af; font-size: 16px; }
-        .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
-        .terms { border: 1px solid #e5e7eb; border-radius: 12px; background: #fafafa; padding: 12px 14px; min-height: 100%; box-sizing: border-box; }
-        .terms p { margin: 0 0 4px; font-size: 12px; color: #374151; line-height: 1.5; white-space: pre-wrap; }
-        .terms p:last-child { margin-bottom: 0; }
-        .content-grow { flex: 1; }
-        .footer { margin-top: 20px; background: linear-gradient(180deg, #1f2937 0%, #111827 100%); color: #ffffff; padding: 14px 18px; text-align: center; font-size: 11px; border-radius: 12px; }
-        .footer strong { display: block; font-size: 12px; margin-bottom: 4px; }
-      </style>
+  pdf.setFontSize(11);
+  pdf.text('FOR COMMUNICATIONS AND INFORMATION TECHNOLOGY', 14, 22);
 
-      <div class="header">
-        <div class="left">
-          <img class="logo" src="${SMART_UNIVERSE_LOGO_BASE64}" alt="Smart Universe" />
-          <div class="brand">
-            <h1>Smart Universe</h1>
-            <h2>for Communications and<br/>Information Technology</h2>
-            <p>${escapeHtml(companyInfo.address || 'Office # 3 ln, Al Dirah Dist, P.O.Box 12633, Riyadh - 11461 KSA')}</p>
-            <p>Tel: ${escapeHtml(companyInfo.phone || '011-4917295')}</p>
-            <p>VAT: 314076518400003</p>
-            <p>CR: 1010973808</p>
-          </div>
-        </div>
+  pdf.setFont('helvetica', 'normal');
+  pdf.setTextColor(55, 65, 81);
+  pdf.setFontSize(9);
+  pdf.text(companyInfo.address || 'Office # 3 ln, Al Dirah Dist, P.O.Box 12633, Riyadh - 11461 KSA', 14, 28);
+  pdf.text(`Tel: ${companyInfo.phone || '011-4917295'}`, 14, 33);
+  pdf.text('VAT: 314076518400003', 14, 38);
+  pdf.text('CR: 1010973808', 14, 43);
 
-        <div class="right">
-          <div class="ar-block">
-            <p class="ar-name">شركة الكون الذكي</p>
-            <p class="ar-name">للاتصالات و تقنية</p>
-            <p class="ar-name">المعلومات</p>
-            <div class="ar-meta-wrap">
-              <p class="ar-meta">رقم الضريبة المضافة: ٣١٤٠٧٦٥١٨٤٠٠٠٠٣</p>
-              <p class="ar-meta">السجل التجاري: ١٠١٠٩٧٣٨٠٨</p>
-            </div>
-          </div>
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(18);
+  pdf.setTextColor(30, 64, 175);
+  pdf.text('QUOTATION', rightX, 18, { align: 'right' });
 
-          <div class="quote-card">
-            <div class="quote-card-inner">
-              <div class="quote-row">
-                <div class="quote-label">Quotation #:</div>
-                <div class="quote-value">${escapeHtml(quoteNumber)}</div>
-              </div>
-              <div class="quote-row">
-                <div class="quote-label">Date:</div>
-                <div class="quote-value">${escapeHtml(quoteDate)}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+  pdf.setFontSize(9);
+  pdf.setTextColor(17, 24, 39);
+  pdf.text(`Quotation #: ${quoteNumber}`, rightX, 26, { align: 'right' });
+  pdf.text(`Date: ${quoteDate}`, rightX, 31, { align: 'right' });
+  pdf.text(`Valid Until: ${validUntil}`, rightX, 36, { align: 'right' });
 
-      <div class="content-grow">
-        <div class="document-title">Quotation:</div>
-        <div class="section-title">Bill To</div>
-        <div class="customer-box">
-          <p><strong>Name:</strong> ${escapeHtml(customer.name || 'N/A')}</p>
-          <p><strong>Company:</strong> ${escapeHtml(customer.company || 'N/A')}</p>
-          <p><strong>Address:</strong> ${escapeHtml(customer.address || 'N/A')}</p>
-          <p><strong>Phone:</strong> ${escapeHtml(customer.phone || 'N/A')}</p>
-          <p><strong>Email:</strong> ${escapeHtml(customer.email || 'N/A')}</p>
-          <p><strong>Valid Until:</strong> ${escapeHtml(validUntil)}</p>
-        </div>
+  pdf.setDrawColor(219, 228, 240);
+  pdf.line(14, 48, pageWidth - 14, 48);
 
-        <div class="section-title">Items & Services</div>
-        <table>
-        <thead>
-          <tr>
-            <th style="width: 7%;">S#</th>
-            <th style="width: 20%;">Item</th>
-            <th style="width: 31%;">Description</th>
-            <th style="width: 10%;">Qty</th>
-            <th style="width: 16%;">Unit Price</th>
-            <th style="width: 16%;">Total</th>
-          </tr>
-        </thead>
-        <tbody>${rowsHtml}</tbody>
-      </table>
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(12);
+  pdf.setTextColor(30, 64, 175);
+  pdf.text('Bill To', 14, 57);
 
-      <div class="totals">
-        <div class="totals-row"><div class="label">Subtotal</div><div class="value"><span class="sar icon-saudi_riyal">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>${formatCurrency(subtotal)}</div></div>
-        ${discountAmount > 0 ? `<div class="totals-row"><div class="label">Discount${discountType === 'percentage' ? ` (${escapeHtml(discountValue)}%)` : ''}</div><div class="value"><span class="sar icon-saudi_riyal">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>-${formatCurrency(discountAmount)}</div></div>` : ''}
-        <div class="totals-row"><div class="label">VAT (${escapeHtml(vatRate)}%)</div><div class="value"><span class="sar icon-saudi_riyal">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>${formatCurrency(vatAmount)}</div></div>
-        <div class="totals-row grand"><div class="label">Total</div><div class="value"><span class="sar icon-saudi_riyal">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>${formatCurrency(total)}</div></div>
-      </div>
+  pdf.setFont('helvetica', 'normal');
+  pdf.setTextColor(55, 65, 81);
+  pdf.setFontSize(9);
+  const customerLines = [
+    `Name: ${customer.name || 'N/A'}`,
+    `Company: ${customer.company || 'N/A'}`,
+    `Address: ${customer.address || 'N/A'}`,
+    `Phone: ${customer.phone || 'N/A'}`,
+    `Email: ${customer.email || 'N/A'}`,
+  ];
+  customerLines.forEach((line, index) => pdf.text(line, 14, 63 + index * 5));
 
-        <div class="details-grid">
-          <div class="terms">
-            <div class="section-title" style="margin-top:0; margin-bottom:10px; font-size:16px;">Terms & Conditions</div>
-            <p>${termsText}</p>
-          </div>
+  autoTable(pdf, {
+    startY: 92,
+    head: [['S#', 'Item', 'Description', 'Qty', 'Unit Price', 'Total']],
+    body: lineItems.length
+      ? lineItems.map((item: any, index: number) => [
+          String(index + 1),
+          item.itemCode || '',
+          item.description || '',
+          String(item.quantity),
+          formatCurrency(item.unitPrice),
+          formatCurrency(item.total),
+        ])
+      : [['', '', 'No items to display', '', '', '']],
+    theme: 'grid',
+    styles: {
+      fontSize: 8.5,
+      cellPadding: 2.5,
+      lineColor: [209, 213, 219],
+      lineWidth: 0.1,
+      textColor: [31, 41, 55],
+    },
+    headStyles: {
+      fillColor: [30, 64, 175],
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+    },
+    columnStyles: {
+      0: { halign: 'center', cellWidth: 12 },
+      1: { cellWidth: 34 },
+      2: { cellWidth: 68 },
+      3: { halign: 'center', cellWidth: 16 },
+      4: { halign: 'right', cellWidth: 28 },
+      5: { halign: 'right', cellWidth: 28 },
+    },
+  });
 
-          <div class="terms">
-            <div class="section-title" style="margin-top:0; margin-bottom:10px; font-size:16px;">Banking Details</div>
-            <p><strong>Bank:</strong> ${escapeHtml(bankingDetails.bankName || 'Saudi National Bank')}</p>
-            <p><strong>IBAN:</strong> ${escapeHtml(bankingDetails.iban || 'SA3610000041000000080109')}</p>
-            <p><strong>Account Number:</strong> ${escapeHtml(bankingDetails.accountNumber || '41000000080109')}</p>
-          </div>
-        </div>
-      </div>
+  const finalY = (pdf as any).lastAutoTable?.finalY || 100;
+  let y = finalY + 10;
 
-      <div class="footer">
-        <strong>Smart Universe for Communications and Information Technology</strong>
-        Riyadh, Saudi Arabia | Phone: +966 11 4917295 | Email: info@smartuniit.com
-      </div>
-    </div>`;
-
-  const container = document.createElement('div');
-  container.style.position = 'absolute';
-  container.style.left = '-99999px';
-  container.style.top = '0';
-  container.style.width = '1120px';
-  container.style.background = '#ffffff';
-  container.innerHTML = html;
-  document.body.appendChild(container);
-
-  try {
-    const root = container.firstElementChild as HTMLElement;
-    const canvas = await html2canvas(root, {
-      scale: 1.35,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-    });
-
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
-    const renderWidth = imgWidth * ratio;
-    const renderHeight = imgHeight * ratio;
-    const x = (pdfWidth - renderWidth) / 2;
-    const y = 0;
-
-    pdf.addImage(canvas.toDataURL('imageJPEG', 0.78), 'JPEG', x, y, renderWidth, renderHeight);
-    return pdf.output('blob');
-  } finally {
-    document.body.removeChild(container);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(10);
+  pdf.setTextColor(17, 24, 39);
+  pdf.text(`Subtotal: ${formatCurrency(subtotal)}`, rightX, y, { align: 'right' });
+  y += 5;
+  if (discountAmount > 0) {
+    pdf.text(
+      `Discount${discountType === 'percentage' ? ` (${discountValue}%)` : ''}: -${formatCurrency(discountAmount)}`,
+      rightX,
+      y,
+      { align: 'right' }
+    );
+    y += 5;
   }
+  pdf.text(`VAT (${vatRate}%): ${formatCurrency(vatAmount)}`, rightX, y, { align: 'right' });
+  y += 6;
+
+  pdf.setFontSize(12);
+  pdf.setTextColor(30, 64, 175);
+  pdf.text(`Total: ${formatCurrency(total)}`, rightX, y, { align: 'right' });
+
+  y += 10;
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(11);
+  pdf.setTextColor(30, 64, 175);
+  pdf.text('Terms & Conditions', 14, y);
+  pdf.text('Banking Details', pageWidth / 2 + 6, y);
+
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(8.5);
+  pdf.setTextColor(55, 65, 81);
+
+  const termsText = Array.isArray(quote.terms)
+    ? quote.terms.join('\n')
+    : (quote.terms || 'Payment terms: 30 days from invoice date');
+  const termsLines = pdf.splitTextToSize(termsText, 82);
+  pdf.text(termsLines, 14, y + 5);
+
+  const bankLines = [
+    `Bank: ${bankingDetails.bankName || 'Saudi National Bank'}`,
+    `IBAN: ${bankingDetails.iban || 'SA3610000041000000080109'}`,
+    `Account Number: ${bankingDetails.accountNumber || '41000000080109'}`,
+  ];
+  pdf.text(bankLines, pageWidth / 2 + 6, y + 5);
+
+  return pdf.output('blob');
 }
