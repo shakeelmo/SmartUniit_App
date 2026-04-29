@@ -6,7 +6,7 @@ import { useCustomers } from '../hooks/useCustomers';
 import { useAuth } from '../contexts/AuthContext';
 import { pdfExports } from '../utils/pdfExports';
 import toast from 'react-hot-toast';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, formatCurrencyWithSymbol } from '../utils/format';
 
 export function Invoices() {
   const { user, hasPermission } = useAuth();
@@ -265,7 +265,9 @@ export function Invoices() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-dark-900">
-                        {formatCurrency(invoice.amount, invoice.currency || 'SAR')}
+                        {invoice.currency === 'SAR' || !invoice.currency
+                          ? formatCurrencyWithSymbol(invoice.amount, invoice.currency || 'SAR')
+                          : formatCurrency(invoice.amount, invoice.currency || 'SAR')}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

@@ -16,7 +16,7 @@ import {
 import { StatsCard } from '../components/Dashboard/StatsCard';
 import { useAuth } from '../contexts/AuthContext';
 import { useDashboardStats } from '../hooks/useDashboardStats';
-import { formatCurrency } from '../utils/format';
+import { formatCurrencyWithSymbol } from '../utils/format';
 
 export function Dashboard() {
   const { user } = useAuth();
@@ -112,7 +112,7 @@ export function Dashboard() {
         />
         <StatsCard
           title="Total Revenue"
-          value={formatCurrency(stats.invoices.totalAmount, 'SAR')}
+          value={formatCurrencyWithSymbol(stats.invoices.totalAmount, 'SAR')}
           icon={DollarSign}
           color="success"
           trend={{ value: 23, isPositive: true }}

@@ -38,7 +38,7 @@ function req(method, path, body, token) {
 async function login() {
   const { status, json } = await req('POST', '/auth/login', {
     email: 'admin@smartuniit.com',
-    password: 'password123',
+    password: 'admin123',
   });
   if (status !== 200 || !json.token) throw new Error('Login failed');
   return json.token;

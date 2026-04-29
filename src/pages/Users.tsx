@@ -118,6 +118,7 @@ export function Users() {
       case 'superadmin': return 'bg-red-100 text-red-800';
       case 'admin': return 'bg-purple-100 text-purple-800';
       case 'manager': return 'bg-blue-100 text-blue-800';
+      case 'technician': return 'bg-green-100 text-green-800';
       case 'staff': return 'bg-green-100 text-green-800';
       case 'customer': return 'bg-orange-100 text-orange-800';
       case 'vendor': return 'bg-yellow-100 text-yellow-800';
@@ -205,6 +206,7 @@ export function Users() {
             >
               <option value="all">All Roles</option>
               <option value="superadmin">Super Admin</option>
+              <option value="technician">Technician</option>
               <option value="admin">Admin</option>
               <option value="manager">Manager</option>
               <option value="staff">Staff</option>

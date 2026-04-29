@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Calendar, User, DollarSign, Building2, MoreHorizontal, Edit, Trash2, Eye, Download, Paperclip } from 'lucide-react';
 import { Proposal } from '../../types/proposal';
 import { format, parseISO } from 'date-fns';
-import { formatCurrency } from '../../utils/format';
+import { formatCurrencyWithSymbol } from '../../utils/format';
 
 interface ProposalCardProps {
   proposal: Proposal;
@@ -155,7 +155,7 @@ export function ProposalCard({
           {proposal.value && (
             <div className="flex items-center text-dark-600">
               <DollarSign className="w-4 h-4 mr-1" />
-              {formatCurrency(proposal.value, 'SAR')}
+              {formatCurrencyWithSymbol(proposal.value, 'SAR')}
             </div>
           )}
         </div>

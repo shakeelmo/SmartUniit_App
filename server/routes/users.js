@@ -4,6 +4,19 @@ const { run, get, all } = require('../db');
 const { authenticateToken, requirePermission } = require('../middleware/auth');
 const { sendNotification } = require('../lib/notify');
 
+const mapUser = (user) => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  role: user.role,
+  status: user.status,
+  phone: user.phone || null,
+  department: user.department || null,
+  avatar: user.avatar_url || null,
+  createdAt: user.created_at,
+  updatedAt: user.updated_at,
+});
+
 const router = express.Router();
 
 // Get all users (admin only)
@@ -46,18 +59,7 @@ router.get('/', authenticateToken, requirePermission('users', 'manage'), async (
     );
 
     res.json({
-      users: users.map(user => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-        phone: user.phone,
-        department: user.department,
-        avatar: user.avatar_url,
-        createdAt: user.created_at,
-        updatedAt: user.updated_at
-      })),
+      users: users.map(mapUser),
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -72,7 +74,7 @@ router.get('/', authenticateToken, requirePermission('users', 'manage'), async (
 });
 
 // Get user by ID
-router.get('/:id', authenticateToken, requirePermission('users:manage'), async (req, res) => {
+router.get('/:id', authenticateToken, requirePermission('users', 'manage'), async (req, res) => {
   try {
     const user = await get(
       'SELECT id, name, email, role, status, phone, department, avatar_url, created_at, updated_at FROM users WHERE id = ?',
@@ -83,20 +85,7 @@ router.get('/:id', authenticateToken, requirePermission('users:manage'), async (
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json({
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-        phone: user.phone,
-        department: user.department,
-        avatar: user.avatar_url,
-        createdAt: user.created_at,
-        updatedAt: user.updated_at
-      }
-    });
+    res.json({ user: mapUser(user) });
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -104,7 +93,7 @@ router.get('/:id', authenticateToken, requirePermission('users:manage'), async (
 });
 
 // Create new user
-router.post('/', authenticateToken, requirePermission('users:manage'), async (req, res) => {
+router.post('/', authenticateToken, requirePermission('users', 'manage'), async (req, res) => {
   try {
     const { email, password, name, role = 'user', phone, department, status = 'active' } = req.body;
 
@@ -131,7 +120,7 @@ router.post('/', authenticateToken, requirePermission('users:manage'), async (re
     await run(
       `INSERT INTO users (id, email, name, password_hash, role, status, phone, department) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, email, name, hashedPassword, role, status, phone, department]
+      [userId, email, name, hashedPassword, role, status, phone || null, department || null]
     );
 
     // Get created user
@@ -140,37 +129,34 @@ router.post('/', authenticateToken, requirePermission('users:manage'), async (re
       [userId]
     );
 
-    // Send welcome email (non-blocking)
-    sendNotification({
-      to: email,
-      subject: 'Welcome to SmartUniit Task Flow',
-      text: `Hi ${name},\n\nWelcome to SmartUniit Task Flow! Your account has been created successfully.\n\nYour login credentials:\nEmail: ${email}\nPassword: ${password}\n\nPlease change your password after your first login.`,
-      html: `
-        <p>Hi ${name},</p>
-        <p>Welcome to <b>SmartUniit Task Flow</b>! Your account has been created successfully.</p>
-        <p><strong>Your login credentials:</strong></p>
-        <ul>
-          <li><strong>Email:</strong> ${email}</li>
-          <li><strong>Password:</strong> ${password}</li>
-        </ul>
-        <p>Please change your password after your first login.</p>
-      `
-    }).catch((err) => console.error('Email send error:', err));
+    // Send welcome email, but never fail user creation if notification setup is absent
+    try {
+      const notificationPromise = sendNotification({
+        to: email,
+        subject: 'Welcome to SmartUniit Task Flow',
+        text: `Hi ${name},\n\nWelcome to SmartUniit Task Flow! Your account has been created successfully.\n\nYour login credentials:\nEmail: ${email}\nPassword: ${password}\n\nPlease change your password after your first login.`,
+        html: `
+          <p>Hi ${name},</p>
+          <p>Welcome to <b>SmartUniit Task Flow</b>! Your account has been created successfully.</p>
+          <p><strong>Your login credentials:</strong></p>
+          <ul>
+            <li><strong>Email:</strong> ${email}</li>
+            <li><strong>Password:</strong> ${password}</li>
+          </ul>
+          <p>Please change your password after your first login.</p>
+        `
+      });
+
+      if (notificationPromise && typeof notificationPromise.catch === 'function') {
+        notificationPromise.catch((err) => console.error('Email send error:', err));
+      }
+    } catch (err) {
+      console.error('Email notification setup error:', err);
+    }
 
     res.status(201).json({
       message: 'User created successfully',
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-        phone: user.phone,
-        department: user.department,
-        avatar: user.avatar_url,
-        createdAt: user.created_at,
-        updatedAt: user.updated_at
-      }
+      user: mapUser(user)
     });
   } catch (error) {
     console.error('Create user error:', error);
@@ -179,7 +165,7 @@ router.post('/', authenticateToken, requirePermission('users:manage'), async (re
 });
 
 // Update user
-router.put('/:id', authenticateToken, requirePermission('users:manage'), async (req, res) => {
+router.put('/:id', authenticateToken, requirePermission('users', 'manage'), async (req, res) => {
   try {
     const { name, email, role, status, phone, department, avatar_url } = req.body;
     const userId = req.params.id;
@@ -221,18 +207,7 @@ router.put('/:id', authenticateToken, requirePermission('users:manage'), async (
 
     res.json({
       message: 'User updated successfully',
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        status: user.status,
-        phone: user.phone,
-        department: user.department,
-        avatar: user.avatar_url,
-        createdAt: user.created_at,
-        updatedAt: user.updated_at
-      }
+      user: mapUser(user)
     });
   } catch (error) {
     console.error('Update user error:', error);
@@ -241,7 +216,7 @@ router.put('/:id', authenticateToken, requirePermission('users:manage'), async (
 });
 
 // Delete user
-router.delete('/:id', authenticateToken, requirePermission('users:manage'), async (req, res) => {
+router.delete('/:id', authenticateToken, requirePermission('users', 'manage'), async (req, res) => {
   try {
     const userId = req.params.id;
 
@@ -267,7 +242,7 @@ router.delete('/:id', authenticateToken, requirePermission('users:manage'), asyn
 });
 
 // Reset user password
-router.post('/:id/reset-password', authenticateToken, requirePermission('users:manage'), async (req, res) => {
+router.post('/:id/reset-password', authenticateToken, requirePermission('users', 'manage'), async (req, res) => {
   try {
     const userId = req.params.id;
     const { newPassword } = req.body;
@@ -312,7 +287,7 @@ router.post('/:id/reset-password', authenticateToken, requirePermission('users:m
 });
 
 // Get user statistics
-router.get('/stats/overview', authenticateToken, requirePermission('users:manage'), async (req, res) => {
+router.get('/stats/overview', authenticateToken, requirePermission('users', 'manage'), async (req, res) => {
   try {
     const totalUsers = await get('SELECT COUNT(*) as count FROM users');
     const activeUsers = await get('SELECT COUNT(*) as count FROM users WHERE status = ?', ['active']);

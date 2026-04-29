@@ -1,5 +1,5 @@
 /* Import Saudi Riyal Symbol Font */
-@import '../node_modules/@abdulrysr/saudi-riyal-new-symbol-font/style.css';
+@import '@abdulrysr/saudi-riyal-new-symbol-font/style.css';
 
 @tailwind base;
 @tailwind components;

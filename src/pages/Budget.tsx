@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Search, Filter, Calculator, DollarSign, TrendingUp, AlertTriangle, Download } from 'lucide-react';
 import { pdfExports } from '../utils/pdfExports';
-import { formatCurrency } from '../utils/format';
+import { formatCurrencyWithSymbol } from '../utils/format';
 
 export function Budget() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -86,7 +86,7 @@ export function Budget() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-dark-600">Total Budget</p>
-              <p className="text-2xl font-bold text-dark-900">{formatCurrency(totalBudget, 'SAR')}</p>
+              <p className="text-2xl font-bold text-dark-900">{formatCurrencyWithSymbol(totalBudget, 'SAR')}</p>
             </div>
             <div className="p-3 bg-primary-100 rounded-lg">
               <Calculator className="w-6 h-6 text-primary-600" />
@@ -98,7 +98,7 @@ export function Budget() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-dark-600">Total Spent</p>
-              <p className="text-2xl font-bold text-blue-600">{formatCurrency(totalSpent, 'SAR')}</p>
+              <p className="text-2xl font-bold text-blue-600">{formatCurrencyWithSymbol(totalSpent, 'SAR')}</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-lg">
               <DollarSign className="w-6 h-6 text-blue-600" />
@@ -110,7 +110,7 @@ export function Budget() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-dark-600">Remaining</p>
-              <p className="text-2xl font-bold text-green-600">{formatCurrency(totalBudget - totalSpent, 'SAR')}</p>
+              <p className="text-2xl font-bold text-green-600">{formatCurrencyWithSymbol(totalBudget - totalSpent, 'SAR')}</p>
             </div>
             <div className="p-3 bg-green-100 rounded-lg">
               <TrendingUp className="w-6 h-6 text-green-600" />
@@ -174,9 +174,9 @@ export function Budget() {
                 <div>
                   <h3 className="text-lg font-semibold text-dark-900 mb-2">{budget.project}</h3>
                   <div className="flex items-center space-x-4 text-sm text-dark-600">
-                    <span>Total: {formatCurrency(budget.totalAmount, 'SAR')}</span>
-                    <span>Spent: {formatCurrency(budget.spentAmount, 'SAR')}</span>
-                    <span>Remaining: {formatCurrency(budget.totalAmount - budget.spentAmount, 'SAR')}</span>
+                    <span>Total: {formatCurrencyWithSymbol(budget.totalAmount, 'SAR')}</span>
+                    <span>Spent: {formatCurrencyWithSymbol(budget.spentAmount, 'SAR')}</span>
+                    <span>Remaining: {formatCurrencyWithSymbol(budget.totalAmount - budget.spentAmount, 'SAR')}</span>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -227,7 +227,7 @@ export function Budget() {
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-medium text-dark-700">{category.name}</span>
                           <span className="text-sm text-dark-600">
-                            {formatCurrency(category.spentAmount, 'SAR')} / {formatCurrency(category.allocatedAmount, 'SAR')}
+                            {formatCurrencyWithSymbol(category.spentAmount, 'SAR')} / {formatCurrencyWithSymbol(category.allocatedAmount, 'SAR')}
                           </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">

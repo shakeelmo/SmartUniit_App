@@ -54,6 +54,8 @@ const authenticateToken = async (req, res, next) => {
   }
 };
 
+const normalizeRole = (role) => role === 'staff' ? 'technician' : role;
+
 // Middleware to check if user has required role
 const requireRole = (roles) => {
   return (req, res, next) => {
@@ -61,7 +63,10 @@ const requireRole = (roles) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    if (!roles.includes(req.user.role)) {
+    const userRole = normalizeRole(req.user.role);
+    const allowedRoles = roles.map(normalizeRole);
+
+    if (!allowedRoles.includes(userRole)) {
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
 
@@ -76,13 +81,15 @@ const requirePermission = (resource, action) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
+    const userRole = normalizeRole(req.user.role);
+
     // Superadmin has all permissions
-    if (req.user.role === 'superadmin') {
+    if (userRole === 'superadmin') {
       return next();
     }
 
     // Check specific permissions based on role
-    const hasPermission = checkPermission(req.user.role, resource, action);
+    const hasPermission = checkPermission(userRole, resource, action);
     
     if (!hasPermission) {
       return res.status(403).json({ error: 'Insufficient permissions' });
@@ -132,6 +139,17 @@ const checkPermission = (role, resource, action) => {
       invoices: ['create', 'read', 'update'],
       budgets: ['create', 'read', 'update']
     },
+    technician: {
+      customers: ['read'],
+      vendors: ['read'],
+      projects: ['read'],
+      tasks: ['create', 'read', 'update'],
+      proposals: ['read'],
+      quotations: ['read'],
+      invoices: ['read'],
+      budgets: ['read'],
+      delivery_notes: ['create', 'read', 'update']
+    },
     staff: {
       customers: ['read'],
       vendors: ['read'],
@@ -140,7 +158,8 @@ const checkPermission = (role, resource, action) => {
       proposals: ['read'],
       quotations: ['read'],
       invoices: ['read'],
-      budgets: ['read']
+      budgets: ['read'],
+      delivery_notes: ['create', 'read', 'update']
     },
     customer: {
       projects: ['read'],

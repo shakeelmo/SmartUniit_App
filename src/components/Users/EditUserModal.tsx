@@ -24,7 +24,8 @@ export default function EditUserModal({ user, onClose, onSubmit }: EditUserModal
     { value: 'superadmin', label: 'Super Admin', description: 'Full system access' },
     { value: 'admin', label: 'Admin', description: 'Administrative access' },
     { value: 'manager', label: 'Manager', description: 'Management access' },
-    { value: 'staff', label: 'Staff', description: 'Staff access' },
+    { value: 'technician', label: 'Technician', description: 'Operational access for field and task work' },
+    { value: 'staff', label: 'Staff (Legacy)', description: 'Legacy role mapped to technician access' },
     { value: 'customer', label: 'Customer', description: 'Customer access' },
     { value: 'vendor', label: 'Vendor', description: 'Vendor access' }
   ];
