@@ -11,6 +11,8 @@ type TableColumn<T> = {
   value: (row: T, index: number) => TextValue;
 };
 
+type TocEntry = { title: string; page: number };
+
 export class ProposalPDFGenerator {
   private static instance: ProposalPDFGenerator;
 
@@ -27,6 +29,10 @@ export class ProposalPDFGenerator {
   private y = 20;
   private proposalTitle = 'Proposal';
   private documentNumber = '';
+  private customerName = 'Customer';
+  private customerLogo?: string;
+  private tocEntries: TocEntry[] = [];
+  private tocPage = 2;
 
   public static getInstance(): ProposalPDFGenerator {
     if (!ProposalPDFGenerator.instance) {
@@ -41,12 +47,17 @@ export class ProposalPDFGenerator {
     this.pageHeight = this.pdf.internal.pageSize.getHeight();
     this.proposalTitle = this.clean(proposal?.title) || 'Proposal';
     this.documentNumber = this.clean(proposal?.documentControl?.documentNumber) || this.clean(proposal?.id) || '';
+    this.customerName = this.clean(customer?.company || customer?.name || 'Customer') || 'Customer';
+    this.customerLogo = this.getCustomerLogo(proposal, customer);
+    this.tocEntries = [];
     this.y = this.topMargin;
 
     this.renderCoverPage(proposal, customer);
     this.addPage();
-    this.renderDocumentControl(proposal);
+    this.tocPage = this.pdf.getCurrentPageInfo().pageNumber;
     this.renderTableOfContents();
+    this.addPage();
+    this.renderDocumentControl(proposal);
     this.renderDocumentProperty(proposal, customer);
     this.renderConfidentiality(proposal);
     this.renderIntroduction(proposal);
@@ -58,6 +69,7 @@ export class ProposalPDFGenerator {
     this.renderPaymentTerms(proposal);
     this.renderProjectDuration(proposal);
     this.renderAcceptance();
+    this.renderTableOfContents(true);
     this.addPageNumbers();
 
     this.pdf.save(this.filename(this.proposalTitle));
@@ -66,7 +78,8 @@ export class ProposalPDFGenerator {
   private renderCoverPage(proposal: Proposal, customer: any) {
     this.pdf.setFillColor(245, 248, 255);
     this.pdf.rect(0, 0, this.pageWidth, this.pageHeight, 'F');
-    this.addLogo(this.margin, 18, 26, 26);
+    this.addLogo(this.margin, 16, 42, 24);
+    this.addCustomerLogo(this.pageWidth - this.margin - 42, 16, 42, 24);
 
     this.pdf.setTextColor(30, 64, 175);
     this.pdf.setFont('helvetica', 'bold');
@@ -107,22 +120,53 @@ export class ProposalPDFGenerator {
     ]);
   }
 
-  private renderTableOfContents() {
-    this.sectionTitle('Table of Contents');
-    [
-      '1. Document Property',
-      '2. Confidentiality Agreement',
-      '3. Introduction',
-      '4. Understanding to Customer Requirement',
-      '5. Customer Prerequisites',
-      '6. Deliverables Scope',
-      '7. Additional Conditions and Assumptions',
-      '8. Commercial Proposal',
-      '9. Payment Terms & Conditions',
-      '10. Duration of Project',
-      '11. SOW Acceptance',
-    ].forEach(item => this.bullet(item, 0, false));
+  private renderTableOfContents(rewrite = false) {
+    if (rewrite) {
+      this.pdf.setPage(this.tocPage);
+      this.clearContentArea();
+      this.y = 30;
+    }
+
+    this.sectionTitle('Table of Contents', false);
+    const entries = this.tocEntries.length
+      ? this.tocEntries
+      : [
+          'Document Control',
+          '1. Document Property',
+          '2. Confidentiality Agreement',
+          '3. Introduction',
+          '4. Understanding to Customer Requirement',
+          '5. Customer Prerequisites',
+          '6. Deliverables Scope',
+          '7. Additional Conditions and Assumptions',
+          '8. Commercial Proposal',
+          '9. Payment Terms & Conditions',
+          '10. Duration of Project',
+          '11. SOW Acceptance',
+        ].map(title => ({ title, page: 0 }));
+
+    entries.forEach((entry, index) => {
+      this.ensureSpace(8);
+      const label = String(index + 1).padStart(2, '0');
+      const title = this.clean(entry.title.replace(/^\d+\.\s*/, ''));
+      const pageText = entry.page ? String(entry.page) : '-';
+      this.pdf.setFont('helvetica', 'bold');
+      this.pdf.setFontSize(9.2);
+      this.pdf.setTextColor(30, 64, 175);
+      this.pdf.text(label, this.margin, this.y);
+      this.pdf.setFont('helvetica', 'normal');
+      this.pdf.setTextColor(17, 24, 39);
+      this.pdf.text(title, this.margin + 12, this.y, { maxWidth: this.contentWidth() - 32 });
+      this.pdf.setDrawColor(209, 213, 219);
+      this.pdf.setLineDashPattern([1, 1], 0);
+      this.pdf.line(this.margin + 75, this.y - 1, this.pageWidth - this.margin - 12, this.y - 1);
+      this.pdf.setLineDashPattern([], 0);
+      this.pdf.setFont('helvetica', 'bold');
+      this.pdf.text(pageText, this.pageWidth - this.margin, this.y, { align: 'right' });
+      this.y += 8;
+    });
     this.y += this.sectionGap;
+    this.pdf.setTextColor(17, 24, 39);
   }
 
   private renderDocumentProperty(proposal: Proposal, customer: any) {
@@ -302,7 +346,20 @@ export class ProposalPDFGenerator {
     this.text('Company Signature & Date', this.pageWidth - this.margin - 62, this.y, 9);
   }
 
-  private sectionTitle(title: string) {
+  private registerToc(title: string) {
+    const page = this.pdf.getCurrentPageInfo().pageNumber;
+    if (!this.tocEntries.some(entry => entry.title === title)) {
+      this.tocEntries.push({ title, page });
+    }
+  }
+
+  private clearContentArea() {
+    this.pdf.setFillColor(255, 255, 255);
+    this.pdf.rect(this.margin - 1, 24, this.contentWidth() + 2, this.pageBottom() - 22, 'F');
+  }
+
+  private sectionTitle(title: string, includeInToc = true) {
+    if (includeInToc) this.registerToc(title);
     this.keepWithNext(18);
     this.pdf.setFillColor(30, 64, 175);
     this.pdf.setTextColor(255, 255, 255);
@@ -454,17 +511,27 @@ export class ProposalPDFGenerator {
   }
 
   private addRunningHeader() {
-    this.addLogo(this.margin, 8, 12, 12);
+    this.pdf.setFillColor(255, 255, 255);
+    this.pdf.rect(0, 0, this.pageWidth, 24, 'F');
+    this.addLogo(this.margin, 6, 30, 16);
     this.pdf.setFont('helvetica', 'bold');
-    this.pdf.setFontSize(9);
+    this.pdf.setFontSize(8.8);
     this.pdf.setTextColor(30, 64, 175);
-    this.pdf.text('Smart Universe', this.margin + 16, 14);
+    this.pdf.text('Smart Universe', this.margin + 34, 12);
     this.pdf.setFont('helvetica', 'normal');
+    this.pdf.setFontSize(7.5);
     this.pdf.setTextColor(75, 85, 99);
-    this.pdf.text(this.documentNumber || this.proposalTitle, this.pageWidth - this.margin, 14, { align: 'right' });
+    this.pdf.text('Communications & Information Technology', this.margin + 34, 17);
+
+    this.addCustomerLogo(this.pageWidth - this.margin - 30, 6, 30, 16);
+    this.pdf.setFont('helvetica', 'normal');
+    this.pdf.setFontSize(7.5);
+    this.pdf.setTextColor(75, 85, 99);
+    this.pdf.text(this.customerName, this.pageWidth - this.margin - 34, 13, { align: 'right', maxWidth: 48 });
+
     this.pdf.setDrawColor(219, 234, 254);
-    this.pdf.line(this.margin, 20, this.pageWidth - this.margin, 20);
-    this.y = 28;
+    this.pdf.line(this.margin, 24, this.pageWidth - this.margin, 24);
+    this.y = 32;
     this.pdf.setTextColor(17, 24, 39);
   }
 
@@ -487,6 +554,32 @@ export class ProposalPDFGenerator {
     } catch (error) {
       console.warn('Unable to add proposal logo:', error);
     }
+  }
+
+  private addCustomerLogo(x: number, y: number, width: number, height: number) {
+    if (this.customerLogo) {
+      try {
+        const type = this.customerLogo.includes('image/png') ? 'PNG' : 'JPEG';
+        this.pdf.addImage(this.customerLogo, type, x, y, width, height);
+        return;
+      } catch (error) {
+        console.warn('Unable to add customer logo:', error);
+      }
+    }
+    this.pdf.setDrawColor(209, 213, 219);
+    this.pdf.setFillColor(249, 250, 251);
+    this.pdf.roundedRect(x, y, width, height, 1.5, 1.5, 'FD');
+    this.pdf.setFont('helvetica', 'bold');
+    this.pdf.setFontSize(6.8);
+    this.pdf.setTextColor(75, 85, 99);
+    this.pdf.text('CUSTOMER', x + width / 2, y + height / 2 - 1, { align: 'center' });
+    this.pdf.text('LOGO', x + width / 2, y + height / 2 + 4, { align: 'center' });
+    this.pdf.setTextColor(17, 24, 39);
+  }
+
+  private getCustomerLogo(proposal: any, customer: any): string | undefined {
+    const candidates = [proposal?.customerLogo, customer?.logo, customer?.logoUrl, customer?.logo_url, customer?.image, customer?.imageUrl, customer?.avatar];
+    return candidates.find(value => typeof value === 'string' && value.startsWith('data:image/'));
   }
 
   private contentWidth() {
