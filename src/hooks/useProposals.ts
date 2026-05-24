@@ -3,6 +3,7 @@ import { api } from '../lib/api';
 
 // Simplified Proposal interface for API compatibility
 interface SimpleProposal {
+  [key: string]: any;
   id: string;
   title: string;
   description: string;
@@ -175,37 +176,75 @@ export function useProposals() {
     }
   };
 
+  const normalizeProposal = (p: any): SimpleProposal => {
+    let fullData: any = {};
+    try {
+      if (p?.full_data && typeof p.full_data === "string") fullData = JSON.parse(p.full_data);
+      else if (p?.full_data && typeof p.full_data === "object") fullData = p.full_data;
+    } catch (error) {
+      console.error("Error parsing proposal full_data:", error);
+    }
+
+    const merged = { ...fullData, ...p };
+    const safeDate = (dateValue: any): Date => {
+      if (!dateValue) return new Date();
+      try {
+        const date = new Date(dateValue);
+        return isNaN(date.getTime()) ? new Date() : date;
+      } catch (error) {
+        console.error('Error parsing date:', dateValue, error);
+        return new Date();
+      }
+    };
+
+    return {
+      ...merged,
+      id: merged.id,
+      title: merged.title,
+      description: merged.description,
+      customerId: String(merged.customer_id || merged.customerId || ''),
+      vendorId: merged.vendor_id || merged.vendorId,
+      status: merged.status || "draft",
+      value: merged.value,
+      attachments: merged.attachments || [],
+      activityLog: merged.activity_log || merged.activityLog || [],
+      createdBy: merged.created_by || merged.createdBy,
+      createdAt: safeDate(merged.created_at || merged.createdAt),
+      updatedAt: safeDate(merged.updated_at || merged.updatedAt),
+    };
+  };
+
+  const sanitizeProposalPayload = (value: any): any => {
+    if (value === null || value === undefined) return value;
+
+    if (typeof File !== 'undefined' && value instanceof File) return undefined;
+    if (typeof Blob !== 'undefined' && value instanceof Blob) return undefined;
+
+    if (typeof value === 'string') {
+      return value.startsWith('data:') ? undefined : value;
+    }
+
+    if (Array.isArray(value)) {
+      return value
+        .map(item => sanitizeProposalPayload(item))
+        .filter(item => item !== undefined);
+    }
+
+    if (typeof value === 'object') {
+      return Object.fromEntries(
+        Object.entries(value)
+          .map(([key, item]) => [key, sanitizeProposalPayload(item)])
+          .filter(([, item]) => item !== undefined)
+      );
+    }
+
+    return value;
+  };
+
   const fetchProposals = async () => {
     try {
       const { proposals } = await api.getProposals();
-      setProposals(proposals.map((p: any) => {
-        // Helper function to safely convert date strings to Date objects
-        const safeDate = (dateValue: any): Date => {
-          if (!dateValue) return new Date();
-          try {
-            const date = new Date(dateValue);
-            return isNaN(date.getTime()) ? new Date() : date;
-          } catch (error) {
-            console.error('Error parsing date:', dateValue, error);
-            return new Date();
-          }
-        };
-
-        return {
-          id: p.id,
-          title: p.title,
-          description: p.description,
-          customerId: p.customer_id || p.customerId,
-          vendorId: p.vendor_id || p.vendorId,
-          status: p.status,
-          value: p.value,
-          attachments: p.attachments || [],
-          activityLog: p.activity_log || p.activityLog || [],
-          createdBy: p.created_by || p.createdBy,
-          createdAt: safeDate(p.created_at || p.createdAt),
-          updatedAt: safeDate(p.updated_at || p.updatedAt),
-        };
-      }));
+      setProposals(proposals.map(normalizeProposal));
     } catch (error) {
       console.error('Error fetching proposals:', error);
       // Fallback to mock data
@@ -237,9 +276,11 @@ export function useProposals() {
 
   const addProposal = async (proposal: Omit<SimpleProposal, 'id' | 'createdAt' | 'updatedAt' | 'attachments' | 'activityLog'>) => {
     try {
-      const { proposal: newProposal } = await api.createProposal(proposal);
-      setProposals(prev => [newProposal, ...prev]);
-      return newProposal;
+      const payload = sanitizeProposalPayload(proposal);
+      const { proposal: newProposal } = await api.createProposal(payload);
+      const normalized = normalizeProposal({ ...proposal, ...newProposal });
+      setProposals(prev => [normalized, ...prev]);
+      return normalized;
     } catch (error) {
       console.error('Error in addProposal:', error);
       throw error;
@@ -248,10 +289,12 @@ export function useProposals() {
 
   const updateProposal = async (id: string, updates: Partial<SimpleProposal>) => {
     try {
-      const { proposal: updatedProposal } = await api.updateProposal(id, updates);
+      const payload = sanitizeProposalPayload(updates);
+      const { proposal: updatedProposal } = await api.updateProposal(id, payload);
+      const normalized = normalizeProposal({ ...updates, ...updatedProposal });
       setProposals(prev => prev.map(proposal => 
         proposal.id === id 
-          ? updatedProposal 
+          ? normalized 
           : proposal
       ));
     } catch (error) {
