@@ -72,11 +72,11 @@ export class PDFExportUtils {
   // Enhanced Proposal PDF Export with full document structure
   public async exportProposalPDF(proposal: any, customer: any): Promise<void> {
     const filename = `Proposal_${proposal?.title?.replace(/[^a-zA-Z0-9_-]+/g, '_') || proposal?.id || 'Draft'}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
-    const htmlContent = this.generateQuotationStyleProposalHTML(proposal, customer);
+    const htmlContent = this.generateProposalExportHTML(proposal, customer);
     await this.generatePDFFromHTML(htmlContent, filename);
   }
 
-  private generateQuotationStyleProposalHTML(proposal: any, customer: any): string {
+  private generateProposalExportHTML(proposal: any, customer: any): string {
     const rawDate = proposal?.createdAt || proposal?.created_at || proposal?.date || proposal?.documentControl?.date;
     const parsedDate = rawDate ? new Date(rawDate) : new Date();
     const safeDate = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
