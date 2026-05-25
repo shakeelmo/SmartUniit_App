@@ -15,6 +15,15 @@ type TableColumn<T> = {
 
 type TocEntry = { title: string; page: number };
 
+const PDF_STYLES = {
+  coverTitle: 28,
+  sectionBar: { fontSize: 12, height: 9 },
+  body: { fontSize: 10.5, lineHeight: 5.8, gap: 4 },
+  table: { headerFontSize: 9.6, bodyFontSize: 9.2, headerHeight: 9, lineHeight: 5.2, paddingX: 2.5, paddingY: 5.5 },
+  footer: { brandFontSize: 8.4, metaFontSize: 7.8 },
+  signature: { width: 66 },
+};
+
 export class ProposalPDFGenerator {
   private static instance: ProposalPDFGenerator;
 
@@ -88,7 +97,7 @@ export class ProposalPDFGenerator {
 
     this.pdf.setTextColor(30, 64, 175);
     this.pdf.setFont('helvetica', 'bold');
-    this.pdf.setFontSize(26);
+    this.pdf.setFontSize(PDF_STYLES.coverTitle);
     this.centerText('TECHNICAL & COMMERCIAL PROPOSAL', 72);
 
     this.pdf.setTextColor(17, 24, 39);
@@ -278,11 +287,11 @@ export class ProposalPDFGenerator {
       this.table(rows, [
         { header: 'S.No', width: 12, align: 'center', value: (row, i) => row.serialNumber || i + 1 },
         { header: 'Description', width: 78, value: row => row.description },
-        { header: 'Qty', width: 16, align: 'right', value: row => row.quantity },
+        { header: 'Qty', width: 16, align: 'center', value: row => row.quantity },
         { header: 'Unit', width: 18, align: 'center', value: row => row.unit },
         { header: 'Unit Price', width: 25, align: 'right', value: row => this.moneyMarker(row.unitPrice, commercial.currency) },
         { header: 'Total', width: 27, align: 'right', value: row => this.moneyMarker(row.total, commercial.currency) },
-      ], { fontSize: 8.5 });
+      ], { fontSize: PDF_STYLES.table.bodyFontSize });
     }
 
     this.keepWithNext(32);
@@ -364,24 +373,28 @@ export class ProposalPDFGenerator {
         { header: 'Duration', width: 24, align: 'center', value: row => row.duration + ' days' },
         { header: 'Days', width: 24, align: 'center', value: row => row.startDay + '-' + row.endDay },
         { header: 'Deliverables', width: 80, value: row => (row.deliverables || []).join(', ') },
-      ], { fontSize: 8.5 });
+      ], { fontSize: PDF_STYLES.table.bodyFontSize });
     }
 
     this.list('Critical Path', duration?.criticalPath);
     this.list('Assumptions', duration?.assumptions);
   }
 
+
   private renderAcceptance() {
     this.sectionTitle('12. SOW Acceptance');
     this.paragraph('By signing this document, the SOW document is officially approved and acknowledged as the only document that defines the project scope based on the signed contract.');
     this.keepWithNext(45);
     this.y += 14;
+    const width = PDF_STYLES.signature.width;
+    const leftX = this.margin;
+    const rightX = this.pageWidth - this.margin - width;
     this.pdf.setDrawColor(17, 24, 39);
-    this.pdf.line(this.margin, this.y, this.margin + 62, this.y);
-    this.pdf.line(this.pageWidth - this.margin - 62, this.y, this.pageWidth - this.margin, this.y);
+    this.pdf.line(leftX, this.y, leftX + width, this.y);
+    this.pdf.line(rightX, this.y, rightX + width, this.y);
     this.y += 6;
-    this.text('Customer Signature & Date', this.margin, this.y, 9);
-    this.text('Company Signature & Date', this.pageWidth - this.margin - 62, this.y, 9);
+    this.text('Customer Signature & Date', leftX, this.y, 9.5);
+    this.text('Company Signature & Date', rightX, this.y, 9.5);
   }
 
   private registerToc(title: string) {
@@ -396,37 +409,41 @@ export class ProposalPDFGenerator {
     this.pdf.rect(this.margin - 1, 24, this.contentWidth() + 2, this.pageBottom() - 22, 'F');
   }
 
+
   private sectionTitle(title: string, includeInToc = true) {
     if (includeInToc) this.registerToc(title);
-    this.keepWithNext(18);
+    this.keepWithNext(20);
+    const style = PDF_STYLES.sectionBar;
     this.pdf.setFillColor(30, 64, 175);
     this.pdf.setTextColor(255, 255, 255);
-    this.pdf.roundedRect(this.margin, this.y, this.contentWidth(), 8, 1.5, 1.5, 'F');
+    this.pdf.roundedRect(this.margin, this.y, this.contentWidth(), style.height, 1.5, 1.5, 'F');
     this.pdf.setFont('helvetica', 'bold');
-    this.pdf.setFontSize(11);
-    this.pdf.text(title.toUpperCase(), this.margin + 3, this.y + 5.5);
-    this.y += 13;
+    this.pdf.setFontSize(style.fontSize);
+    this.pdf.text(title.toUpperCase(), this.margin + 3, this.y + 6.2);
+    this.y += style.height + 6;
     this.pdf.setTextColor(17, 24, 39);
   }
 
+
   private subTitle(title: string) {
     if (!this.clean(title)) return;
-    this.keepWithNext(10);
+    this.keepWithNext(11);
     this.pdf.setFont('helvetica', 'bold');
     this.pdf.setFontSize(11);
     this.pdf.setTextColor(30, 64, 175);
     this.pdf.text(title, this.margin, this.y);
-    this.y += 6;
+    this.y += 6.5;
     this.pdf.setTextColor(17, 24, 39);
   }
 
-  private paragraph(value: TextValue, indent = 0, fontSize = 9.5) {
+
+  private paragraph(value: TextValue, indent = 0, fontSize = PDF_STYLES.body.fontSize) {
     const text = this.clean(value);
     if (!text) return;
     const x = this.margin + indent;
     const maxWidth = this.contentWidth() - indent;
-    this.writeWrapped(text, x, maxWidth, fontSize);
-    this.y += 3;
+    this.writeWrapped(text, x, maxWidth, fontSize, PDF_STYLES.body.lineHeight);
+    this.y += PDF_STYLES.body.gap;
   }
 
   private list(title: string, items?: TextValue[], indent = 0) {
@@ -437,24 +454,28 @@ export class ProposalPDFGenerator {
     this.y += 2;
   }
 
+
   private bullet(value: TextValue, level = 0, bullet = true) {
     const text = this.clean(value);
     if (!text) return;
     const x = this.margin + level * 6;
     const prefix = bullet ? (level > 0 ? '-' : '•') : '';
     const firstIndent = prefix ? 4 : 0;
+    const lineHeight = PDF_STYLES.body.lineHeight;
     const lines = this.pdf.splitTextToSize(text, this.contentWidth() - level * 6 - firstIndent);
     this.pdf.setFont('helvetica', 'normal');
-    this.pdf.setFontSize(9.3);
+    this.pdf.setFontSize(10);
     lines.forEach((line: string, index: number) => {
-      this.ensureSpace(this.lineGap);
+      this.ensureSpace(lineHeight);
       if (prefix && index === 0) this.pdf.text(prefix, x, this.y);
       this.pdf.text(line, x + firstIndent, this.y);
-      this.y += this.lineGap;
+      this.y += lineHeight;
     });
+    this.y += 1.2;
   }
 
-  private writeWrapped(value: string, x: number, maxWidth: number, fontSize = 9.5, lineHeight = 5) {
+
+  private writeWrapped(value: string, x: number, maxWidth: number, fontSize = PDF_STYLES.body.fontSize, lineHeight = PDF_STYLES.body.lineHeight) {
     this.pdf.setFont('helvetica', 'normal');
     this.pdf.setFontSize(fontSize);
     const lines = this.pdf.splitTextToSize(value, maxWidth);
@@ -465,36 +486,36 @@ export class ProposalPDFGenerator {
     });
   }
 
+
   private keyValueRows(rows: Array<[string, TextValue]>, x = this.margin, width = this.contentWidth()) {
     const labelWidth = Math.min(45, width * 0.42);
     rows
       .filter(([, value]) => this.clean(value))
       .forEach(([label, value]) => {
         const text = this.clean(value) || 'N/A';
-        const valueLines = this.isSarMoney(text) ? [this.displayText(text)] : this.pdf.splitTextToSize(text, width - labelWidth - 4);
-        const rowHeight = Math.max(7, valueLines.length * 4.5 + 3);
+        const valueLines = this.pdf.splitTextToSize(text, width - labelWidth - 5);
+        const rowHeight = Math.max(8.5, valueLines.length * 5.2 + 4);
         this.ensureSpace(rowHeight);
         this.pdf.setDrawColor(229, 231, 235);
         this.pdf.setFillColor(249, 250, 251);
-        this.pdf.rect(x, this.y - 4.5, width, rowHeight, 'S');
-        this.pdf.setFontSize(9);
+        this.pdf.rect(x, this.y - 4.8, width, rowHeight, 'S');
+        this.pdf.setFontSize(9.8);
         this.pdf.setFont('helvetica', 'bold');
-        this.pdf.text(label, x + 2, this.y);
+        this.pdf.text(label, x + 2.5, this.y);
         this.pdf.setFont('helvetica', 'normal');
-        if (this.isSarMoney(text)) {
-          this.drawTextValue(text, x + labelWidth, this.y, { fontSize: 9 });
-        } else {
-          this.pdf.text(valueLines, x + labelWidth, this.y);
-        }
+        this.pdf.setFontSize(9.5);
+        this.pdf.text(valueLines, x + labelWidth, this.y, { maxWidth: width - labelWidth - 5 });
         this.y += rowHeight;
       });
-    this.y += 4;
+    this.y += PDF_STYLES.body.gap;
   }
 
+
   private table<T>(rows: T[], columns: TableColumn<T>[], options: { fontSize?: number } = {}) {
-    const fontSize = options.fontSize || 8.8;
-    const lineHeight = fontSize * 0.48;
-    const headerHeight = 8;
+    const fontSize = options.fontSize || PDF_STYLES.table.bodyFontSize;
+    const lineHeight = PDF_STYLES.table.lineHeight;
+    const headerHeight = PDF_STYLES.table.headerHeight;
+    const padX = PDF_STYLES.table.paddingX;
 
     const drawHeader = () => {
       this.ensureSpace(headerHeight + 4);
@@ -503,10 +524,12 @@ export class ProposalPDFGenerator {
       this.pdf.setDrawColor(30, 64, 175);
       this.pdf.setTextColor(255, 255, 255);
       this.pdf.setFont('helvetica', 'bold');
-      this.pdf.setFontSize(fontSize);
+      this.pdf.setFontSize(PDF_STYLES.table.headerFontSize);
       columns.forEach(col => {
         this.pdf.rect(x, this.y, col.width, headerHeight, 'FD');
-        this.pdf.text(col.header, x + 2, this.y + 5.2, { maxWidth: col.width - 4 });
+        const align = col.align || 'left';
+        const textX = align === 'right' ? x + col.width - padX : align === 'center' ? x + col.width / 2 : x + padX;
+        this.pdf.text(col.header, textX, this.y + 6, { align, maxWidth: col.width - padX * 2 });
         x += col.width;
       });
       this.y += headerHeight;
@@ -516,11 +539,8 @@ export class ProposalPDFGenerator {
     drawHeader();
     rows.forEach((row, rowIndex) => {
       const rawValues = columns.map(col => col.value(row, rowIndex));
-      const cellLines = columns.map((col, colIndex) => {
-        const raw = rawValues[colIndex];
-        return this.isSarMoney(raw) ? [this.displayText(raw)] : this.pdf.splitTextToSize(this.clean(raw), col.width - 4);
-      });
-      const rowHeight = Math.max(8, Math.max(...cellLines.map(lines => lines.length)) * lineHeight + 4);
+      const cellLines = columns.map((col, colIndex) => this.pdf.splitTextToSize(this.clean(rawValues[colIndex]), col.width - padX * 2));
+      const rowHeight = Math.max(9.5, Math.max(...cellLines.map(lines => lines.length)) * lineHeight + PDF_STYLES.table.paddingY);
       if (this.y + rowHeight > this.pageBottom()) {
         this.addPage();
         drawHeader();
@@ -533,12 +553,8 @@ export class ProposalPDFGenerator {
       columns.forEach((col, colIndex) => {
         this.pdf.rect(x, this.y, col.width, rowHeight);
         const align = col.align || 'left';
-        const textX = align === 'right' ? x + col.width - 2 : align === 'center' ? x + col.width / 2 : x + 2;
-        if (this.isSarMoney(rawValues[colIndex])) {
-          this.drawTextValue(rawValues[colIndex], textX, this.y + 5, { align, maxWidth: col.width - 4, fontSize });
-        } else {
-          this.pdf.text(cellLines[colIndex], textX, this.y + 5, { align, maxWidth: col.width - 4 });
-        }
+        const textX = align === 'right' ? x + col.width - padX : align === 'center' ? x + col.width / 2 : x + padX;
+        this.pdf.text(cellLines[colIndex], textX, this.y + 6, { align, maxWidth: col.width - padX * 2 });
         x += col.width;
       });
       this.y += rowHeight;
@@ -560,30 +576,32 @@ export class ProposalPDFGenerator {
     this.addRunningHeader();
   }
 
+
   private addRunningHeader() {
     this.pdf.setFillColor(255, 255, 255);
-    this.pdf.rect(0, 0, this.pageWidth, 24, 'F');
-    this.addLogo(this.margin, 6, 30, 16);
+    this.pdf.rect(0, 0, this.pageWidth, 28, 'F');
+    this.addLogo(this.margin, 7, 32, 18);
     this.pdf.setFont('helvetica', 'bold');
-    this.pdf.setFontSize(8.8);
+    this.pdf.setFontSize(9);
     this.pdf.setTextColor(30, 64, 175);
-    this.pdf.text('Smart Universe', this.margin + 34, 12);
+    this.pdf.text('Smart Universe', this.margin + 36, 14);
     this.pdf.setFont('helvetica', 'normal');
-    this.pdf.setFontSize(7.5);
+    this.pdf.setFontSize(7.8);
     this.pdf.setTextColor(75, 85, 99);
-    this.pdf.text('Communications & Information Technology', this.margin + 34, 17);
+    this.pdf.text('Communications & Information Technology', this.margin + 36, 19);
 
-    this.addCustomerLogo(this.pageWidth - this.margin - 30, 6, 30, 16);
+    this.addCustomerLogo(this.pageWidth - this.margin - 32, 7, 32, 18);
     this.pdf.setFont('helvetica', 'normal');
-    this.pdf.setFontSize(7.5);
+    this.pdf.setFontSize(7.8);
     this.pdf.setTextColor(75, 85, 99);
-    this.pdf.text(this.customerName, this.pageWidth - this.margin - 34, 13, { align: 'right', maxWidth: 48 });
+    this.pdf.text(this.customerName, this.pageWidth - this.margin - 36, 15, { align: 'right', maxWidth: 48 });
 
     this.pdf.setDrawColor(219, 234, 254);
-    this.pdf.line(this.margin, 24, this.pageWidth - this.margin, 24);
-    this.y = 32;
+    this.pdf.line(this.margin, 28, this.pageWidth - this.margin, 28);
+    this.y = 36;
     this.pdf.setTextColor(17, 24, 39);
   }
+
 
   private addPageNumbers() {
     const total = this.pdf.getNumberOfPages();
@@ -594,14 +612,14 @@ export class ProposalPDFGenerator {
       this.pdf.setDrawColor(219, 234, 254);
       this.pdf.line(this.margin, this.pageHeight - 18, this.pageWidth - this.margin, this.pageHeight - 18);
       this.pdf.setFont('helvetica', 'bold');
-      this.pdf.setFontSize(7.8);
+      this.pdf.setFontSize(PDF_STYLES.footer.brandFontSize);
       this.pdf.setTextColor(30, 64, 175);
       this.pdf.text('Smart Universe for Communications and Information Technology', this.pageWidth / 2, this.pageHeight - 12, { align: 'center' });
       this.pdf.setFont('helvetica', 'normal');
-      this.pdf.setFontSize(7.2);
+      this.pdf.setFontSize(PDF_STYLES.footer.metaFontSize);
       this.pdf.setTextColor(75, 85, 99);
       this.pdf.text('Riyadh, Saudi Arabia | Phone: +966 11 4917295 | Email: info@smartuniit.com', this.pageWidth / 2, this.pageHeight - 7, { align: 'center' });
-      this.pdf.setFontSize(7.8);
+      this.pdf.setFontSize(PDF_STYLES.footer.metaFontSize);
       this.pdf.text('Page ' + page + ' of ' + total, this.pageWidth - this.margin, this.pageHeight - 7, { align: 'right' });
     }
     this.pdf.setTextColor(17, 24, 39);
@@ -726,13 +744,11 @@ export class ProposalPDFGenerator {
   private money(value: any, currency = 'SAR', includeCurrency = true): string {
     const amount = Number(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const code = (currency || 'SAR').toUpperCase();
-    return includeCurrency ? amount + ' ' + code : amount;
+    return includeCurrency ? code + ' ' + amount : amount;
   }
 
   private moneyMarker(value: any, currency = 'SAR'): string {
-    const amount = Number(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const code = (currency || 'SAR').toUpperCase();
-    return code === 'SAR' ? 'SAR ' + amount : amount + ' ' + code;
+    return this.money(value, currency);
   }
   private displayText(value: TextValue): string {
     const text = this.clean(value);
