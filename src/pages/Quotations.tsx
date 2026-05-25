@@ -11,7 +11,7 @@ import autoTable from 'jspdf-autotable';
 
 const RiyalSymbol = ({ className = "w-4 h-4" }: { className?: string }) => (
   <img 
-    src="/Riyal_symbol.png" 
+    src="/Riyal_symbol.svg" 
     alt="SAR" 
     className={`inline-block ${className}`}
     style={{ background: 'transparent' }}

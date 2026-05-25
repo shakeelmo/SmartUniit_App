@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, DollarSign, User, Building2, FileText, AlertCircle, Plus, Trash2, Calendar, Clock, Upload, Image } from 'lucide-react';
 import { Proposal, DocumentControl, Introduction, RequirementUnderstanding, CustomerPrerequisites, Deliverable, AdditionalCondition, CommercialProposal, PaymentTerms, ProjectDuration, CommercialItem, DeliverableTask, PaymentMilestone, ProjectPhase } from '../../types/proposal';
 import { useAuth } from '../../contexts/AuthContext';
+import { SaudiRiyalSymbol } from '../SaudiRiyalSymbol';
 
 interface CreateProposalModalProps {
   isOpen: boolean;
@@ -37,6 +38,9 @@ export function CreateProposalModal({
   const [customerLogo, setCustomerLogo] = useState<string | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoError, setLogoError] = useState<string>('');
+  const RiyalSymbol = ({ className = 'w-4 h-4' }: { className?: string }) => (
+    <SaudiRiyalSymbol className={className} />
+  );
 
   // Document Control
   const [documentControl, setDocumentControl] = useState<DocumentControl>({
@@ -135,7 +139,7 @@ export function CreateProposalModal({
         },
         {
           id: '1-3',
-          description: 'Laying the PVC 1-1/2" pipe along the excavated land',
+          description: 'Laying the PVC 1½" pipe along the excavated land',
           details: ['Class 3 PVC pipe installation', 'Proper bedding and protection'],
         },
         {
@@ -616,32 +620,6 @@ export function CreateProposalModal({
     }));
   };
 
-  const addPrerequisite = () => {
-    setPrerequisites(prev => ({ ...prev, items: [...prev.items, { id: Date.now().toString(), description: '', responsibility: 'customer', mandatory: true }] }));
-  };
-  const updatePrerequisite = (id: string, updates: Partial<CustomerPrerequisites['items'][number]>) => {
-    setPrerequisites(prev => ({ ...prev, items: prev.items.map(item => item.id === id ? { ...item, ...updates } : item) }));
-  };
-  const removePrerequisite = (id: string) => setPrerequisites(prev => ({ ...prev, items: prev.items.filter(item => item.id !== id) }));
-
-  const addDeliverable = () => setDeliverables(prev => ([...prev, { id: Date.now().toString(), title: '', description: '', tasks: [], acceptanceCriteria: [], timeline: '' }]));
-  const updateDeliverable = (id: string, updates: Partial<Deliverable>) => setDeliverables(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
-  const removeDeliverable = (id: string) => setDeliverables(prev => prev.filter(item => item.id !== id));
-  const addDeliverableTask = (deliverableId: string) => setDeliverables(prev => prev.map(deliverable => deliverable.id === deliverableId ? { ...deliverable, tasks: [...deliverable.tasks, { id: Date.now().toString(), description: '', details: [] }] } : deliverable));
-  const updateDeliverableTask = (deliverableId: string, taskId: string, description: string) => setDeliverables(prev => prev.map(deliverable => deliverable.id === deliverableId ? { ...deliverable, tasks: deliverable.tasks.map(task => task.id === taskId ? { ...task, description } : task) } : deliverable));
-  const removeDeliverableTask = (deliverableId: string, taskId: string) => setDeliverables(prev => prev.map(deliverable => deliverable.id === deliverableId ? { ...deliverable, tasks: deliverable.tasks.filter(task => task.id !== taskId) } : deliverable));
-
-  const addCondition = () => setConditions(prev => ([...prev, { id: Date.now().toString(), condition: '', category: 'general' }]));
-  const updateCondition = (id: string, updates: Partial<AdditionalCondition>) => setConditions(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
-  const removeCondition = (id: string) => setConditions(prev => prev.filter(item => item.id !== id));
-
-  const addPaymentMilestone = () => setPaymentTerms(prev => ({ ...prev, milestones: [...prev.milestones, { id: Date.now().toString(), description: '', percentage: 0, amount: 0, conditions: [] }] }));
-  const updatePaymentMilestone = (id: string, updates: Partial<PaymentMilestone>) => setPaymentTerms(prev => ({ ...prev, milestones: prev.milestones.map(item => item.id === id ? { ...item, ...updates } : item) }));
-  const removePaymentMilestone = (id: string) => setPaymentTerms(prev => ({ ...prev, milestones: prev.milestones.filter(item => item.id !== id) }));
-
-  const addProjectPhase = () => setProjectDuration(prev => ({ ...prev, phases: [...prev.phases, { id: Date.now().toString(), name: '', duration: 1, startDay: 1, endDay: 1, deliverables: [] }] }));
-  const updateProjectPhase = (id: string, updates: Partial<ProjectPhase>) => setProjectDuration(prev => ({ ...prev, phases: prev.phases.map(item => item.id === id ? { ...item, ...updates } : item) }));
-  const removeProjectPhase = (id: string) => setProjectDuration(prev => ({ ...prev, phases: prev.phases.filter(item => item.id !== id) }));
   // Logo Upload Handlers
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -927,7 +905,7 @@ export function CreateProposalModal({
                             <p><strong>Email:</strong> {getSelectedCustomer()?.email}</p>
                             {!customerLogo && (
                               <p className="mt-2 text-xs text-orange-600">
-                                Tip: Upload a logo for this customer to make the proposal more professional
+                                💡 Tip: Upload a logo for this customer to make the proposal more professional
                               </p>
                             )}
                           </div>
@@ -1192,28 +1170,6 @@ export function CreateProposalModal({
                 </div>
               )}
 
-              {activeTab === 'prerequisites' && (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between"><h3 className="text-lg font-semibold text-dark-900">Customer Prerequisites</h3><button type="button" onClick={addPrerequisite} className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"><Plus className="w-4 h-4" /><span>Add Prerequisite</span></button></div>
-                  <div className="space-y-4">{prerequisites.items.map((item, index) => (<div key={item.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50"><div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start"><div className="lg:col-span-6"><label className="block text-sm font-medium text-dark-700 mb-2">Description</label><textarea rows={2} value={item.description} onChange={(e) => updatePrerequisite(item.id, { description: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder={`Prerequisite ${index + 1}`} /></div><div className="lg:col-span-3"><label className="block text-sm font-medium text-dark-700 mb-2">Responsibility</label><select value={item.responsibility} onChange={(e) => updatePrerequisite(item.id, { responsibility: e.target.value as any })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"><option value="customer">Customer</option><option value="vendor">Vendor</option><option value="shared">Shared</option></select></div><div className="lg:col-span-2 pt-8"><label className="flex items-center space-x-2 text-sm text-dark-700"><input type="checkbox" checked={item.mandatory} onChange={(e) => updatePrerequisite(item.id, { mandatory: e.target.checked })} className="rounded border-gray-300 text-primary-600 focus:ring-primary-500" /><span>Mandatory</span></label></div><div className="lg:col-span-1 pt-8"><button type="button" onClick={() => removePrerequisite(item.id)} className="text-red-600 hover:text-red-800"><Trash2 className="w-4 h-4" /></button></div></div></div>))}</div>
-                </div>
-              )}
-
-              {activeTab === 'deliverables' && (
-                <div className="space-y-6"><div className="flex items-center justify-between"><h3 className="text-lg font-semibold text-dark-900">Deliverables Scope</h3><button type="button" onClick={addDeliverable} className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"><Plus className="w-4 h-4" /><span>Add Deliverable</span></button></div><div className="space-y-5">{deliverables.map((deliverable, index) => (<div key={deliverable.id} className="border border-gray-200 rounded-lg p-4 bg-white shadow-sm"><div className="flex items-center justify-between mb-4"><h4 className="font-medium text-dark-900">Deliverable {index + 1}</h4><button type="button" onClick={() => removeDeliverable(deliverable.id)} className="text-red-600 hover:text-red-800"><Trash2 className="w-4 h-4" /></button></div><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label className="block text-sm font-medium text-dark-700 mb-2">Title</label><input value={deliverable.title} onChange={(e) => updateDeliverable(deliverable.id, { title: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" /></div><div><label className="block text-sm font-medium text-dark-700 mb-2">Timeline</label><input value={deliverable.timeline} onChange={(e) => updateDeliverable(deliverable.id, { timeline: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="e.g. 10 working days" /></div></div><div className="mt-4"><label className="block text-sm font-medium text-dark-700 mb-2">Description</label><textarea rows={3} value={deliverable.description} onChange={(e) => updateDeliverable(deliverable.id, { description: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" /></div><div className="mt-4"><div className="flex items-center justify-between mb-2"><label className="block text-sm font-medium text-dark-700">Tasks</label><button type="button" onClick={() => addDeliverableTask(deliverable.id)} className="text-primary-600 hover:text-primary-700 text-sm flex items-center"><Plus className="w-4 h-4 mr-1" />Add Task</button></div><div className="space-y-2">{deliverable.tasks.map((task) => (<div key={task.id} className="flex items-center space-x-2"><input value={task.description} onChange={(e) => updateDeliverableTask(deliverable.id, task.id, e.target.value)} className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="Task description" /><button type="button" onClick={() => removeDeliverableTask(deliverable.id, task.id)} className="text-red-600 hover:text-red-800"><Trash2 className="w-4 h-4" /></button></div>))}</div></div><div className="mt-4"><label className="block text-sm font-medium text-dark-700 mb-2">Acceptance Criteria</label><textarea rows={3} value={deliverable.acceptanceCriteria.join('\n')} onChange={(e) => updateDeliverable(deliverable.id, { acceptanceCriteria: e.target.value.split('\n').filter(Boolean) })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="One criterion per line" /></div></div>))}</div></div>
-              )}
-
-              {activeTab === 'conditions' && (
-                <div className="space-y-6"><div className="flex items-center justify-between"><h3 className="text-lg font-semibold text-dark-900">Additional Conditions and Assumptions</h3><button type="button" onClick={addCondition} className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"><Plus className="w-4 h-4" /><span>Add Condition</span></button></div><div className="space-y-3">{conditions.map((item, index) => (<div key={item.id} className="grid grid-cols-1 lg:grid-cols-12 gap-3 border border-gray-200 rounded-lg p-4 bg-gray-50"><div className="lg:col-span-8"><label className="block text-sm font-medium text-dark-700 mb-2">Condition {index + 1}</label><textarea rows={2} value={item.condition} onChange={(e) => updateCondition(item.id, { condition: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" /></div><div className="lg:col-span-3"><label className="block text-sm font-medium text-dark-700 mb-2">Category</label><select value={item.category} onChange={(e) => updateCondition(item.id, { category: e.target.value as any })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"><option value="scope">Scope</option><option value="responsibility">Responsibility</option><option value="timeline">Timeline</option><option value="payment">Payment</option><option value="risk">Risk</option><option value="general">General</option></select></div><div className="lg:col-span-1 pt-8"><button type="button" onClick={() => removeCondition(item.id)} className="text-red-600 hover:text-red-800"><Trash2 className="w-4 h-4" /></button></div></div>))}</div></div>
-              )}
-
-              {activeTab === 'payment' && (
-                <div className="space-y-6"><div className="flex items-center justify-between"><h3 className="text-lg font-semibold text-dark-900">Payment Terms</h3><button type="button" onClick={addPaymentMilestone} className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"><Plus className="w-4 h-4" /><span>Add Milestone</span></button></div><div className="grid grid-cols-1 md:grid-cols-3 gap-4"><div><label className="block text-sm font-medium text-dark-700 mb-2">Structure</label><select value={paymentTerms.structure} onChange={(e) => setPaymentTerms(prev => ({ ...prev, structure: e.target.value as any }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"><option value="milestone">Milestone</option><option value="percentage">Percentage</option><option value="fixed">Fixed</option></select></div><div><label className="block text-sm font-medium text-dark-700 mb-2">Currency</label><input value={paymentTerms.currency} onChange={(e) => setPaymentTerms(prev => ({ ...prev, currency: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" /></div><div><label className="block text-sm font-medium text-dark-700 mb-2">Advance Payment %</label><input type="number" min="0" max="100" value={paymentTerms.advancePayment || 0} onChange={(e) => setPaymentTerms(prev => ({ ...prev, advancePayment: Number(e.target.value) || 0 }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" /></div></div><div className="space-y-3">{paymentTerms.milestones.map((item, index) => (<div key={item.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50"><div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-end"><div className="lg:col-span-5"><label className="block text-sm font-medium text-dark-700 mb-2">Milestone {index + 1}</label><input value={item.description} onChange={(e) => updatePaymentMilestone(item.id, { description: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" /></div><div className="lg:col-span-2"><label className="block text-sm font-medium text-dark-700 mb-2">%</label><input type="number" value={item.percentage} onChange={(e) => updatePaymentMilestone(item.id, { percentage: Number(e.target.value) || 0 })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" /></div><div className="lg:col-span-3"><label className="block text-sm font-medium text-dark-700 mb-2">Amount</label><input type="number" value={item.amount} onChange={(e) => updatePaymentMilestone(item.id, { amount: Number(e.target.value) || 0 })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" /></div><div className="lg:col-span-1"><button type="button" onClick={() => removePaymentMilestone(item.id)} className="text-red-600 hover:text-red-800"><Trash2 className="w-4 h-4" /></button></div></div><div className="mt-3"><label className="block text-sm font-medium text-dark-700 mb-2">Conditions</label><textarea rows={2} value={item.conditions.join('\n')} onChange={(e) => updatePaymentMilestone(item.id, { conditions: e.target.value.split('\n').filter(Boolean) })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="One condition per line" /></div></div>))}</div></div>
-              )}
-
-              {activeTab === 'timeline' && (
-                <div className="space-y-6"><div className="flex items-center justify-between"><h3 className="text-lg font-semibold text-dark-900">Project Timeline</h3><button type="button" onClick={addProjectPhase} className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"><Plus className="w-4 h-4" /><span>Add Phase</span></button></div><div className="grid grid-cols-1 md:grid-cols-3 gap-4"><div><label className="block text-sm font-medium text-dark-700 mb-2">Total Days</label><input type="number" min="1" value={projectDuration.totalDays} onChange={(e) => setProjectDuration(prev => ({ ...prev, totalDays: Number(e.target.value) || 1 }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" /></div><div><label className="block text-sm font-medium text-dark-700 mb-2">Start Date</label><input type="date" value={projectDuration.startDate ? new Date(projectDuration.startDate).toISOString().slice(0, 10) : ''} onChange={(e) => setProjectDuration(prev => ({ ...prev, startDate: e.target.value ? new Date(e.target.value) : undefined }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" /></div><div><label className="block text-sm font-medium text-dark-700 mb-2">End Date</label><input type="date" value={projectDuration.endDate ? new Date(projectDuration.endDate).toISOString().slice(0, 10) : ''} onChange={(e) => setProjectDuration(prev => ({ ...prev, endDate: e.target.value ? new Date(e.target.value) : undefined }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" /></div></div><div className="space-y-3">{projectDuration.phases.map((phase, index) => (<div key={phase.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50"><div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-end"><div className="lg:col-span-4"><label className="block text-sm font-medium text-dark-700 mb-2">Phase {index + 1}</label><input value={phase.name} onChange={(e) => updateProjectPhase(phase.id, { name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" /></div><div className="lg:col-span-2"><label className="block text-sm font-medium text-dark-700 mb-2">Duration</label><input type="number" min="1" value={phase.duration} onChange={(e) => updateProjectPhase(phase.id, { duration: Number(e.target.value) || 1 })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" /></div><div className="lg:col-span-2"><label className="block text-sm font-medium text-dark-700 mb-2">Start Day</label><input type="number" min="1" value={phase.startDay} onChange={(e) => updateProjectPhase(phase.id, { startDay: Number(e.target.value) || 1 })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" /></div><div className="lg:col-span-2"><label className="block text-sm font-medium text-dark-700 mb-2">End Day</label><input type="number" min="1" value={phase.endDay} onChange={(e) => updateProjectPhase(phase.id, { endDay: Number(e.target.value) || 1 })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" /></div><div className="lg:col-span-1"><button type="button" onClick={() => removeProjectPhase(phase.id)} className="text-red-600 hover:text-red-800"><Trash2 className="w-4 h-4" /></button></div></div><div className="mt-3"><label className="block text-sm font-medium text-dark-700 mb-2">Phase Deliverables</label><textarea rows={2} value={phase.deliverables.join('\n')} onChange={(e) => updateProjectPhase(phase.id, { deliverables: e.target.value.split('\n').filter(Boolean) })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="One deliverable per line" /></div></div>))}</div><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label className="block text-sm font-medium text-dark-700 mb-2">Critical Path</label><textarea rows={4} value={projectDuration.criticalPath.join('\n')} onChange={(e) => setProjectDuration(prev => ({ ...prev, criticalPath: e.target.value.split('\n').filter(Boolean) }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="One item per line" /></div><div><label className="block text-sm font-medium text-dark-700 mb-2">Assumptions</label><textarea rows={4} value={projectDuration.assumptions.join('\n')} onChange={(e) => setProjectDuration(prev => ({ ...prev, assumptions: e.target.value.split('\n').filter(Boolean) }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" placeholder="One assumption per line" /></div></div></div>
-              )}
               {activeTab === 'commercial' && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
@@ -1307,15 +1263,24 @@ export function CreateProposalModal({
                       <div className="w-64 space-y-2">
                         <div className="flex justify-between">
                           <span>Subtotal:</span>
-                          <span className="font-medium">{commercial.subtotal.toLocaleString()} {commercial.currency}</span>
+                          <span className="font-medium inline-flex items-center gap-1">
+                            {commercial.currency === 'SAR' && <RiyalSymbol className="w-3 h-3" />}
+                            {commercial.subtotal.toLocaleString()} {commercial.currency !== 'SAR' && commercial.currency}
+                          </span>
                         </div>
                         <div className="flex justify-between">
                           <span>VAT ({commercial.vatRate}%):</span>
-                          <span className="font-medium">{commercial.vatAmount.toLocaleString()} {commercial.currency}</span>
+                          <span className="font-medium inline-flex items-center gap-1">
+                            {commercial.currency === 'SAR' && <RiyalSymbol className="w-3 h-3" />}
+                            {commercial.vatAmount.toLocaleString()} {commercial.currency !== 'SAR' && commercial.currency}
+                          </span>
                         </div>
                         <div className="flex justify-between border-t pt-2 font-bold text-lg">
                           <span>Grand Total:</span>
-                          <span>{commercial.total.toLocaleString()} {commercial.currency}</span>
+                          <span className="inline-flex items-center gap-1">
+                            {commercial.currency === 'SAR' && <RiyalSymbol className="w-4 h-4" />}
+                            {commercial.total.toLocaleString()} {commercial.currency !== 'SAR' && commercial.currency}
+                          </span>
                         </div>
                       </div>
                     </div>

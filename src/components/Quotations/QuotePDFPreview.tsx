@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { Quote } from '../../types/quotation';
 import { generateQuotationPDF } from '../../utils/pdfGenerator';
+import { SaudiRiyalSymbol } from '../SaudiRiyalSymbol';
 
-import { formatCurrencyWithSymbol } from '../../utils/format';
+const RiyalSymbol = ({ className = 'w-4 h-4' }: { className?: string }) => (
+  <SaudiRiyalSymbol className={className} />
+);
 
 interface QuotePDFPreviewProps {
   quote: Quote;
@@ -130,10 +133,14 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
                     Qty / الكمية
                   </th>
                   <th className="border border-gray-300 px-4 py-3 text-right text-sm font-semibold">
-                    Unit Price / سعر الوحدة
+                    <span className="inline-flex items-center justify-end gap-1">
+                      Unit Price / سعر الوحدة (<RiyalSymbol className="w-3 h-3" />)
+                    </span>
                   </th>
                   <th className="border border-gray-300 px-4 py-3 text-right text-sm font-semibold">
-                    Total / المجموع
+                    <span className="inline-flex items-center justify-end gap-1">
+                      Total / المجموع (<RiyalSymbol className="w-3 h-3" />)
+                    </span>
                   </th>
                 </tr>
               </thead>
@@ -160,10 +167,16 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
                         {item.quantity}
                       </td>
                       <td className="border border-gray-300 px-4 py-3 text-center text-sm">
-                        {formatCurrencyWithSymbol(item.unitPrice || 0, 'SAR')}
+                        <span className="inline-flex items-center justify-center gap-1">
+                          <RiyalSymbol className="w-3 h-3" />
+                          {item.unitPrice?.toLocaleString() || '0'}
+                        </span>
                       </td>
                       <td className="border border-gray-300 px-4 py-3 text-center text-sm font-medium">
-                        {formatCurrencyWithSymbol(itemTotal, 'SAR')}
+                        <span className="inline-flex items-center justify-center gap-1">
+                          <RiyalSymbol className="w-3 h-3" />
+                          {itemTotal.toLocaleString()}
+                        </span>
                       </td>
                     </tr>
                   );
@@ -180,28 +193,28 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
               <div className="flex justify-between mb-2">
                 <span className="text-sm text-dark-600">Subtotal / المجموع الفرعي:</span>
                 <span className="text-sm font-medium flex items-center">
-                  {formatCurrencyWithSymbol(quote.lineItems.reduce((sum, item) => {
+                  <RiyalSymbol className="w-3 h-3 mr-1" /> {quote.lineItems.reduce((sum, item) => {
                     const itemTotal = item.total || (item.quantity * item.unitPrice) || 0;
                     return sum + itemTotal;
-                  }, 0), 'SAR')}
+                  }, 0).toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between mb-2">
                 <span className="text-sm text-dark-600">VAT (15%):</span>
                 <span className="text-sm font-medium flex items-center">
-                  {formatCurrencyWithSymbol((quote.lineItems.reduce((sum, item) => {
+                  <RiyalSymbol className="w-3 h-3 mr-1" /> {(quote.lineItems.reduce((sum, item) => {
                     const itemTotal = item.total || (item.quantity * item.unitPrice) || 0;
                     return sum + itemTotal;
-                  }, 0) * 0.15), 'SAR')}
+                  }, 0) * 0.15).toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between items-center mt-4 pt-2 border-t border-gray-300">
                 <span className="text-lg font-bold text-dark-900">Total / المجموع الكلي:</span>
                 <span className="text-lg font-bold text-primary-600 flex items-center">
-                  {formatCurrencyWithSymbol((quote.lineItems.reduce((sum, item) => {
+                  <RiyalSymbol className="w-4 h-4 mr-1" /> {(quote.lineItems.reduce((sum, item) => {
                     const itemTotal = item.total || (item.quantity * item.unitPrice) || 0;
                     return sum + itemTotal;
-                  }, 0) * 1.15), 'SAR')}
+                  }, 0) * 1.15).toLocaleString()}
                 </span>
               </div>
             </div>

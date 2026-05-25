@@ -1,9 +1,32 @@
-/* Import Saudi Riyal Symbol Font */
-@import '@abdulrysr/saudi-riyal-new-symbol-font/style.css';
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Saudi Riyal symbol font from https://github.com/abdulrysrr/new-saudi-riyal-symbol */
+@font-face {
+  font-family: 'SaudiRiyalSymbol';
+  src:
+    url('/saudiriyalsymbol.woff2') format('woff2'),
+    url('/saudiriyalsymbol.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+00EA;
+}
+
+.icon-saudi_riyal {
+  font-family: 'SaudiRiyalSymbol', sans-serif;
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+  display: inline-block;
+}
+
+@layer base {
+  body {
+    font-family: 'SaudiRiyalSymbol', Inter, system-ui, sans-serif;
+  }
+}
 
 /* Custom styles for SMART UNIVERSE logo */
 .smart-text {

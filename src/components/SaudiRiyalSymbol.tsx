@@ -1,4 +1,5 @@
 import React from 'react';
+import { SAUDI_RIYAL_SYMBOL } from '../utils/format';
 
 interface SaudiRiyalSymbolProps {
   className?: string;
@@ -22,8 +23,8 @@ export const SaudiRiyalSymbol: React.FC<SaudiRiyalSymbolProps> = ({
 
   return (
     <span className={`inline-flex items-center gap-1 ${className}`} style={{ color }}>
-      <span className={sizeClasses[size]} style={{ color }} aria-label="Saudi Riyal">
-        ﷼
+      <span className={`icon-saudi_riyal ${sizeClasses[size]}`} style={{ color }}>
+        {SAUDI_RIYAL_SYMBOL}
       </span>
       {showLabel && <span>SAR</span>}
     </span>
