@@ -35,6 +35,8 @@ export class ProposalPDFGenerator {
   private customerLogo?: string;
   private tocEntries: TocEntry[] = [];
   private tocPage = 2;
+  private companyLogoImage?: string;
+  private riyalSymbolImage?: string;
 
   public static getInstance(): ProposalPDFGenerator {
     if (!ProposalPDFGenerator.instance) {
@@ -45,6 +47,8 @@ export class ProposalPDFGenerator {
 
   public async generateProposalPDF(proposal: Proposal, customer: any): Promise<void> {
     this.pdf = new jsPDF('p', 'mm', 'a4');
+    this.companyLogoImage = this.createSmartUniverseLogoImage();
+    this.riyalSymbolImage = this.createRiyalSymbolImage();
     this.pageWidth = this.pdf.internal.pageSize.getWidth();
     this.pageHeight = this.pdf.internal.pageSize.getHeight();
     this.proposalTitle = this.clean(proposal?.title) || 'Proposal';
@@ -301,6 +305,30 @@ export class ProposalPDFGenerator {
       ['Account Number', '41000000080109'],
     ]);
   }
+  private getPaymentMilestonesForDisplay(proposal: Proposal) {
+    const terms = proposal?.paymentTerms;
+    const total = Number(proposal?.commercialProposal?.total || proposal?.value || 0);
+    const currency = terms?.currency || proposal?.commercialProposal?.currency || 'SAR';
+    const milestones = terms?.milestones || [];
+    const advance = Number(terms?.advancePayment || 0);
+
+    if (advance > 0 && milestones.length === 2) {
+      const first = this.clean(milestones[0]?.description).toLowerCase();
+      const second = this.clean(milestones[1]?.description).toLowerCase();
+      if (first.includes('advance') && second.includes('final')) {
+        return [
+          { ...milestones[0], percentage: advance, amount: total * advance / 100 },
+          { ...milestones[1], percentage: 100 - advance, amount: total * (100 - advance) / 100 },
+        ];
+      }
+    }
+
+    return milestones.map(milestone => {
+      const percentage = Number(milestone.percentage || 0);
+      const amount = Number(milestone.amount || 0) || (total && percentage ? total * percentage / 100 : 0);
+      return { ...milestone, percentage, amount, currency };
+    });
+  }
   private renderPaymentTerms(proposal: Proposal) {
     this.sectionTitle('10. Payment Terms & Conditions');
     const terms = proposal?.paymentTerms;
@@ -311,7 +339,7 @@ export class ProposalPDFGenerator {
       ['Late Penalty', terms?.latePenalty ? terms.latePenalty + '%' : 'N/A'],
     ]);
 
-    const milestones = terms?.milestones || [];
+    const milestones = this.getPaymentMilestonesForDisplay(proposal);
     if (milestones.length) {
       this.subTitle('Milestones');
       milestones.forEach((milestone, index) => {
@@ -585,27 +613,79 @@ export class ProposalPDFGenerator {
     this.pdf.setFillColor(255, 255, 255);
     this.pdf.roundedRect(x, y, width, height, 1.5, 1.5, 'F');
 
-    const scale = Math.min(width / 42, height / 24);
-    const centerX = x + width / 2;
-    const baseY = y + height * 0.32;
-
-    this.pdf.setDrawColor(234, 124, 35);
-    this.pdf.setLineWidth(Math.max(0.25, 0.55 * scale));
-    this.pdf.ellipse(centerX + 1.5 * scale, baseY + 7.2 * scale, 16.2 * scale, 9.8 * scale, 'S');
-    this.pdf.line(centerX - 13.5 * scale, baseY + 1.5 * scale, centerX - 10.5 * scale, baseY - 3.0 * scale);
+    if (this.companyLogoImage) {
+      try {
+        const ratio = 150 / 97;
+        const boxRatio = width / height;
+        const drawWidth = boxRatio > ratio ? height * ratio : width;
+        const drawHeight = boxRatio > ratio ? height : width / ratio;
+        const drawX = x + (width - drawWidth) / 2;
+        const drawY = y + (height - drawHeight) / 2;
+        this.pdf.addImage(this.companyLogoImage, 'PNG', drawX, drawY, drawWidth, drawHeight, undefined, 'FAST');
+        return;
+      } catch (error) {
+        console.warn('Unable to add generated Smart Universe logo:', error);
+      }
+    }
 
     this.pdf.setFont('helvetica', 'bold');
     this.pdf.setTextColor(234, 124, 35);
-    this.pdf.setFontSize(13.5 * scale);
-    this.pdf.text('SMART', centerX, baseY + 5.0 * scale, { align: 'center' });
-
-    this.pdf.setFont('helvetica', 'bold');
+    this.pdf.setFontSize(Math.min(14, height * 0.52));
+    this.pdf.text('SMART', x + width / 2, y + height * 0.43, { align: 'center' });
     this.pdf.setTextColor(17, 24, 95);
-    this.pdf.setFontSize(12.2 * scale);
-    this.pdf.text('UNIVERSE', centerX, baseY + 12.4 * scale, { align: 'center' });
-
+    this.pdf.setFontSize(Math.min(12, height * 0.46));
+    this.pdf.text('UNIVERSE', x + width / 2, y + height * 0.72, { align: 'center' });
     this.pdf.setFont('helvetica', 'normal');
     this.pdf.setTextColor(17, 24, 39);
+  }
+
+  private createSmartUniverseLogoImage(): string | undefined {
+    if (typeof document === 'undefined') return undefined;
+    const canvas = document.createElement('canvas');
+    canvas.width = 300;
+    canvas.height = 194;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return undefined;
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#ea7c23';
+    ctx.beginPath();
+    ctx.ellipse(160, 90, 105, 67, -0.18, 0.95 * Math.PI, 2.18 * Math.PI);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(68, 48);
+    ctx.lineTo(92, 18);
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = 'italic 700 58px Arial, Helvetica, sans-serif';
+    ctx.fillStyle = '#ea7c23';
+    ctx.fillText('SMART', 150, 76);
+    ctx.font = '900 51px Arial, Helvetica, sans-serif';
+    ctx.fillStyle = '#11185f';
+    ctx.fillText('UNIVERSE', 150, 122);
+
+    return canvas.toDataURL('image/png');
+  }
+
+  private createRiyalSymbolImage(): string | undefined {
+    if (typeof document === 'undefined') return undefined;
+    const canvas = document.createElement('canvas');
+    canvas.width = 96;
+    canvas.height = 96;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return undefined;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#1e40af';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '74px SaudiRiyalSymbol, Arial, Helvetica, sans-serif';
+    ctx.fillText(String.fromCharCode(0xea), 48, 50);
+    return canvas.toDataURL('image/png');
   }
   private addCustomerLogo(x: number, y: number, width: number, height: number) {
     if (this.customerLogo) {
@@ -695,35 +775,33 @@ export class ProposalPDFGenerator {
     const align = options.align || 'left';
     const amount = this.sarAmount(text);
     const fontSize = options.fontSize || this.pdf.getFontSize();
-    const gap = 1.6;
+    const gap = 1.4;
     this.pdf.setFont('helvetica', 'normal');
     this.pdf.setFontSize(fontSize);
     const amountWidth = this.pdf.getTextWidth(amount);
-    const symbolWidth = fontSize * 0.72;
+    const symbolSize = fontSize * 0.82;
+    const symbolWidth = symbolSize * 0.78;
     const totalWidth = symbolWidth + gap + amountWidth;
     const startX = align === 'right' ? x - totalWidth : align === 'center' ? x - totalWidth / 2 : x;
 
-    this.drawRiyalSymbol(startX, y - fontSize * 0.72, fontSize * 0.78);
+    if (this.riyalSymbolImage) {
+      try {
+        this.pdf.addImage(this.riyalSymbolImage, 'PNG', startX, y - symbolSize * 0.78, symbolWidth, symbolSize, undefined, 'FAST');
+      } catch (error) {
+        this.pdf.setFont('helvetica', 'bold');
+        this.pdf.setTextColor(30, 64, 175);
+        this.pdf.text('SAR', startX, y);
+      }
+    } else {
+      this.pdf.setFont('helvetica', 'bold');
+      this.pdf.setTextColor(30, 64, 175);
+      this.pdf.text('SAR', startX, y);
+    }
+
     this.pdf.setFont('helvetica', 'normal');
     this.pdf.setFontSize(fontSize);
     this.pdf.setTextColor(17, 24, 39);
     this.pdf.text(amount, startX + symbolWidth + gap, y);
-  }
-
-  private drawRiyalSymbol(x: number, y: number, size: number) {
-    const blue = [30, 64, 175] as const;
-    this.pdf.setDrawColor(blue[0], blue[1], blue[2]);
-    this.pdf.setLineWidth(Math.max(0.18, size * 0.055));
-
-    const sx = (value: number) => x + value * size;
-    const sy = (value: number) => y + value * size;
-
-    this.pdf.line(sx(0.22), sy(0.08), sx(0.22), sy(0.96));
-    this.pdf.line(sx(0.43), sy(0.02), sx(0.43), sy(0.84));
-    this.pdf.line(sx(0.64), sy(0.16), sx(0.64), sy(0.88));
-    this.pdf.line(sx(0.04), sy(0.42), sx(0.88), sy(0.30));
-    this.pdf.line(sx(0.02), sy(0.61), sx(0.82), sy(0.50));
-    this.pdf.line(sx(0.14), sy(0.82), sx(0.92), sy(0.72));
   }
   private filename(title: string): string {
     const safeTitle = (title || 'Proposal').replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '') || 'Proposal';
