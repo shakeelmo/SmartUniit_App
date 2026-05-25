@@ -2,7 +2,6 @@ import jsPDF from 'jspdf';
 import { Proposal } from '../types/proposal';
 import { format } from 'date-fns';
 const SMART_UNIVERSE_LOGO_BASE64 = "data:image/jpeg;base64,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";
-const SAUDI_RIYAL_FONT_BASE64 = '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';
 const SAR_MONEY_PREFIX = '__SAR_MONEY__';
 
 type TextValue = string | number | null | undefined;
@@ -23,8 +22,6 @@ export class ProposalPDFGenerator {
   private readonly topMargin = 20;
   private readonly bottomMargin = 20;
   private readonly footerHeight = 14;
-  private readonly sarSymbol = String.fromCharCode(0xea);
-  private companyLogoData = SMART_UNIVERSE_LOGO_BASE64;
   private readonly lineGap = 4.8;
   private readonly sectionGap = 6;
 
@@ -48,8 +45,6 @@ export class ProposalPDFGenerator {
 
   public async generateProposalPDF(proposal: Proposal, customer: any): Promise<void> {
     this.pdf = new jsPDF('p', 'mm', 'a4');
-    this.registerSaudiRiyalFont();
-    this.companyLogoData = await this.normalizeLogo(SMART_UNIVERSE_LOGO_BASE64);
     this.pageWidth = this.pdf.internal.pageSize.getWidth();
     this.pageHeight = this.pdf.internal.pageSize.getHeight();
     this.proposalTitle = this.clean(proposal?.title) || 'Proposal';
@@ -586,67 +581,37 @@ export class ProposalPDFGenerator {
     this.pdf.setTextColor(17, 24, 39);
   }
 
-  private registerSaudiRiyalFont() {
-    try {
-      this.pdf.addFileToVFS('saudiriyalsymbol.ttf', SAUDI_RIYAL_FONT_BASE64);
-      this.pdf.addFont('saudiriyalsymbol.ttf', 'SaudiRiyalSymbol', 'normal');
-    } catch (error) {
-      console.warn('Unable to register Saudi Riyal font:', error);
-    }
-  }
-
-  private normalizeLogo(dataUrl: string): Promise<string> {
-    return new Promise(resolve => {
-      if (typeof Image === 'undefined' || typeof document === 'undefined') {
-        resolve(dataUrl);
-        return;
-      }
-      const image = new Image();
-      image.onload = () => {
-        try {
-          const canvas = document.createElement('canvas');
-          canvas.width = image.naturalWidth || 150;
-          canvas.height = image.naturalHeight || 97;
-          const context = canvas.getContext('2d');
-          if (!context) {
-            resolve(dataUrl);
-            return;
-          }
-          context.fillStyle = '#ffffff';
-          context.fillRect(0, 0, canvas.width, canvas.height);
-          context.drawImage(image, 0, 0, canvas.width, canvas.height);
-          resolve(canvas.toDataURL('image/png'));
-        } catch (error) {
-          console.warn('Unable to normalize proposal logo:', error);
-          resolve(dataUrl);
-        }
-      };
-      image.onerror = () => resolve(dataUrl);
-      image.src = dataUrl;
-    });
-  }
   private addLogo(x: number, y: number, width: number, height: number) {
     this.pdf.setFillColor(255, 255, 255);
     this.pdf.roundedRect(x, y, width, height, 1.5, 1.5, 'F');
-    try {
-      const logoRatio = 150 / 97;
-      const boxRatio = width / height;
-      const drawWidth = boxRatio > logoRatio ? height * logoRatio : width;
-      const drawHeight = boxRatio > logoRatio ? height : width / logoRatio;
-      const drawX = x + (width - drawWidth) / 2;
-      const drawY = y + (height - drawHeight) / 2;
-      this.pdf.addImage(this.companyLogoData, 'PNG', drawX, drawY, drawWidth, drawHeight, undefined, 'FAST');
-      return;
-    } catch (error) {
-      console.warn('Unable to add proposal logo image:', error);
-    }
+
+    const scale = Math.min(width / 42, height / 24);
+    const centerX = x + width / 2;
+    const topY = y + height * 0.24;
+
+    this.pdf.setDrawColor(234, 124, 35);
+    this.pdf.setLineWidth(0.45 * scale);
+    this.pdf.ellipse(centerX + 1.2 * scale, topY + 8.4 * scale, 15.5 * scale, 9.2 * scale, 'S');
+    this.pdf.line(centerX - 12.5 * scale, topY + 1.7 * scale, centerX - 9.5 * scale, topY - 2.5 * scale);
+
+    this.pdf.setFont('helvetica', 'bolditalic');
+    this.pdf.setTextColor(234, 124, 35);
+    this.pdf.setFontSize(12.2 * scale);
+    this.pdf.text('SMART', centerX, topY + 7.2 * scale, { align: 'center' });
 
     this.pdf.setFont('helvetica', 'bold');
-    this.pdf.setFontSize(Math.min(9, height * 0.32));
-    this.pdf.setTextColor(234, 124, 35);
-    this.pdf.text('SMART', x + width / 2, y + height * 0.42, { align: 'center' });
     this.pdf.setTextColor(30, 64, 175);
-    this.pdf.text('UNIVERSE', x + width / 2, y + height * 0.66, { align: 'center' });
+    this.pdf.setFontSize(10.8 * scale);
+    this.pdf.text('UNIVERSE', centerX, topY + 14.3 * scale, { align: 'center' });
+
+    if (height >= 20) {
+      this.pdf.setFont('helvetica', 'normal');
+      this.pdf.setFontSize(2.6 * scale);
+      this.pdf.setTextColor(234, 124, 35);
+      this.pdf.text('COMMUNICATIONS & INFORMATION TECHNOLOGY', centerX, topY + 18.2 * scale, { align: 'center' });
+    }
+
+    this.pdf.setFont('helvetica', 'normal');
     this.pdf.setTextColor(17, 24, 39);
   }
   private addCustomerLogo(x: number, y: number, width: number, height: number) {
@@ -733,18 +698,35 @@ export class ProposalPDFGenerator {
     const align = options.align || 'left';
     const amount = this.sarAmount(text);
     const fontSize = options.fontSize || this.pdf.getFontSize();
-    const gap = 1.8;
+    const gap = 1.6;
     this.pdf.setFont('helvetica', 'normal');
     this.pdf.setFontSize(fontSize);
     const amountWidth = this.pdf.getTextWidth(amount);
-    const symbolWidth = fontSize * 0.38;
+    const symbolWidth = fontSize * 0.72;
     const totalWidth = symbolWidth + gap + amountWidth;
     const startX = align === 'right' ? x - totalWidth : align === 'center' ? x - totalWidth / 2 : x;
 
-    this.pdf.setFont('SaudiRiyalSymbol', 'normal');
-    this.pdf.text(this.sarSymbol, startX, y);
+    this.drawRiyalSymbol(startX, y - fontSize * 0.72, fontSize * 0.78);
     this.pdf.setFont('helvetica', 'normal');
+    this.pdf.setFontSize(fontSize);
+    this.pdf.setTextColor(17, 24, 39);
     this.pdf.text(amount, startX + symbolWidth + gap, y);
+  }
+
+  private drawRiyalSymbol(x: number, y: number, size: number) {
+    const blue = [30, 64, 175] as const;
+    this.pdf.setDrawColor(blue[0], blue[1], blue[2]);
+    this.pdf.setLineWidth(Math.max(0.18, size * 0.055));
+
+    const sx = (value: number) => x + value * size;
+    const sy = (value: number) => y + value * size;
+
+    this.pdf.line(sx(0.22), sy(0.08), sx(0.22), sy(0.96));
+    this.pdf.line(sx(0.43), sy(0.02), sx(0.43), sy(0.84));
+    this.pdf.line(sx(0.64), sy(0.16), sx(0.64), sy(0.88));
+    this.pdf.line(sx(0.04), sy(0.42), sx(0.88), sy(0.30));
+    this.pdf.line(sx(0.02), sy(0.61), sx(0.82), sy(0.50));
+    this.pdf.line(sx(0.14), sy(0.82), sx(0.92), sy(0.72));
   }
   private filename(title: string): string {
     const safeTitle = (title || 'Proposal').replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '') || 'Proposal';
