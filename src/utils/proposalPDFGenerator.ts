@@ -18,8 +18,9 @@ export class ProposalPDFGenerator {
 
   private readonly margin = 18;
   private readonly topMargin = 20;
-  private readonly bottomMargin = 18;
-  private readonly footerHeight = 8;
+  private readonly bottomMargin = 20;
+  private readonly footerHeight = 14;
+  private readonly sarSymbol = '\uFDFC';
   private readonly lineGap = 4.8;
   private readonly sectionGap = 6;
 
@@ -66,6 +67,7 @@ export class ProposalPDFGenerator {
     this.renderDeliverables(proposal);
     this.renderConditions(proposal);
     this.renderCommercialProposal(proposal);
+    this.renderBankingDetails();
     this.renderPaymentTerms(proposal);
     this.renderProjectDuration(proposal);
     this.renderAcceptance();
@@ -140,9 +142,10 @@ export class ProposalPDFGenerator {
           '6. Deliverables Scope',
           '7. Additional Conditions and Assumptions',
           '8. Commercial Proposal',
-          '9. Payment Terms & Conditions',
-          '10. Duration of Project',
-          '11. SOW Acceptance',
+          '9. Banking Details',
+          '10. Payment Terms & Conditions',
+          '11. Duration of Project',
+          '12. SOW Acceptance',
         ].map(title => ({ title, page: 0 }));
 
     entries.forEach((entry, index) => {
@@ -289,8 +292,16 @@ export class ProposalPDFGenerator {
     ], this.pageWidth - this.margin - 82, 82);
   }
 
+  private renderBankingDetails() {
+    this.sectionTitle('9. Banking Details');
+    this.keyValueRows([
+      ['Bank', 'Saudi National Bank'],
+      ['IBAN', 'SA3610000041000000080109'],
+      ['Account Number', '41000000080109'],
+    ]);
+  }
   private renderPaymentTerms(proposal: Proposal) {
-    this.sectionTitle('9. Payment Terms & Conditions');
+    this.sectionTitle('10. Payment Terms & Conditions');
     const terms = proposal?.paymentTerms;
     this.keyValueRows([
       ['Structure', terms?.structure],
@@ -311,7 +322,7 @@ export class ProposalPDFGenerator {
   }
 
   private renderProjectDuration(proposal: Proposal) {
-    this.sectionTitle('10. Duration of Project');
+    this.sectionTitle('11. Duration of Project');
     const duration = proposal?.projectDuration;
     this.paragraph('This project is expected to be completed within ' + (duration?.totalDays || 0) + ' days.');
     this.keyValueRows([
@@ -334,7 +345,7 @@ export class ProposalPDFGenerator {
   }
 
   private renderAcceptance() {
-    this.sectionTitle('11. SOW Acceptance');
+    this.sectionTitle('12. SOW Acceptance');
     this.paragraph('By signing this document, the SOW document is officially approved and acknowledged as the only document that defines the project scope based on the signed contract.');
     this.keepWithNext(45);
     this.y += 14;
@@ -539,21 +550,52 @@ export class ProposalPDFGenerator {
     const total = this.pdf.getNumberOfPages();
     for (let page = 1; page <= total; page++) {
       this.pdf.setPage(page);
+      this.pdf.setFillColor(255, 255, 255);
+      this.pdf.rect(0, this.pageHeight - 18, this.pageWidth, 18, 'F');
+      this.pdf.setDrawColor(219, 234, 254);
+      this.pdf.line(this.margin, this.pageHeight - 18, this.pageWidth - this.margin, this.pageHeight - 18);
+      this.pdf.setFont('helvetica', 'bold');
+      this.pdf.setFontSize(7.8);
+      this.pdf.setTextColor(30, 64, 175);
+      this.pdf.text('Smart Universe for Communications and Information Technology', this.margin, this.pageHeight - 12);
       this.pdf.setFont('helvetica', 'normal');
-      this.pdf.setFontSize(8);
-      this.pdf.setTextColor(107, 114, 128);
-      this.pdf.text('Page ' + page + ' of ' + total, this.pageWidth - this.margin, this.pageHeight - 9, { align: 'right' });
-      this.pdf.text('Smart Universe for Communications and Information Technology', this.margin, this.pageHeight - 9);
+      this.pdf.setFontSize(7.2);
+      this.pdf.setTextColor(75, 85, 99);
+      this.pdf.text('Riyadh, Saudi Arabia | Phone: +966 11 4917295 | Email: info@smartuniit.com', this.margin, this.pageHeight - 7);
+      this.pdf.setFontSize(7.8);
+      this.pdf.text('Page ' + page + ' of ' + total, this.pageWidth - this.margin, this.pageHeight - 7, { align: 'right' });
     }
     this.pdf.setTextColor(17, 24, 39);
   }
 
   private addLogo(x: number, y: number, width: number, height: number) {
-    try {
-      this.pdf.addImage(SMART_UNIVERSE_LOGO_BASE64, 'JPEG', x, y, width, height);
-    } catch (error) {
-      console.warn('Unable to add proposal logo:', error);
+    this.pdf.setFillColor(255, 255, 255);
+    this.pdf.roundedRect(x, y, width, height, 1.5, 1.5, 'F');
+
+    const scale = Math.min(width / 42, height / 22);
+    const centerX = x + width / 2;
+    const logoY = y + height * 0.42;
+
+    this.pdf.setFont('helvetica', 'bold');
+    this.pdf.setFontSize(13 * scale);
+    this.pdf.setTextColor(234, 124, 35);
+    this.pdf.text('SMART', centerX, logoY, { align: 'center' });
+
+    this.pdf.setFontSize(12 * scale);
+    this.pdf.setTextColor(30, 64, 175);
+    this.pdf.text('UNIVERSE', centerX, logoY + 6.2 * scale, { align: 'center' });
+
+    this.pdf.setDrawColor(234, 124, 35);
+    this.pdf.setLineWidth(0.35 * scale);
+    this.pdf.ellipse(centerX + 2 * scale, logoY + 1.5 * scale, 16 * scale, 8 * scale, 'S');
+
+    if (height >= 18) {
+      this.pdf.setFont('helvetica', 'normal');
+      this.pdf.setFontSize(3.5 * scale);
+      this.pdf.setTextColor(75, 85, 99);
+      this.pdf.text('Communications & Information Technology', centerX, y + height - 2.8 * scale, { align: 'center' });
     }
+    this.pdf.setTextColor(17, 24, 39);
   }
 
   private addCustomerLogo(x: number, y: number, width: number, height: number) {
@@ -612,7 +654,9 @@ export class ProposalPDFGenerator {
 
   private money(value: any, currency = 'SAR', includeCurrency = true): string {
     const amount = Number(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    return includeCurrency ? amount + ' ' + (currency || 'SAR') : amount;
+    const code = (currency || 'SAR').toUpperCase();
+    if (code === 'SAR') return this.sarSymbol + ' ' + amount;
+    return includeCurrency ? amount + ' ' + code : amount;
   }
 
   private filename(title: string): string {
