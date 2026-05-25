@@ -36,7 +36,6 @@ export class ProposalPDFGenerator {
   private tocEntries: TocEntry[] = [];
   private tocPage = 2;
   private companyLogoImage?: string;
-  private riyalSymbolImage?: string;
 
   public static getInstance(): ProposalPDFGenerator {
     if (!ProposalPDFGenerator.instance) {
@@ -48,7 +47,6 @@ export class ProposalPDFGenerator {
   public async generateProposalPDF(proposal: Proposal, customer: any): Promise<void> {
     this.pdf = new jsPDF('p', 'mm', 'a4');
     this.companyLogoImage = this.createSmartUniverseLogoImage();
-    this.riyalSymbolImage = this.createRiyalSymbolImage();
     this.pageWidth = this.pdf.internal.pageSize.getWidth();
     this.pageHeight = this.pdf.internal.pageSize.getHeight();
     this.proposalTitle = this.clean(proposal?.title) || 'Proposal';
@@ -671,22 +669,6 @@ export class ProposalPDFGenerator {
     return canvas.toDataURL('image/png');
   }
 
-  private createRiyalSymbolImage(): string | undefined {
-    if (typeof document === 'undefined') return undefined;
-    const canvas = document.createElement('canvas');
-    canvas.width = 96;
-    canvas.height = 96;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return undefined;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#1e40af';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.font = '74px SaudiRiyalSymbol, Arial, Helvetica, sans-serif';
-    ctx.fillText(String.fromCharCode(0xea), 48, 50);
-    return canvas.toDataURL('image/png');
-  }
   private addCustomerLogo(x: number, y: number, width: number, height: number) {
     if (this.customerLogo) {
       try {
@@ -750,7 +732,7 @@ export class ProposalPDFGenerator {
   private moneyMarker(value: any, currency = 'SAR'): string {
     const amount = Number(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const code = (currency || 'SAR').toUpperCase();
-    return code === 'SAR' ? SAR_MONEY_PREFIX + amount : amount + ' ' + code;
+    return code === 'SAR' ? 'SAR ' + amount : amount + ' ' + code;
   }
   private displayText(value: TextValue): string {
     const text = this.clean(value);
@@ -766,42 +748,7 @@ export class ProposalPDFGenerator {
   }
 
   private drawTextValue(value: TextValue, x: number, y: number, options: { align?: 'left' | 'center' | 'right'; maxWidth?: number; fontSize?: number } = {}) {
-    const text = this.clean(value);
-    if (!this.isSarMoney(text)) {
-      this.pdf.text(text, x, y, { align: options.align, maxWidth: options.maxWidth });
-      return;
-    }
-
-    const align = options.align || 'left';
-    const amount = this.sarAmount(text);
-    const fontSize = options.fontSize || this.pdf.getFontSize();
-    const gap = 1.4;
-    this.pdf.setFont('helvetica', 'normal');
-    this.pdf.setFontSize(fontSize);
-    const amountWidth = this.pdf.getTextWidth(amount);
-    const symbolSize = fontSize * 0.82;
-    const symbolWidth = symbolSize * 0.78;
-    const totalWidth = symbolWidth + gap + amountWidth;
-    const startX = align === 'right' ? x - totalWidth : align === 'center' ? x - totalWidth / 2 : x;
-
-    if (this.riyalSymbolImage) {
-      try {
-        this.pdf.addImage(this.riyalSymbolImage, 'PNG', startX, y - symbolSize * 0.78, symbolWidth, symbolSize, undefined, 'FAST');
-      } catch (error) {
-        this.pdf.setFont('helvetica', 'bold');
-        this.pdf.setTextColor(30, 64, 175);
-        this.pdf.text('SAR', startX, y);
-      }
-    } else {
-      this.pdf.setFont('helvetica', 'bold');
-      this.pdf.setTextColor(30, 64, 175);
-      this.pdf.text('SAR', startX, y);
-    }
-
-    this.pdf.setFont('helvetica', 'normal');
-    this.pdf.setFontSize(fontSize);
-    this.pdf.setTextColor(17, 24, 39);
-    this.pdf.text(amount, startX + symbolWidth + gap, y);
+    this.pdf.text(this.clean(value), x, y, { align: options.align, maxWidth: options.maxWidth });
   }
   private filename(title: string): string {
     const safeTitle = (title || 'Proposal').replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '') || 'Proposal';

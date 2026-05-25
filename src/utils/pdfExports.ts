@@ -70,13 +70,161 @@ export class PDFExportUtils {
 
   // Enhanced Proposal PDF Export with full document structure
   public async exportProposalPDF(proposal: any, customer: any): Promise<void> {
-    // Create a professional proposal PDF that matches the exact format shown
-    const htmlContent = this.generateProfessionalProposalHTML(proposal, customer);
-    const filename = `Proposal_${proposal.title?.replace(/\s+/g, '_') || proposal.id}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+    try {
+      // Prefer the structured multi-page generator for proposals.
+      await proposalPDFGenerator.generateProposalPDF(proposal as Proposal, customer);
+      return;
+    } catch (error) {
+      console.error('Structured proposal PDF generation failed:', error);
+      throw error;
+    }
+
+    const filename = `Proposal_${proposal?.title?.replace(/[^a-zA-Z0-9_-]+/g, '_') || proposal?.id || 'Draft'}_${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+    const htmlContent = this.generateQuotationStyleProposalHTML(proposal, customer);
     await this.generatePDFFromHTML(htmlContent, filename);
   }
 
+  private generateQuotationStyleProposalHTML(proposal: any, customer: any): string {
+    const rawDate = proposal?.createdAt || proposal?.created_at || proposal?.date || proposal?.documentControl?.date;
+    const parsedDate = rawDate ? new Date(rawDate) : new Date();
+    const safeDate = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+
+    const currency = proposal?.commercialProposal?.currency || 'SAR';
+    const items = Array.isArray(proposal?.commercialProposal?.items) ? proposal.commercialProposal.items : [];
+
+    const normalizedItems = items.length
+      ? items
+      : [{ serialNumber: 1, itemName: proposal?.title || 'Service', description: proposal?.description || 'Scope details', quantity: 1, unitPrice: Number(proposal?.commercialProposal?.total || 0), total: Number(proposal?.commercialProposal?.total || 0) }];
+
+    const subtotal = Number(
+      proposal?.commercialProposal?.subtotal ??
+      normalizedItems.reduce((s: number, r: any) => s + Number(r?.total || 0), 0)
+    );
+    const discountPercent = Number(proposal?.commercialProposal?.discountPercent ?? proposal?.commercialProposal?.discountRate ?? 0);
+    const discountAmount = Number(
+      proposal?.commercialProposal?.discountAmount ??
+      (discountPercent > 0 ? subtotal * discountPercent / 100 : 0)
+    );
+    const afterDiscount = subtotal - discountAmount;
+    const vatRate = Number(proposal?.commercialProposal?.vatRate ?? 15);
+    const vatAmount = Number(proposal?.commercialProposal?.vatAmount ?? (afterDiscount * vatRate / 100));
+    const total = Number(proposal?.commercialProposal?.total ?? (afterDiscount + vatAmount));
+
+    const money = (v: any) => `${currency} ${Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+    const terms = (proposal?.additionalConditions || []).map((c: any) => c?.condition).filter(Boolean);
+    const paymentTerms = (proposal?.paymentTerms?.milestones || []).map((m: any) => `${m?.description || 'Payment milestone'} - ${m?.percentage || 0}%`).filter(Boolean);
+    const termsList = [...terms, ...paymentTerms].slice(0, 6);
+
+    return `
+      <div style="width: 210mm; min-height: 297mm; padding: 10mm; box-sizing: border-box; background: #ffffff; font-family: Arial, Helvetica, sans-serif; color: #1f2937;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px;">
+          <div style="display:flex; gap:10px; align-items:flex-start; flex:1;">
+            <img src="${SMART_UNIVERSE_LOGO_BASE64}" style="width:48px; height:48px; object-fit:contain;" />
+            <div>
+              <div style="font-size:48px; line-height:1; color:#1d4ed8; font-weight:800;">Smart Universe</div>
+              <div style="font-size:22px; line-height:1.1; color:#1d4ed8; font-weight:700; text-transform:uppercase;">FOR COMMUNICATIONS AND<br/>INFORMATION TECHNOLOGY</div>
+              <div style="margin-top:8px; font-size:19px; color:#374151;">Office # 3 In, Al Dirah Dist, P.O.Box 12633, Riyadh - 11461 KSA</div>
+              <div style="margin-top:4px; font-size:19px; color:#374151;">Tel: 011-4917295</div>
+              <div style="margin-top:4px; font-size:19px; color:#374151;">VAT: 314076518400003</div>
+              <div style="margin-top:4px; font-size:19px; color:#374151;">CR: 1010973808</div>
+            </div>
+          </div>
+
+          <div style="width:420px;">
+            <div style="border:1px solid #d1d5db; border-radius:12px; padding:16px; margin-bottom:8px; text-align:right;">
+              <div style="font-size:56px; line-height:1.15; color:#1d4ed8; font-weight:800;">شركة الكون الذكي<br/>للاتصالات و تقنيه<br/>المعلومات</div>
+              <div style="margin-top:10px; border-top:1px solid #e5e7eb; padding-top:8px; font-size:22px; color:#374151; font-weight:700;">رقم الضريبة المضافة: ٣١٤٠٧٦٥١٨٤٠٠٠٠٣<br/>السجل التجاري: ١٠١٠٩٧٣٨٠٨</div>
+            </div>
+            <div style="border:1px solid #d1d5db; border-radius:12px; overflow:hidden;">
+              <div style="display:flex; align-items:stretch;">
+                <div style="width:6px; background:#2563eb;"></div>
+                <div style="flex:1; padding:10px 14px; font-size:15px;">
+                  <div style="display:flex; justify-content:space-between; margin-bottom:6px;"><strong>Proposal #:</strong><strong style="color:#1d4ed8;">${proposal?.documentControl?.documentNumber || proposal?.id || 'N/A'}</strong></div>
+                  <div style="display:flex; justify-content:space-between;"><strong>Date:</strong><strong style="color:#1d4ed8;">${format(safeDate, 'MMM dd, yyyy')}</strong></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid #d1d5db; margin:8px 0 10px 0;"></div>
+
+        <div style="font-size:24px; color:#1d4ed8; font-weight:800; margin-bottom:8px;">Proposal:</div>
+        <div style="font-size:19px; color:#1e3a8a; font-weight:700; margin-bottom:4px;">Bill To</div>
+        <div style="border:1px solid #d1d5db; background:#f9fafb; border-radius:10px; padding:12px; font-size:15px; line-height:1.6; margin-bottom:10px;">
+          <div><strong>Name:</strong> ${customer?.name || 'N/A'}</div>
+          <div><strong>Company:</strong> ${customer?.company || 'N/A'}</div>
+          <div><strong>Address:</strong> ${customer?.address || 'N/A'}</div>
+          <div><strong>Phone:</strong> ${customer?.phone || 'N/A'}</div>
+          <div><strong>Email:</strong> ${customer?.email || 'N/A'}</div>
+          <div><strong>Valid Until:</strong> ${format(new Date(safeDate.getTime() + 30*24*60*60*1000), 'MMMM dd, yyyy')}</div>
+        </div>
+
+        <div style="font-size:21px; color:#1e3a8a; font-weight:800; margin-bottom:6px;">Items & Services</div>
+        <table style="width:100%; border-collapse:separate; border-spacing:0; font-size:14px; margin-bottom:8px;">
+          <thead>
+            <tr style="background:linear-gradient(180deg,#2563eb,#1e40af); color:#fff;">
+              <th style="padding:8px; border:1px solid #9ca3af; width:7%;">S#</th>
+              <th style="padding:8px; border:1px solid #9ca3af; width:20%;">Item</th>
+              <th style="padding:8px; border:1px solid #9ca3af; width:31%;">Description</th>
+              <th style="padding:8px; border:1px solid #9ca3af; width:10%;">Qty</th>
+              <th style="padding:8px; border:1px solid #9ca3af; width:16%;">Unit Price</th>
+              <th style="padding:8px; border:1px solid #9ca3af; width:16%;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${normalizedItems.map((r: any, idx: number) => `
+              <tr>
+                <td style="padding:7px; border:1px solid #d1d5db; text-align:center;">${r?.serialNumber || idx + 1}</td>
+                <td style="padding:7px; border:1px solid #d1d5db; text-align:center;">${r?.itemName || r?.item || proposal?.title || 'Service'}</td>
+                <td style="padding:7px; border:1px solid #d1d5db; text-align:center;">${r?.description || ''}</td>
+                <td style="padding:7px; border:1px solid #d1d5db; text-align:center;">${r?.quantity ?? 0}</td>
+                <td style="padding:7px; border:1px solid #d1d5db; text-align:center;">${money(r?.unitPrice)}</td>
+                <td style="padding:7px; border:1px solid #d1d5db; text-align:center;">${money(r?.total)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+          <div style="width:360px; border-top:3px solid #1e3a8a; padding-top:6px; font-size:13px;">
+            <div style="display:flex; justify-content:space-between; margin:4px 0;"><span style="font-weight:700;">Subtotal</span><span style="font-weight:700;">${money(subtotal)}</span></div>
+            <div style="display:flex; justify-content:space-between; margin:4px 0;"><span style="font-weight:700;">Discount (${discountPercent}%)</span><span style="font-weight:700;">- ${money(discountAmount)}</span></div>
+            <div style="display:flex; justify-content:space-between; margin:4px 0; border-bottom:1px dashed #d1d5db; padding-bottom:6px;"><span style="font-weight:700;">VAT (${vatRate}%)</span><span style="font-weight:700;">${money(vatAmount)}</span></div>
+            <div style="display:flex; justify-content:space-between; margin-top:8px;"><span style="font-size:28px; color:#1d4ed8; font-weight:800;">Total</span><span style="font-size:34px; color:#1d4ed8; font-weight:800;">${money(total)}</span></div>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-bottom:14px;">
+          <div style="flex:1; border:1px solid #d1d5db; border-radius:10px; background:#f9fafb; padding:12px; min-height:120px;">
+            <div style="font-size:16px; color:#1e3a8a; font-weight:800; margin-bottom:6px;">Terms & Conditions</div>
+            <div style="font-size:13px; line-height:1.55; color:#374151;">
+              ${(termsList.length ? termsList : ['Payment terms: 30 days from invoice date', 'All prices are in Saudi Riyals (SAR)', 'VAT is included in all prices', 'Delivery timeline as per agreed schedule']).map((t: string) => `<div>${t}</div>`).join('')}
+            </div>
+          </div>
+          <div style="flex:1; border:1px solid #d1d5db; border-radius:10px; background:#f9fafb; padding:12px; min-height:120px;">
+            <div style="font-size:16px; color:#1e3a8a; font-weight:800; margin-bottom:6px;">Banking Details</div>
+            <div style="font-size:13px; line-height:1.7; color:#374151;">
+              <div><strong>Bank:</strong> Saudi National Bank</div>
+              <div><strong>IBAN:</strong> SA3610000041000000080109</div>
+              <div><strong>Account Number:</strong> 41000000080109</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:auto; background:linear-gradient(180deg,#111827,#1e3a8a); border-radius:10px; color:#fff; text-align:center; padding:10px 14px; font-size:13px; font-weight:600;">
+          Smart Universe for Communications and Information Technology<br/>
+          Riyadh, Saudi Arabia | Phone: +966 11 4917295 | Email: info@smartuniit.com
+        </div>
+      </div>
+    `;
+  }
+
   private generateProfessionalProposalHTML(proposal: any, customer: any): string {
+    const rawProposalDate = proposal?.createdAt || proposal?.created_at || proposal?.date || proposal?.documentControl?.date;
+    const parsedProposalDate = rawProposalDate ? new Date(rawProposalDate) : new Date();
+    const safeProposalDate = Number.isNaN(parsedProposalDate.getTime()) ? new Date() : parsedProposalDate;
     // Use uploaded logo if available, otherwise use default
     const customerLogoHtml = proposal.customerLogo ? 
       `<img src="${proposal.customerLogo}" alt="Customer Logo" style="max-width: 150px; max-height: 80px; object-fit: contain;" />` :
@@ -154,7 +302,7 @@ export class PDFExportUtils {
           <div style="position: absolute; bottom: 40px; left: 20mm; right: 20mm; position: relative; z-index: 2;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <div style="font-size: 12px; color: #666;">
-                <div style="margin-bottom: 4px;"><strong>Submission Date:</strong> ${format(new Date(proposal.createdAt), 'MMMM dd, yyyy')}</div>
+                <div style="margin-bottom: 4px;"><strong>Submission Date:</strong> ${format(safeProposalDate, 'MMMM dd, yyyy')}</div>
                 <div><strong>Version:</strong> ${proposal.documentControl?.version || 'V 1.0'}</div>
               </div>
             </div>
@@ -206,7 +354,7 @@ export class PDFExportUtils {
                 </tr>
                 <tr style="background-color: #f9f9f9;">
                   <td style="border: 1px solid #ccc; padding: 12px 8px; font-size: 11px; font-weight: bold;">Date</td>
-                  <td style="border: 1px solid #ccc; padding: 12px 8px; font-size: 11px;">${format(new Date(proposal.createdAt), 'dd/MM/yyyy')}</td>
+                  <td style="border: 1px solid #ccc; padding: 12px 8px; font-size: 11px;">${format(safeProposalDate, 'dd/MM/yyyy')}</td>
                 </tr>
                 <tr>
                   <td style="border: 1px solid #ccc; padding: 12px 8px; font-size: 11px; font-weight: bold;">Status</td>
