@@ -5,6 +5,7 @@ import { Customer } from '../../types';
 import { useQuotations } from '../../hooks/useQuotations';
 import { formatCurrency } from '../../utils/format';
 import { generateQuotationPDF } from '../../utils/pdfGenerator';
+import toast from 'react-hot-toast';
 import { format, parseISO } from 'date-fns';
 import { useAuth } from '../../contexts/AuthContext';
 import { SaudiRiyalSymbol } from '../SaudiRiyalSymbol';
@@ -122,6 +123,7 @@ export function QuoteCard({ quote, customer, onEdit, onDuplicate, onViewPDF }: Q
     }
     try {
       setIsDownloading(true);
+      console.info('[quotation:download_pdf:click]', { quoteId: quote.id, quoteNumber: quote.quoteNumber });
       const quoteWithCustomer = { ...quote, customer: exportCustomer };
       const pdfBlob = await generateQuotationPDF(quoteWithCustomer, settings);
       const url = URL.createObjectURL(pdfBlob);
@@ -132,9 +134,11 @@ export function QuoteCard({ quote, customer, onEdit, onDuplicate, onViewPDF }: Q
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+      console.info('[quotation:download_pdf:success]', { quoteId: quote.id });
+      toast.success('Quotation PDF download started');
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      alert('Error generating PDF. Please try again.');
+      console.error('[quotation:download_pdf:error]', error);
+      toast.error('Error generating PDF. Please try again.');
     } finally {
       setIsDownloading(false);
     }

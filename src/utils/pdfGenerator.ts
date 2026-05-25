@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { SMART_UNIVERSE_LOGO_BASE64 } from './logoBase64';
 
-const SAUDI_RIYAL_SYMBOL_ENTITY = '&#xea;';
+const SAUDI_RIYAL_SYMBOL_ENTITY = '﷼';
 
 function escapeHtml(value: any): string {
   return String(value ?? '')
@@ -73,8 +73,8 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
               <td class="center">${escapeHtml(item.itemCode || item.code || item.sku || item.partNumber || '')}</td>
               <td class="center">${escapeHtml(item.description || item.name || '')}</td>
               <td class="center">${escapeHtml(item.quantity)}</td>
-              <td class="center money"><span class="sar icon-saudi_riyal">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>${formatCurrency(item.unitPrice)}</td>
-              <td class="center money total-cell"><span class="sar icon-saudi_riyal">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>${formatCurrency(item.total)}</td>
+              <td class="center money"><span class="sar">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>${formatCurrency(item.unitPrice)}</td>
+              <td class="center money total-cell"><span class="sar">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>${formatCurrency(item.total)}</td>
             </tr>`
         )
         .join('')
@@ -86,8 +86,7 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   const html = `
     <div id="quotation-pdf-root" style="width: 1120px; min-height: 1580px; background: #ffffff; color: #111827; font-family: Arial, Helvetica, sans-serif; padding: 28px 34px 22px; box-sizing: border-box; display: flex; flex-direction: column;">
       <style>
-        @import '@abdulrysr/saudi-riyal-new-symbol-font/style.css';
-        .header { display: flex; justify-content: space-between; align-items: stretch; gap: 8px; border-bottom: 2px solid #dbe4f0; padding-bottom: 14px; position: relative; }
+                .header { display: flex; justify-content: space-between; align-items: stretch; gap: 8px; border-bottom: 2px solid #dbe4f0; padding-bottom: 14px; position: relative; }
         .header::after { content: ''; position: absolute; left: 0; right: 0; bottom: -2px; height: 1px; background: #1e40af; opacity: 0.16; }
         .left { width: 56%; display: flex; gap: 12px; }
         .logo { width: 74px; height: 74px; object-fit: contain; border-radius: 14px; background: #ffffff; box-shadow: 0 3px 12px rgba(30, 64, 175, 0.06); }
@@ -202,10 +201,10 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
       </table>
 
       <div class="totals">
-        <div class="totals-row"><div class="label">Subtotal</div><div class="value"><span class="sar icon-saudi_riyal">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>${formatCurrency(subtotal)}</div></div>
-        ${discountAmount > 0 ? `<div class="totals-row"><div class="label">Discount${discountType === 'percentage' ? ` (${escapeHtml(discountValue)}%)` : ''}</div><div class="value"><span class="sar icon-saudi_riyal">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>-${formatCurrency(discountAmount)}</div></div>` : ''}
-        <div class="totals-row"><div class="label">VAT (${escapeHtml(vatRate)}%)</div><div class="value"><span class="sar icon-saudi_riyal">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>${formatCurrency(vatAmount)}</div></div>
-        <div class="totals-row grand"><div class="label">Total</div><div class="value"><span class="sar icon-saudi_riyal">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>${formatCurrency(total)}</div></div>
+        <div class="totals-row"><div class="label">Subtotal</div><div class="value"><span class="sar">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>${formatCurrency(subtotal)}</div></div>
+        ${discountAmount > 0 ? `<div class="totals-row"><div class="label">Discount${discountType === 'percentage' ? ` (${escapeHtml(discountValue)}%)` : ''}</div><div class="value"><span class="sar">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>-${formatCurrency(discountAmount)}</div></div>` : ''}
+        <div class="totals-row"><div class="label">VAT (${escapeHtml(vatRate)}%)</div><div class="value"><span class="sar">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>${formatCurrency(vatAmount)}</div></div>
+        <div class="totals-row grand"><div class="label">Total</div><div class="value"><span class="sar">${SAUDI_RIYAL_SYMBOL_ENTITY}</span>${formatCurrency(total)}</div></div>
       </div>
 
         <div class="details-grid">

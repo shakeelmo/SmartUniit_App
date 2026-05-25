@@ -22,8 +22,8 @@ export const SaudiRiyalSymbol: React.FC<SaudiRiyalSymbolProps> = ({
 
   return (
     <span className={`inline-flex items-center gap-1 ${className}`} style={{ color }}>
-      <span className={`icon-saudi_riyal ${sizeClasses[size]}`} style={{ color }}>
-        &#xea;
+      <span className={sizeClasses[size]} style={{ color }} aria-label="Saudi Riyal">
+        ﷼
       </span>
       {showLabel && <span>SAR</span>}
     </span>

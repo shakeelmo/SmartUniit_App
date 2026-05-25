@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Quote } from '../../types/quotation';
 import { generateQuotationPDF } from '../../utils/pdfGenerator';
 
-// Saudi Riyal symbol from the GitHub repository
-const SAR_SYMBOL = '﷼';
+import { formatCurrencyWithSymbol } from '../../utils/format';
 
 interface QuotePDFPreviewProps {
   quote: Quote;
@@ -131,10 +130,10 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
                     Qty / الكمية
                   </th>
                   <th className="border border-gray-300 px-4 py-3 text-right text-sm font-semibold">
-                    Unit Price / سعر الوحدة (${SAR_SYMBOL})
+                    Unit Price / سعر الوحدة
                   </th>
                   <th className="border border-gray-300 px-4 py-3 text-right text-sm font-semibold">
-                    Total / المجموع (${SAR_SYMBOL})
+                    Total / المجموع
                   </th>
                 </tr>
               </thead>
@@ -161,10 +160,10 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
                         {item.quantity}
                       </td>
                       <td className="border border-gray-300 px-4 py-3 text-center text-sm">
-                        ${SAR_SYMBOL} {item.unitPrice?.toLocaleString() || '0'}
+                        {formatCurrencyWithSymbol(item.unitPrice || 0, 'SAR')}
                       </td>
                       <td className="border border-gray-300 px-4 py-3 text-center text-sm font-medium">
-                        ${SAR_SYMBOL} {itemTotal.toLocaleString()}
+                        {formatCurrencyWithSymbol(itemTotal, 'SAR')}
                       </td>
                     </tr>
                   );
@@ -181,28 +180,28 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
               <div className="flex justify-between mb-2">
                 <span className="text-sm text-dark-600">Subtotal / المجموع الفرعي:</span>
                 <span className="text-sm font-medium flex items-center">
-                  ${SAR_SYMBOL} {quote.lineItems.reduce((sum, item) => {
+                  {formatCurrencyWithSymbol(quote.lineItems.reduce((sum, item) => {
                     const itemTotal = item.total || (item.quantity * item.unitPrice) || 0;
                     return sum + itemTotal;
-                  }, 0).toLocaleString()}
+                  }, 0), 'SAR')}
                 </span>
               </div>
               <div className="flex justify-between mb-2">
                 <span className="text-sm text-dark-600">VAT (15%):</span>
                 <span className="text-sm font-medium flex items-center">
-                  ${SAR_SYMBOL} {(quote.lineItems.reduce((sum, item) => {
+                  {formatCurrencyWithSymbol((quote.lineItems.reduce((sum, item) => {
                     const itemTotal = item.total || (item.quantity * item.unitPrice) || 0;
                     return sum + itemTotal;
-                  }, 0) * 0.15).toLocaleString()}
+                  }, 0) * 0.15), 'SAR')}
                 </span>
               </div>
               <div className="flex justify-between items-center mt-4 pt-2 border-t border-gray-300">
                 <span className="text-lg font-bold text-dark-900">Total / المجموع الكلي:</span>
                 <span className="text-lg font-bold text-primary-600 flex items-center">
-                  ${SAR_SYMBOL} {(quote.lineItems.reduce((sum, item) => {
+                  {formatCurrencyWithSymbol((quote.lineItems.reduce((sum, item) => {
                     const itemTotal = item.total || (item.quantity * item.unitPrice) || 0;
                     return sum + itemTotal;
-                  }, 0) * 1.15).toLocaleString()}
+                  }, 0) * 1.15), 'SAR')}
                 </span>
               </div>
             </div>
