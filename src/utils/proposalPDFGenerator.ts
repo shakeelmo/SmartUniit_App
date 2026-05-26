@@ -543,7 +543,8 @@ export class ProposalPDFGenerator {
         this.pdf.rect(x, this.y, col.width, headerHeight, 'S');
         const align = col.align || 'left';
         const textX = align === 'right' ? x + col.width - padX : align === 'center' ? x + col.width / 2 : x + padX;
-        this.pdf.text(this.clean(col.header), textX, this.y + 6, { align, maxWidth: col.width - padX * 2 });
+        const headerText = this.clean(col.header) || `Column ${colIndex + 1}`;
+        this.pdf.text(headerText, textX, this.y + 6, { align, maxWidth: col.width - padX * 2 });
         x += col.width;
       });
       this.y += headerHeight;
@@ -756,7 +757,10 @@ export class ProposalPDFGenerator {
 
   private safeFormatDate(value: any): string {
     const date = value ? new Date(value) : new Date();
-    return Number.isNaN(date.getTime()) ? 'N/A' : format(date, 'dd/MM/yyyy');
+    if (Number.isNaN(date.getTime())) {
+      return format(new Date(), 'dd/MM/yyyy');
+    }
+    return format(date, 'dd/MM/yyyy');
   }
 
   private money(value: any, currency = 'SAR', includeCurrency = true): string {

@@ -829,6 +829,16 @@ export function CreateProposalModal({
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
+                      <label className="block text-sm font-medium text-dark-700 mb-2">Proposal Date</label>
+                      <input
+                        type="date"
+                        value={documentControl.date ? new Date(documentControl.date).toISOString().split('T')[0] : ''}
+                        onChange={(e) => setDocumentControl(prev => ({ ...prev, date: e.target.value ? new Date(e.target.value) : new Date() }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    <div>
                       <label className="block text-sm font-medium text-dark-700 mb-2">
                         Status
                       </label>
