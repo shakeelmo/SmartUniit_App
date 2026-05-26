@@ -185,7 +185,7 @@ export function useProposals() {
       console.error("Error parsing proposal full_data:", error);
     }
 
-    const merged = { ...fullData, ...p };
+    const merged = { ...p, ...fullData };
     const safeDate = (dateValue: any): Date => {
       if (!dateValue) return new Date();
       try {
@@ -291,10 +291,10 @@ export function useProposals() {
     try {
       const payload = sanitizeProposalPayload(updates);
       const { proposal: updatedProposal } = await api.updateProposal(id, payload);
-      const normalized = normalizeProposal({ ...updates, ...updatedProposal });
-      setProposals(prev => prev.map(proposal => 
-        proposal.id === id 
-          ? normalized 
+      const normalized = normalizeProposal({ ...updatedProposal, ...payload });
+      setProposals(prev => prev.map(proposal =>
+        proposal.id === id
+          ? normalizeProposal({ ...proposal, ...normalized })
           : proposal
       ));
     } catch (error) {
