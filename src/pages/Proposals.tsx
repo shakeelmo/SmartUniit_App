@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Proposal } from '../types/proposal';
 import { pdfExports } from '../utils/pdfExports';
 import toast from 'react-hot-toast';
+import { formatCurrencyWithSymbol } from '../utils/format';
 
 export function Proposals() {
   const { user, hasPermission } = useAuth();
@@ -228,7 +229,7 @@ export function Proposals() {
             <div>
               <p className="text-sm text-dark-600">Total Value</p>
               <p className="text-2xl font-bold text-primary-600">
-                ${(stats.totalValue / 1000).toFixed(0)}K
+                {formatCurrencyWithSymbol(stats.totalValue, 'SAR')}
               </p>
             </div>
             <div className="p-3 bg-primary-100 rounded-lg">

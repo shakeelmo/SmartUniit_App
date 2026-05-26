@@ -1,25 +1,27 @@
 // src/utils/format.ts
-export const SAUDI_RIYAL_SYMBOL = '\u00ea';
+export const SAR_SYMBOL = 'SAR';
+export const SAUDI_RIYAL_SYMBOL = SAR_SYMBOL;
 
-export function formatCurrency(amount: number, currency: string = 'SAR', locale: string = 'ar-SA') {
-  const formatted = new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
-    currencyDisplay: 'code'
-  }).format(amount);
+export function formatCurrency(amount: number, currency: string = 'SAR', locale: string = 'en-US') {
+  const value = Number(amount || 0);
+  const formatted = value.toLocaleString(locale, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
-  if (currency === 'SAR') {
-    return formatted.replace(/SAR|ر\.س\.?|﷼/g, '').trim();
+  if ((currency || 'SAR').toUpperCase() === 'SAR') {
+    return formatted;
   }
 
-  return formatted;
+  return `${(currency || '').toUpperCase()} ${formatted}`.trim();
 }
 
-export function formatCurrencyWithSymbol(amount: number, currency: string = 'SAR', locale: string = 'ar-SA') {
-  const value = formatCurrency(amount, currency, locale);
+export function formatCurrencyWithSymbol(amount: number, currency: string = 'SAR', locale: string = 'en-US') {
+  const code = (currency || 'SAR').toUpperCase();
+  const value = formatCurrency(amount, code, locale);
 
-  if (currency === 'SAR') {
-    return `${SAUDI_RIYAL_SYMBOL} ${value}`;
+  if (code === 'SAR') {
+    return `${SAR_SYMBOL} ${value}`;
   }
 
   return value;

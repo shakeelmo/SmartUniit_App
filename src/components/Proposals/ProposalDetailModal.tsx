@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Calendar, User, DollarSign, Building2, Paperclip, Download, Trash2, Upload, Activity } from 'lucide-react';
 import { Proposal } from '../../types/proposal';
 import { format, parseISO } from 'date-fns';
+import { formatCurrencyWithSymbol } from '../../utils/format';
 
 // Helper function to safely format dates
 const formatDate = (dateValue: any): string => {
@@ -238,7 +239,7 @@ export function ProposalDetailModal({
                   {proposal.value && (
                     <div>
                       <label className="block text-sm font-medium text-dark-700 mb-1">Estimated Value</label>
-                      <p className="text-dark-900 font-semibold">${proposal.value.toLocaleString()}</p>
+                      <p className="text-dark-900 font-semibold">{formatCurrencyWithSymbol(proposal.value, 'SAR')}</p>
                     </div>
                   )}
                   <div>
