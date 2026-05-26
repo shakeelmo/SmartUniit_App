@@ -45,6 +45,8 @@ export class ProposalPDFGenerator {
   private tocEntries: TocEntry[] = [];
   private tocPage = 2;
   private companyLogoImage?: string;
+  private bankingDetails = { bank: 'Saudi National Bank', iban: 'SA3610000041000000080109', accountNumber: '41000000080109' };
+  private companyFooter = 'Smart Universe for Communications and Information Technology | Riyadh, Saudi Arabia | Phone: +966 11 4917295 | Email: info@smartuniit.com';
 
   public static getInstance(): ProposalPDFGenerator {
     if (!ProposalPDFGenerator.instance) {
@@ -62,6 +64,8 @@ export class ProposalPDFGenerator {
     this.documentNumber = this.clean(proposal?.documentControl?.documentNumber) || this.clean(proposal?.id) || '';
     this.customerName = this.clean(customer?.company || customer?.name || 'Customer') || 'Customer';
     this.customerLogo = this.getCustomerLogo(proposal, customer);
+    this.bankingDetails = (proposal as any)?.bankingDetails || this.bankingDetails;
+    this.companyFooter = (proposal as any)?.companyFooter || this.companyFooter;
     this.tocEntries = [];
     this.y = this.topMargin;
 
@@ -308,9 +312,9 @@ export class ProposalPDFGenerator {
   private renderBankingDetails() {
     this.sectionTitle('9. Banking Details');
     this.keyValueRows([
-      ['Bank', 'Saudi National Bank'],
-      ['IBAN', 'SA3610000041000000080109'],
-      ['Account Number', '41000000080109'],
+      ['Bank', this.bankingDetails.bank],
+      ['IBAN', this.bankingDetails.iban],
+      ['Account Number', this.bankingDetails.accountNumber],
     ]);
   }
   private getPaymentMilestonesForDisplay(proposal: Proposal) {
@@ -521,9 +525,9 @@ export class ProposalPDFGenerator {
     const drawHeader = () => {
       this.ensureSpace(headerHeight + 4);
       let x = this.margin;
-      this.pdf.setFillColor(238, 242, 255);
+      this.pdf.setFillColor(30, 64, 175);
       this.pdf.setDrawColor(37, 99, 235);
-      this.pdf.setTextColor(30, 64, 175);
+      this.pdf.setTextColor(255, 255, 255);
       this.pdf.setFont('helvetica', 'bold');
       this.pdf.setFontSize(PDF_STYLES.table.headerFontSize);
       columns.forEach(col => {
@@ -620,7 +624,7 @@ export class ProposalPDFGenerator {
       this.pdf.setFont('helvetica', 'normal');
       this.pdf.setFontSize(PDF_STYLES.footer.metaFontSize);
       this.pdf.setTextColor(75, 85, 99);
-      this.pdf.text('Riyadh, Saudi Arabia | Phone: +966 11 4917295 | Email: info@smartuniit.com', this.pageWidth / 2, this.pageHeight - 7, { align: 'center' });
+      this.pdf.text(this.companyFooter, this.pageWidth / 2, this.pageHeight - 7, { align: 'center', maxWidth: this.contentWidth() });
       this.pdf.setFontSize(PDF_STYLES.footer.metaFontSize);
       this.pdf.text('Page ' + page + ' of ' + total, this.pageWidth - this.margin, this.pageHeight - 7, { align: 'right' });
     }

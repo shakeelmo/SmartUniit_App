@@ -406,6 +406,14 @@ export function CreateProposalModal({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const [bankingDetails, setBankingDetails] = useState({
+    bank: 'Saudi National Bank',
+    iban: 'SA3610000041000000080109',
+    accountNumber: '41000000080109',
+  });
+
+  const [companyFooter, setCompanyFooter] = useState('Smart Universe for Communications and Information Technology | Riyadh, Saudi Arabia | Phone: +966 11 4917295 | Email: info@smartuniit.com');
+
   // Initialize form data when editing
   useEffect(() => {
     if (editProposal) {
@@ -452,6 +460,14 @@ export function CreateProposalModal({
       
       if (editProposal.projectDuration) {
         setProjectDuration(editProposal.projectDuration);
+      }
+
+      if ((editProposal as any).bankingDetails) {
+        setBankingDetails((editProposal as any).bankingDetails);
+      }
+
+      if ((editProposal as any).companyFooter) {
+        setCompanyFooter((editProposal as any).companyFooter);
       }
     }
   }, [editProposal]);
@@ -516,6 +532,8 @@ export function CreateProposalModal({
       // Include customer logo data
       customerLogo: customerLogo || undefined,
       logoFile: logoFile || undefined,
+      bankingDetails: bankingDetails as any,
+      companyFooter: companyFooter as any,
     };
 
     onSubmit(proposalData);
@@ -1002,6 +1020,25 @@ export function CreateProposalModal({
                         <option value="confidential">Confidential</option>
                         <option value="restricted">Restricted</option>
                       </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-dark-700 mb-2">Bank</label>
+                      <input type="text" value={bankingDetails.bank} onChange={(e) => setBankingDetails(prev => ({ ...prev, bank: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-dark-700 mb-2">IBAN</label>
+                      <input type="text" value={bankingDetails.iban} onChange={(e) => setBankingDetails(prev => ({ ...prev, iban: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-dark-700 mb-2">Account Number</label>
+                      <input type="text" value={bankingDetails.accountNumber} onChange={(e) => setBankingDetails(prev => ({ ...prev, accountNumber: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-dark-700 mb-2">Footer Text</label>
+                      <textarea rows={2} value={companyFooter} onChange={(e) => setCompanyFooter(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
                     </div>
                   </div>
                 </div>
