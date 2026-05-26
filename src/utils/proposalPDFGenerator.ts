@@ -113,7 +113,8 @@ export class ProposalPDFGenerator {
     this.pdf.setFontSize(12);
     this.centerText('Prepared for: ' + customerName, 118);
     this.centerText('Document No: ' + (this.documentNumber || 'N/A'), 128);
-    this.centerText('Date: ' + this.safeFormatDate(proposal?.documentControl?.date || proposal?.createdAt), 138);
+    const coverDate = proposal?.documentControl?.date || proposal?.createdAt || new Date();
+    this.centerText('Date: ' + this.safeFormatDate(coverDate), 138);
 
     this.pdf.setFontSize(11);
     this.pdf.setTextColor(75, 85, 99);
@@ -520,16 +521,17 @@ export class ProposalPDFGenerator {
     const drawHeader = () => {
       this.ensureSpace(headerHeight + 4);
       let x = this.margin;
-      this.pdf.setFillColor(30, 64, 175);
-      this.pdf.setDrawColor(30, 64, 175);
-      this.pdf.setTextColor(255, 255, 255);
+      this.pdf.setFillColor(238, 242, 255);
+      this.pdf.setDrawColor(37, 99, 235);
+      this.pdf.setTextColor(30, 64, 175);
       this.pdf.setFont('helvetica', 'bold');
       this.pdf.setFontSize(PDF_STYLES.table.headerFontSize);
       columns.forEach(col => {
-        this.pdf.rect(x, this.y, col.width, headerHeight, 'FD');
+        this.pdf.rect(x, this.y, col.width, headerHeight, 'F');
+        this.pdf.rect(x, this.y, col.width, headerHeight, 'S');
         const align = col.align || 'left';
         const textX = align === 'right' ? x + col.width - padX : align === 'center' ? x + col.width / 2 : x + padX;
-        this.pdf.text(col.header, textX, this.y + 6, { align, maxWidth: col.width - padX * 2 });
+        this.pdf.text(this.clean(col.header), textX, this.y + 6, { align, maxWidth: col.width - padX * 2 });
         x += col.width;
       });
       this.y += headerHeight;
@@ -744,7 +746,7 @@ export class ProposalPDFGenerator {
   private money(value: any, currency = 'SAR', includeCurrency = true): string {
     const amount = Number(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const code = (currency || 'SAR').toUpperCase();
-    return includeCurrency ? code + ' ' + amount : amount;
+    return includeCurrency ? (code === 'SAR' ? '? ' + amount : code + ' ' + amount) : amount;
   }
 
   private moneyMarker(value: any, currency = 'SAR'): string {
