@@ -15,6 +15,8 @@ type TableColumn<T> = {
 
 type TocEntry = { title: string; page: number };
 
+const RIYAL_MARKER = '[[RIYAL]]';
+
 const PDF_STYLES = {
   coverTitle: 28,
   sectionBar: { fontSize: 12, height: 9 },
@@ -47,6 +49,7 @@ export class ProposalPDFGenerator {
   private companyLogoImage?: string;
   private bankingDetails = { bank: 'Saudi National Bank', iban: 'SA3610000041000000080109', accountNumber: '41000000080109' };
   private companyFooter = 'Smart Universe for Communications and Information Technology | Riyadh, Saudi Arabia | Phone: +966 11 4917295 | Email: info@smartuniit.com';
+  private riyalSymbolImage?: string;
 
   public static getInstance(): ProposalPDFGenerator {
     if (!ProposalPDFGenerator.instance) {
@@ -58,6 +61,7 @@ export class ProposalPDFGenerator {
   public async generateProposalPDF(proposal: Proposal, customer: any): Promise<void> {
     this.pdf = new jsPDF('p', 'mm', 'a4');
     this.companyLogoImage = this.createSmartUniverseLogoImage();
+    this.riyalSymbolImage = await this.loadRiyalSymbolImage();
     this.pageWidth = this.pdf.internal.pageSize.getWidth();
     this.pageHeight = this.pdf.internal.pageSize.getHeight();
     this.proposalTitle = this.clean(proposal?.title) || 'Proposal';
@@ -509,7 +513,11 @@ export class ProposalPDFGenerator {
         this.pdf.text(label, x + 2.5, this.y);
         this.pdf.setFont('helvetica', 'normal');
         this.pdf.setFontSize(9.5);
-        this.pdf.text(valueLines, x + labelWidth, this.y, { maxWidth: width - labelWidth - 5 });
+        if (this.isRiyalValue(text)) {
+          this.drawRiyalValue(text, x + labelWidth, this.y, { maxWidth: width - labelWidth - 5 });
+        } else {
+          this.pdf.text(valueLines, x + labelWidth, this.y, { maxWidth: width - labelWidth - 5 });
+        }
         this.y += rowHeight;
       });
     this.y += PDF_STYLES.body.gap;
@@ -560,7 +568,11 @@ export class ProposalPDFGenerator {
         this.pdf.rect(x, this.y, col.width, rowHeight);
         const align = col.align || 'left';
         const textX = align === 'right' ? x + col.width - padX : align === 'center' ? x + col.width / 2 : x + padX;
-        this.pdf.text(cellLines[colIndex], textX, this.y + 6, { align, maxWidth: col.width - padX * 2 });
+        if (this.isRiyalValue(rawValues[colIndex])) {
+          this.drawRiyalValue(rawValues[colIndex], textX, this.y + 6, { align, maxWidth: col.width - padX * 2 });
+        } else {
+          this.pdf.text(cellLines[colIndex], textX, this.y + 6, { align, maxWidth: col.width - padX * 2 });
+        }
         x += col.width;
       });
       this.y += rowHeight;
@@ -750,7 +762,7 @@ export class ProposalPDFGenerator {
   private money(value: any, currency = 'SAR', includeCurrency = true): string {
     const amount = Number(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const code = (currency || 'SAR').toUpperCase();
-    return includeCurrency ? (code === 'SAR' ? '? ' + amount : code + ' ' + amount) : amount;
+    return includeCurrency ? (code === 'SAR' ? RIYAL_MARKER + amount : code + ' ' + amount) : amount;
   }
 
   private moneyMarker(value: any, currency = 'SAR'): string {
@@ -772,6 +784,62 @@ export class ProposalPDFGenerator {
   private drawTextValue(value: TextValue, x: number, y: number, options: { align?: 'left' | 'center' | 'right'; maxWidth?: number; fontSize?: number } = {}) {
     this.pdf.text(this.clean(value), x, y, { align: options.align, maxWidth: options.maxWidth });
   }
+
+  private isRiyalValue(value: TextValue): boolean {
+    return this.clean(value).startsWith(RIYAL_MARKER);
+  }
+
+  private stripRiyalMarker(value: TextValue): string {
+    return this.clean(value).replace(RIYAL_MARKER, '').trim();
+  }
+
+  private async loadRiyalSymbolImage(): Promise<string | undefined> {
+    if (typeof document === 'undefined') return undefined;
+    try {
+      const img = new Image();
+      img.src = '/Riyal_symbol.svg';
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+      });
+      const canvas = document.createElement('canvas');
+      canvas.width = 48;
+      canvas.height = 48;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return undefined;
+      ctx.clearRect(0, 0, 48, 48);
+      ctx.drawImage(img, 0, 0, 48, 48);
+      return canvas.toDataURL('image/png');
+    } catch {
+      return undefined;
+    }
+  }
+
+  private drawRiyalValue(value: TextValue, x: number, y: number, options: { align?: 'left' | 'center' | 'right'; maxWidth?: number } = {}) {
+    const amount = this.stripRiyalMarker(value);
+    const align = options.align || 'left';
+    const iconW = 3.2;
+    const iconH = 3.2;
+    const gap = 1.2;
+    if (align === 'right') {
+      const amountWidth = this.pdf.getTextWidth(amount);
+      const startX = x - amountWidth - gap - iconW;
+      if (this.riyalSymbolImage) {
+        try { this.pdf.addImage(this.riyalSymbolImage, 'PNG', startX, y - 2.7, iconW, iconH, undefined, 'FAST'); } catch {}
+      } else {
+        this.pdf.text('?', startX, y);
+      }
+      this.pdf.text(amount, x, y, { align: 'right', maxWidth: options.maxWidth });
+      return;
+    }
+    if (this.riyalSymbolImage) {
+      try { this.pdf.addImage(this.riyalSymbolImage, 'PNG', x, y - 2.7, iconW, iconH, undefined, 'FAST'); } catch {}
+    } else {
+      this.pdf.text('?', x, y);
+    }
+    this.pdf.text(amount, x + iconW + gap, y, { align: 'left', maxWidth: options.maxWidth });
+  }
+
   private filename(title: string): string {
     const safeTitle = (title || 'Proposal').replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '') || 'Proposal';
     return 'Proposal_' + safeTitle + '_' + format(new Date(), 'yyyy-MM-dd') + '.pdf';
