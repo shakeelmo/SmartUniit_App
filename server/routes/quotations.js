@@ -3,6 +3,8 @@ const router = express.Router();
 const { authenticateToken, requirePermission } = require('../middleware/auth');
 const { run, all, get } = require('../db');
 
+const dbClient = (process.env.DB_CLIENT || 'sqlite').toLowerCase();
+
 // Generate quote number
 const generateQuoteNumber = async () => {
   const year = new Date().getFullYear();
@@ -30,21 +32,28 @@ const toNumber = (value, fallback = 0) => {
   return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const getTableColumnNames = async (tableName) => {
+  if (dbClient === 'mysql') {
+    const columns = await all(`SHOW COLUMNS FROM ${tableName}`);
+    return new Set(columns.map((column) => column.Field));
+  }
+
+  const columns = await all(`PRAGMA table_info(${tableName})`);
+  return new Set(columns.map((column) => column.name));
+};
+
+const addColumnIfMissing = async (tableName, columnName, sqliteDefinition, mysqlDefinition) => {
+  const columnNames = await getTableColumnNames(tableName);
+  if (columnNames.has(columnName)) return;
+
+  const definition = dbClient === 'mysql' ? mysqlDefinition : sqliteDefinition;
+  await run(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
+};
+
 const ensureQuotationLineItemColumns = async () => {
-  const columns = await all('PRAGMA table_info(quotation_line_items)');
-  const columnNames = new Set(columns.map((column) => column.name));
-
-  if (!columnNames.has('item_code')) {
-    await run('ALTER TABLE quotation_line_items ADD COLUMN item_code TEXT');
-  }
-
-  if (!columnNames.has('unit')) {
-    await run("ALTER TABLE quotation_line_items ADD COLUMN unit TEXT DEFAULT 'piece'");
-  }
-
-  if (!columnNames.has('custom_unit')) {
-    await run('ALTER TABLE quotation_line_items ADD COLUMN custom_unit TEXT');
-  }
+  await addColumnIfMissing('quotation_line_items', 'item_code', 'TEXT', 'VARCHAR(255) NULL');
+  await addColumnIfMissing('quotation_line_items', 'unit', "TEXT DEFAULT 'piece'", "VARCHAR(50) DEFAULT 'piece'");
+  await addColumnIfMissing('quotation_line_items', 'custom_unit', 'TEXT', 'VARCHAR(100) NULL');
 };
 
 // Get all quotations
@@ -199,8 +208,7 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
     const quoteNumber = await generateQuoteNumber();
     
     // Detect legacy columns for backward compatibility on existing VPS DBs
-    const columnsInfo = await all('PRAGMA table_info(quotations)');
-    const columnNames = new Set(columnsInfo.map(c => c.name));
+    const columnNames = await getTableColumnNames('quotations');
 
     // Some deployments have NOT NULL customer_name and an items JSON column
     const includeCustomerName = columnNames.has('customer_name');
@@ -236,6 +244,8 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
     const insertValues = [quotationId];
 
     for (const field of portableFields) {
+      if (field.value === undefined) continue;
+
       const column = field.candidates.find(candidate => columnNames.has(candidate));
       if (column) {
         insertColumns.push(column);
@@ -330,8 +340,7 @@ router.put('/:id', authenticateToken, requirePermission('quotations', 'update'),
       return res.status(400).json({ error: 'Valid amount is required' });
     }
 
-    const columnsInfo = await all('PRAGMA table_info(quotations)');
-    const columnNames = new Set(columnsInfo.map(c => c.name));
+    const columnNames = await getTableColumnNames('quotations');
     const updateFields = [];
     const updateValues = [];
     let normalizedCustomerId = customer_id ?? customerId;
