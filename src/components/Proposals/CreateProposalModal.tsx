@@ -431,35 +431,76 @@ export function CreateProposalModal({
       }
       
       if (editProposal.introduction) {
-        setIntroduction(editProposal.introduction);
+        setIntroduction(prev => ({
+          ...prev,
+          ...editProposal.introduction,
+          objectives: Array.isArray(editProposal.introduction?.objectives) ? editProposal.introduction.objectives : prev.objectives,
+        }));
       }
       
       if (editProposal.requirementUnderstanding) {
-        setRequirements(editProposal.requirementUnderstanding);
+        setRequirements(prev => ({
+          ...prev,
+          ...editProposal.requirementUnderstanding,
+          highLevelRequirements: Array.isArray(editProposal.requirementUnderstanding?.highLevelRequirements) ? editProposal.requirementUnderstanding.highLevelRequirements : prev.highLevelRequirements,
+          technicalRequirements: Array.isArray(editProposal.requirementUnderstanding?.technicalRequirements) ? editProposal.requirementUnderstanding.technicalRequirements : prev.technicalRequirements,
+          businessRequirements: Array.isArray(editProposal.requirementUnderstanding?.businessRequirements) ? editProposal.requirementUnderstanding.businessRequirements : prev.businessRequirements,
+        }));
       }
       
       if (editProposal.customerPrerequisites) {
-        setPrerequisites(editProposal.customerPrerequisites);
+        setPrerequisites(prev => ({
+          ...prev,
+          ...editProposal.customerPrerequisites,
+          items: Array.isArray(editProposal.customerPrerequisites?.items) ? editProposal.customerPrerequisites.items : prev.items,
+        }));
       }
       
-      if (editProposal.deliverables) {
-        setDeliverables(editProposal.deliverables);
+      if (Array.isArray(editProposal.deliverables)) {
+        setDeliverables(editProposal.deliverables.map((item, index) => ({
+          id: item.id || `${Date.now()}-${index}`,
+          title: item.title || '',
+          description: item.description || '',
+          timeline: item.timeline || '',
+          tasks: Array.isArray(item.tasks) ? item.tasks : [],
+          acceptanceCriteria: Array.isArray(item.acceptanceCriteria) ? item.acceptanceCriteria : [],
+          dependencies: Array.isArray(item.dependencies) ? item.dependencies : [],
+        })));
       }
       
-      if (editProposal.additionalConditions) {
-        setConditions(editProposal.additionalConditions);
+      if (Array.isArray(editProposal.additionalConditions)) {
+        setConditions(editProposal.additionalConditions.map((item, index) => ({
+          id: item.id || `${Date.now()}-${index}`,
+          condition: item.condition || '',
+          category: item.category || 'general',
+        })));
       }
       
       if (editProposal.commercialProposal) {
-        setCommercial(editProposal.commercialProposal);
+        setCommercial(prev => ({
+          ...prev,
+          ...editProposal.commercialProposal,
+          items: Array.isArray(editProposal.commercialProposal?.items) ? editProposal.commercialProposal.items : prev.items,
+        }));
       }
       
       if (editProposal.paymentTerms) {
-        setPaymentTerms(editProposal.paymentTerms);
+        setPaymentTerms(prev => ({
+          ...prev,
+          ...editProposal.paymentTerms,
+          paymentMethod: Array.isArray(editProposal.paymentTerms?.paymentMethod) ? editProposal.paymentTerms.paymentMethod : prev.paymentMethod,
+          milestones: Array.isArray(editProposal.paymentTerms?.milestones) ? editProposal.paymentTerms.milestones : prev.milestones,
+        }));
       }
       
       if (editProposal.projectDuration) {
-        setProjectDuration(editProposal.projectDuration);
+        setProjectDuration(prev => ({
+          ...prev,
+          ...editProposal.projectDuration,
+          phases: Array.isArray(editProposal.projectDuration?.phases) ? editProposal.projectDuration.phases : prev.phases,
+          criticalPath: Array.isArray(editProposal.projectDuration?.criticalPath) ? editProposal.projectDuration.criticalPath : prev.criticalPath,
+          assumptions: Array.isArray(editProposal.projectDuration?.assumptions) ? editProposal.projectDuration.assumptions : prev.assumptions,
+        }));
       }
 
       if ((editProposal as any).bankingDetails) {
@@ -543,7 +584,7 @@ export function CreateProposalModal({
   const addCommercialItem = () => {
     const newItem: CommercialItem = {
       id: Date.now().toString(),
-      serialNumber: commercial.items.length + 1,
+      serialNumber: (commercial.items || []).length + 1,
       description: '',
       quantity: 1,
       unit: 'Each',
@@ -552,14 +593,14 @@ export function CreateProposalModal({
     };
     setCommercial(prev => ({
       ...prev,
-      items: [...prev.items, newItem],
+      items: [...(prev.items || []), newItem],
     }));
   };
 
   const updateCommercialItem = (id: string, updates: Partial<CommercialItem>) => {
     setCommercial(prev => ({
       ...prev,
-      items: prev.items.map(item => {
+      items: (prev.items || []).map(item => {
         if (item.id === id) {
           const updated = { ...item, ...updates };
           if (updates.quantity !== undefined || updates.unitPrice !== undefined) {
@@ -575,12 +616,12 @@ export function CreateProposalModal({
   const removeCommercialItem = (id: string) => {
     setCommercial(prev => ({
       ...prev,
-      items: prev.items.filter(item => item.id !== id),
+      items: (prev.items || []).filter(item => item.id !== id),
     }));
   };
 
   const calculateCommercialTotals = () => {
-    const subtotal = commercial.items.reduce((sum, item) => sum + item.total, 0);
+    const subtotal = (commercial.items || []).reduce((sum, item) => sum + (item.total || 0), 0);
     const vatAmount = subtotal * (commercial.vatRate / 100);
     const total = subtotal + vatAmount;
     
@@ -627,14 +668,14 @@ export function CreateProposalModal({
   const updateRequirement = (type: 'highLevelRequirements' | 'technicalRequirements' | 'businessRequirements', index: number, value: string) => {
     setRequirements(prev => ({
       ...prev,
-      [type]: prev[type].map((req, i) => i === index ? value : req),
+      [type]: (prev[type] || []).map((req, i) => i === index ? value : req),
     }));
   };
 
   const removeRequirement = (type: 'highLevelRequirements' | 'technicalRequirements' | 'businessRequirements', index: number) => {
     setRequirements(prev => ({
       ...prev,
-      [type]: prev[type].filter((_, i) => i !== index),
+      [type]: (prev[type] || []).filter((_, i) => i !== index),
     }));
   };
 
@@ -642,9 +683,9 @@ export function CreateProposalModal({
   const splitLines = (value: string) => value.split('\n').map(item => item.trim()).filter(Boolean);
   const joinLines = (items?: string[]) => (items || []).join('\n');
 
-  const addPrerequisite = () => setPrerequisites(prev => ({ ...prev, items: [...prev.items, { id: Date.now().toString(), description: '', responsibility: 'customer', mandatory: true }] }));
-  const updatePrerequisite = (id: string, updates: Partial<CustomerPrerequisites['items'][number]>) => setPrerequisites(prev => ({ ...prev, items: prev.items.map(item => item.id === id ? { ...item, ...updates } : item) }));
-  const removePrerequisite = (id: string) => setPrerequisites(prev => ({ ...prev, items: prev.items.filter(item => item.id !== id) }));
+  const addPrerequisite = () => setPrerequisites(prev => ({ ...prev, items: [...(prev.items || []), { id: Date.now().toString(), description: '', responsibility: 'customer', mandatory: true }] }));
+  const updatePrerequisite = (id: string, updates: Partial<CustomerPrerequisites['items'][number]>) => setPrerequisites(prev => ({ ...prev, items: (prev.items || []).map(item => item.id === id ? { ...item, ...updates } : item) }));
+  const removePrerequisite = (id: string) => setPrerequisites(prev => ({ ...prev, items: (prev.items || []).filter(item => item.id !== id) }));
 
   const addDeliverable = () => setDeliverables(prev => [...prev, { id: Date.now().toString(), title: '', description: '', tasks: [], acceptanceCriteria: [], timeline: '', dependencies: [] }]);
   const updateDeliverable = (id: string, updates: Partial<Deliverable>) => setDeliverables(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
@@ -654,13 +695,13 @@ export function CreateProposalModal({
   const updateCondition = (id: string, updates: Partial<AdditionalCondition>) => setConditions(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
   const removeCondition = (id: string) => setConditions(prev => prev.filter(item => item.id !== id));
 
-  const addPaymentMilestone = () => setPaymentTerms(prev => ({ ...prev, milestones: [...prev.milestones, { id: Date.now().toString(), description: '', percentage: 0, amount: 0, conditions: [] }] }));
-  const updatePaymentMilestone = (id: string, updates: Partial<PaymentMilestone>) => setPaymentTerms(prev => ({ ...prev, milestones: prev.milestones.map(item => item.id === id ? { ...item, ...updates } : item) }));
-  const removePaymentMilestone = (id: string) => setPaymentTerms(prev => ({ ...prev, milestones: prev.milestones.filter(item => item.id !== id) }));
+  const addPaymentMilestone = () => setPaymentTerms(prev => ({ ...prev, milestones: [...(prev.milestones || []), { id: Date.now().toString(), description: '', percentage: 0, amount: 0, conditions: [] }] }));
+  const updatePaymentMilestone = (id: string, updates: Partial<PaymentMilestone>) => setPaymentTerms(prev => ({ ...prev, milestones: (prev.milestones || []).map(item => item.id === id ? { ...item, ...updates } : item) }));
+  const removePaymentMilestone = (id: string) => setPaymentTerms(prev => ({ ...prev, milestones: (prev.milestones || []).filter(item => item.id !== id) }));
 
-  const addProjectPhase = () => setProjectDuration(prev => ({ ...prev, phases: [...prev.phases, { id: Date.now().toString(), name: '', duration: 1, startDay: 1, endDay: 1, deliverables: [] }] }));
-  const updateProjectPhase = (id: string, updates: Partial<ProjectPhase>) => setProjectDuration(prev => ({ ...prev, phases: prev.phases.map(item => item.id === id ? { ...item, ...updates } : item) }));
-  const removeProjectPhase = (id: string) => setProjectDuration(prev => ({ ...prev, phases: prev.phases.filter(item => item.id !== id) }));
+  const addProjectPhase = () => setProjectDuration(prev => ({ ...prev, phases: [...(prev.phases || []), { id: Date.now().toString(), name: '', duration: 1, startDay: 1, endDay: 1, deliverables: [] }] }));
+  const updateProjectPhase = (id: string, updates: Partial<ProjectPhase>) => setProjectDuration(prev => ({ ...prev, phases: (prev.phases || []).map(item => item.id === id ? { ...item, ...updates } : item) }));
+  const removeProjectPhase = (id: string) => setProjectDuration(prev => ({ ...prev, phases: (prev.phases || []).filter(item => item.id !== id) }));
 
   // Logo Upload Handlers
   const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1097,7 +1138,7 @@ export function CreateProposalModal({
                       </button>
                     </div>
                     <div className="space-y-2">
-                      {introduction.objectives.map((objective, index) => (
+                      {(introduction.objectives || []).map((objective, index) => (
                         <div key={index} className="flex items-center space-x-2">
                           <input
                             type="text"
@@ -1152,7 +1193,7 @@ export function CreateProposalModal({
                       </button>
                     </div>
                     <div className="space-y-2">
-                      {requirements.highLevelRequirements.map((req, index) => (
+                      {(requirements.highLevelRequirements || []).map((req, index) => (
                         <div key={index} className="flex items-center space-x-2">
                           <input
                             type="text"
@@ -1189,7 +1230,7 @@ export function CreateProposalModal({
                       </button>
                     </div>
                     <div className="space-y-2">
-                      {requirements.technicalRequirements.map((req, index) => (
+                      {(requirements.technicalRequirements || []).map((req, index) => (
                         <div key={index} className="flex items-center space-x-2">
                           <input
                             type="text"
@@ -1226,7 +1267,7 @@ export function CreateProposalModal({
                       </button>
                     </div>
                     <div className="space-y-2">
-                      {requirements.businessRequirements.map((req, index) => (
+                      {(requirements.businessRequirements || []).map((req, index) => (
                         <div key={index} className="flex items-center space-x-2">
                           <input
                             type="text"
@@ -1253,27 +1294,27 @@ export function CreateProposalModal({
               {activeTab === 'prerequisites' && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between"><h3 className="text-lg font-semibold text-dark-900">Customer Prerequisites</h3><button type="button" onClick={addPrerequisite} className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"><Plus className="w-4 h-4" /><span>Add Prerequisite</span></button></div>
-                  {prerequisites.items.map((item) => <div key={item.id} className="border border-gray-200 rounded-lg p-4 space-y-3"><textarea rows={2} value={item.description} onChange={(e) => updatePrerequisite(item.id, { description: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Prerequisite description" /><div className="grid grid-cols-1 md:grid-cols-3 gap-3"><select value={item.responsibility} onChange={(e) => updatePrerequisite(item.id, { responsibility: e.target.value as any })} className="px-3 py-2 border border-gray-300 rounded-lg"><option value="customer">Customer</option><option value="vendor">Vendor</option><option value="shared">Shared</option></select><label className="flex items-center gap-2 text-sm text-dark-700"><input type="checkbox" checked={item.mandatory} onChange={(e) => updatePrerequisite(item.id, { mandatory: e.target.checked })} />Mandatory</label><button type="button" onClick={() => removePrerequisite(item.id)} className="text-red-600 hover:text-red-800 justify-self-start"><Trash2 className="w-4 h-4" /></button></div></div>)}
+                  {(prerequisites.items || []).map((item) => <div key={item.id} className="border border-gray-200 rounded-lg p-4 space-y-3"><textarea rows={2} value={item.description} onChange={(e) => updatePrerequisite(item.id, { description: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Prerequisite description" /><div className="grid grid-cols-1 md:grid-cols-3 gap-3"><select value={item.responsibility} onChange={(e) => updatePrerequisite(item.id, { responsibility: e.target.value as any })} className="px-3 py-2 border border-gray-300 rounded-lg"><option value="customer">Customer</option><option value="vendor">Vendor</option><option value="shared">Shared</option></select><label className="flex items-center gap-2 text-sm text-dark-700"><input type="checkbox" checked={item.mandatory} onChange={(e) => updatePrerequisite(item.id, { mandatory: e.target.checked })} />Mandatory</label><button type="button" onClick={() => removePrerequisite(item.id)} className="text-red-600 hover:text-red-800 justify-self-start"><Trash2 className="w-4 h-4" /></button></div></div>)}
                 </div>
               )}
 
               {activeTab === 'deliverables' && (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between"><h3 className="text-lg font-semibold text-dark-900">Deliverables Scope</h3><button type="button" onClick={addDeliverable} className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"><Plus className="w-4 h-4" /><span>Add Deliverable</span></button></div>
-                  {deliverables.map((item, index) => <div key={item.id} className="border border-gray-200 rounded-lg p-4 space-y-4"><div className="flex items-center justify-between"><h4 className="font-medium text-dark-900">Deliverable {index + 1}</h4><button type="button" onClick={() => removeDeliverable(item.id)} className="text-red-600 hover:text-red-800"><Trash2 className="w-4 h-4" /></button></div><input value={item.title} onChange={(e) => updateDeliverable(item.id, { title: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Deliverable title" /><textarea rows={3} value={item.description} onChange={(e) => updateDeliverable(item.id, { description: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Description" /><input value={item.timeline} onChange={(e) => updateDeliverable(item.id, { timeline: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Timeline" /><textarea rows={3} value={joinLines(item.tasks.map(task => task.description))} onChange={(e) => updateDeliverable(item.id, { tasks: splitLines(e.target.value).map((description, taskIndex) => ({ id: `${item.id}-${taskIndex + 1}`, description, details: [] })) })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Tasks, one per line" /><textarea rows={3} value={joinLines(item.acceptanceCriteria)} onChange={(e) => updateDeliverable(item.id, { acceptanceCriteria: splitLines(e.target.value) })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Acceptance criteria, one per line" /><textarea rows={2} value={joinLines(item.dependencies)} onChange={(e) => updateDeliverable(item.id, { dependencies: splitLines(e.target.value) })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Dependencies, one per line" /></div>)}
+                  {(deliverables || []).map((item, index) => <div key={item.id} className="border border-gray-200 rounded-lg p-4 space-y-4"><div className="flex items-center justify-between"><h4 className="font-medium text-dark-900">Deliverable {index + 1}</h4><button type="button" onClick={() => removeDeliverable(item.id)} className="text-red-600 hover:text-red-800"><Trash2 className="w-4 h-4" /></button></div><input value={item.title} onChange={(e) => updateDeliverable(item.id, { title: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Deliverable title" /><textarea rows={3} value={item.description} onChange={(e) => updateDeliverable(item.id, { description: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Description" /><input value={item.timeline} onChange={(e) => updateDeliverable(item.id, { timeline: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Timeline" /><textarea rows={3} value={joinLines((item.tasks || []).map(task => task.description))} onChange={(e) => updateDeliverable(item.id, { tasks: splitLines(e.target.value).map((description, taskIndex) => ({ id: `${item.id}-${taskIndex + 1}`, description, details: [] })) })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Tasks, one per line" /><textarea rows={3} value={joinLines(item.acceptanceCriteria)} onChange={(e) => updateDeliverable(item.id, { acceptanceCriteria: splitLines(e.target.value) })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Acceptance criteria, one per line" /><textarea rows={2} value={joinLines(item.dependencies)} onChange={(e) => updateDeliverable(item.id, { dependencies: splitLines(e.target.value) })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Dependencies, one per line" /></div>)}
                 </div>
               )}
 
               {activeTab === 'conditions' && (
-                <div className="space-y-6"><div className="flex items-center justify-between"><h3 className="text-lg font-semibold text-dark-900">Additional Conditions and Assumptions</h3><button type="button" onClick={addCondition} className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"><Plus className="w-4 h-4" /><span>Add Condition</span></button></div>{conditions.map((item) => <div key={item.id} className="border border-gray-200 rounded-lg p-4 space-y-3"><textarea rows={2} value={item.condition} onChange={(e) => updateCondition(item.id, { condition: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Condition or assumption" /><div className="flex items-center gap-3"><select value={item.category} onChange={(e) => updateCondition(item.id, { category: e.target.value as any })} className="px-3 py-2 border border-gray-300 rounded-lg"><option value="scope">Scope</option><option value="responsibility">Responsibility</option><option value="timeline">Timeline</option><option value="payment">Payment</option><option value="risk">Risk</option><option value="general">General</option></select><button type="button" onClick={() => removeCondition(item.id)} className="text-red-600 hover:text-red-800"><Trash2 className="w-4 h-4" /></button></div></div>)}</div>
+                <div className="space-y-6"><div className="flex items-center justify-between"><h3 className="text-lg font-semibold text-dark-900">Additional Conditions and Assumptions</h3><button type="button" onClick={addCondition} className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"><Plus className="w-4 h-4" /><span>Add Condition</span></button></div>{(conditions || []).map((item) => <div key={item.id} className="border border-gray-200 rounded-lg p-4 space-y-3"><textarea rows={2} value={item.condition} onChange={(e) => updateCondition(item.id, { condition: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Condition or assumption" /><div className="flex items-center gap-3"><select value={item.category} onChange={(e) => updateCondition(item.id, { category: e.target.value as any })} className="px-3 py-2 border border-gray-300 rounded-lg"><option value="scope">Scope</option><option value="responsibility">Responsibility</option><option value="timeline">Timeline</option><option value="payment">Payment</option><option value="risk">Risk</option><option value="general">General</option></select><button type="button" onClick={() => removeCondition(item.id)} className="text-red-600 hover:text-red-800"><Trash2 className="w-4 h-4" /></button></div></div>)}</div>
               )}
 
               {activeTab === 'payment' && (
-                <div className="space-y-6"><h3 className="text-lg font-semibold text-dark-900">Payment Terms</h3><div className="grid grid-cols-1 md:grid-cols-3 gap-4"><select value={paymentTerms.structure} onChange={(e) => setPaymentTerms(prev => ({ ...prev, structure: e.target.value as any }))} className="px-3 py-2 border border-gray-300 rounded-lg"><option value="milestone">Milestone</option><option value="percentage">Percentage</option><option value="fixed">Fixed</option></select><input type="number" value={paymentTerms.advancePayment || 0} onChange={(e) => setPaymentTerms(prev => ({ ...prev, advancePayment: Number(e.target.value) || 0 }))} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="Advance payment %" /><input type="number" value={paymentTerms.latePenalty || 0} onChange={(e) => setPaymentTerms(prev => ({ ...prev, latePenalty: Number(e.target.value) || 0 }))} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="Late penalty %" /></div><textarea rows={2} value={joinLines(paymentTerms.paymentMethod)} onChange={(e) => setPaymentTerms(prev => ({ ...prev, paymentMethod: splitLines(e.target.value) }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Payment methods, one per line" /><div className="flex items-center justify-between"><h4 className="font-medium text-dark-900">Milestones</h4><button type="button" onClick={addPaymentMilestone} className="text-primary-600 hover:text-primary-700 text-sm flex items-center"><Plus className="w-4 h-4 mr-1" />Add Milestone</button></div>{paymentTerms.milestones.map((item) => <div key={item.id} className="border border-gray-200 rounded-lg p-4 space-y-3"><input value={item.description} onChange={(e) => updatePaymentMilestone(item.id, { description: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Milestone description" /><div className="grid grid-cols-1 md:grid-cols-3 gap-3"><input type="number" value={item.percentage} onChange={(e) => updatePaymentMilestone(item.id, { percentage: Number(e.target.value) || 0, amount: commercial.total * (Number(e.target.value) || 0) / 100 })} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="%" /><input type="number" value={item.amount} onChange={(e) => updatePaymentMilestone(item.id, { amount: Number(e.target.value) || 0 })} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="Amount" /><button type="button" onClick={() => removePaymentMilestone(item.id)} className="text-red-600 hover:text-red-800 justify-self-start"><Trash2 className="w-4 h-4" /></button></div><textarea rows={2} value={joinLines(item.conditions)} onChange={(e) => updatePaymentMilestone(item.id, { conditions: splitLines(e.target.value) })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Conditions, one per line" /></div>)}</div>
+                <div className="space-y-6"><h3 className="text-lg font-semibold text-dark-900">Payment Terms</h3><div className="grid grid-cols-1 md:grid-cols-3 gap-4"><select value={paymentTerms.structure} onChange={(e) => setPaymentTerms(prev => ({ ...prev, structure: e.target.value as any }))} className="px-3 py-2 border border-gray-300 rounded-lg"><option value="milestone">Milestone</option><option value="percentage">Percentage</option><option value="fixed">Fixed</option></select><input type="number" value={paymentTerms.advancePayment || 0} onChange={(e) => setPaymentTerms(prev => ({ ...prev, advancePayment: Number(e.target.value) || 0 }))} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="Advance payment %" /><input type="number" value={paymentTerms.latePenalty || 0} onChange={(e) => setPaymentTerms(prev => ({ ...prev, latePenalty: Number(e.target.value) || 0 }))} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="Late penalty %" /></div><textarea rows={2} value={joinLines(paymentTerms.paymentMethod)} onChange={(e) => setPaymentTerms(prev => ({ ...prev, paymentMethod: splitLines(e.target.value) }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Payment methods, one per line" /><div className="flex items-center justify-between"><h4 className="font-medium text-dark-900">Milestones</h4><button type="button" onClick={addPaymentMilestone} className="text-primary-600 hover:text-primary-700 text-sm flex items-center"><Plus className="w-4 h-4 mr-1" />Add Milestone</button></div>{(paymentTerms.milestones || []).map((item) => <div key={item.id} className="border border-gray-200 rounded-lg p-4 space-y-3"><input value={item.description} onChange={(e) => updatePaymentMilestone(item.id, { description: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Milestone description" /><div className="grid grid-cols-1 md:grid-cols-3 gap-3"><input type="number" value={item.percentage} onChange={(e) => updatePaymentMilestone(item.id, { percentage: Number(e.target.value) || 0, amount: commercial.total * (Number(e.target.value) || 0) / 100 })} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="%" /><input type="number" value={item.amount} onChange={(e) => updatePaymentMilestone(item.id, { amount: Number(e.target.value) || 0 })} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="Amount" /><button type="button" onClick={() => removePaymentMilestone(item.id)} className="text-red-600 hover:text-red-800 justify-self-start"><Trash2 className="w-4 h-4" /></button></div><textarea rows={2} value={joinLines(item.conditions)} onChange={(e) => updatePaymentMilestone(item.id, { conditions: splitLines(e.target.value) })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Conditions, one per line" /></div>)}</div>
               )}
 
               {activeTab === 'timeline' && (
-                <div className="space-y-6"><div className="flex items-center justify-between"><h3 className="text-lg font-semibold text-dark-900">Project Timeline</h3><button type="button" onClick={addProjectPhase} className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"><Plus className="w-4 h-4" /><span>Add Phase</span></button></div><input type="number" value={projectDuration.totalDays} onChange={(e) => setProjectDuration(prev => ({ ...prev, totalDays: Number(e.target.value) || 0 }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Total days" /><div className="grid grid-cols-1 md:grid-cols-2 gap-3"><div><label className="block text-sm font-medium text-dark-700 mb-2">Start Date</label><input type="date" value={projectDuration.startDate ? new Date(projectDuration.startDate).toISOString().split('T')[0] : ''} onChange={(e) => setProjectDuration(prev => ({ ...prev, startDate: e.target.value ? new Date(e.target.value) : undefined }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" /></div><div><label className="block text-sm font-medium text-dark-700 mb-2">End Date</label><input type="date" value={projectDuration.endDate ? new Date(projectDuration.endDate).toISOString().split('T')[0] : ''} onChange={(e) => setProjectDuration(prev => ({ ...prev, endDate: e.target.value ? new Date(e.target.value) : undefined }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" /></div></div>{projectDuration.phases.map((item) => <div key={item.id} className="border border-gray-200 rounded-lg p-4 space-y-3"><div className="flex items-center justify-between"><input value={item.name} onChange={(e) => updateProjectPhase(item.id, { name: e.target.value })} className="flex-1 px-3 py-2 border border-gray-300 rounded-lg" placeholder="Phase name" /><button type="button" onClick={() => removeProjectPhase(item.id)} className="ml-3 text-red-600 hover:text-red-800"><Trash2 className="w-4 h-4" /></button></div><div className="grid grid-cols-1 md:grid-cols-3 gap-3"><input type="number" value={item.duration} onChange={(e) => updateProjectPhase(item.id, { duration: Number(e.target.value) || 0 })} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="Duration" /><input type="number" value={item.startDay} onChange={(e) => updateProjectPhase(item.id, { startDay: Number(e.target.value) || 0 })} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="Start day" /><input type="number" value={item.endDay} onChange={(e) => updateProjectPhase(item.id, { endDay: Number(e.target.value) || 0 })} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="End day" /></div><textarea rows={2} value={joinLines(item.deliverables)} onChange={(e) => updateProjectPhase(item.id, { deliverables: splitLines(e.target.value) })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Phase deliverables, one per line" /></div>)}<textarea rows={3} value={joinLines(projectDuration.criticalPath)} onChange={(e) => setProjectDuration(prev => ({ ...prev, criticalPath: splitLines(e.target.value) }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Critical path items, one per line" /><textarea rows={3} value={joinLines(projectDuration.assumptions)} onChange={(e) => setProjectDuration(prev => ({ ...prev, assumptions: splitLines(e.target.value) }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Timeline assumptions, one per line" /></div>
+                <div className="space-y-6"><div className="flex items-center justify-between"><h3 className="text-lg font-semibold text-dark-900">Project Timeline</h3><button type="button" onClick={addProjectPhase} className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"><Plus className="w-4 h-4" /><span>Add Phase</span></button></div><input type="number" value={projectDuration.totalDays} onChange={(e) => setProjectDuration(prev => ({ ...prev, totalDays: Number(e.target.value) || 0 }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Total days" /><div className="grid grid-cols-1 md:grid-cols-2 gap-3"><div><label className="block text-sm font-medium text-dark-700 mb-2">Start Date</label><input type="date" value={projectDuration.startDate ? new Date(projectDuration.startDate).toISOString().split('T')[0] : ''} onChange={(e) => setProjectDuration(prev => ({ ...prev, startDate: e.target.value ? new Date(e.target.value) : undefined }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" /></div><div><label className="block text-sm font-medium text-dark-700 mb-2">End Date</label><input type="date" value={projectDuration.endDate ? new Date(projectDuration.endDate).toISOString().split('T')[0] : ''} onChange={(e) => setProjectDuration(prev => ({ ...prev, endDate: e.target.value ? new Date(e.target.value) : undefined }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" /></div></div>{(projectDuration.phases || []).map((item) => <div key={item.id} className="border border-gray-200 rounded-lg p-4 space-y-3"><div className="flex items-center justify-between"><input value={item.name} onChange={(e) => updateProjectPhase(item.id, { name: e.target.value })} className="flex-1 px-3 py-2 border border-gray-300 rounded-lg" placeholder="Phase name" /><button type="button" onClick={() => removeProjectPhase(item.id)} className="ml-3 text-red-600 hover:text-red-800"><Trash2 className="w-4 h-4" /></button></div><div className="grid grid-cols-1 md:grid-cols-3 gap-3"><input type="number" value={item.duration} onChange={(e) => updateProjectPhase(item.id, { duration: Number(e.target.value) || 0 })} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="Duration" /><input type="number" value={item.startDay} onChange={(e) => updateProjectPhase(item.id, { startDay: Number(e.target.value) || 0 })} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="Start day" /><input type="number" value={item.endDay} onChange={(e) => updateProjectPhase(item.id, { endDay: Number(e.target.value) || 0 })} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="End day" /></div><textarea rows={2} value={joinLines(item.deliverables)} onChange={(e) => updateProjectPhase(item.id, { deliverables: splitLines(e.target.value) })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Phase deliverables, one per line" /></div>)}<textarea rows={3} value={joinLines(projectDuration.criticalPath)} onChange={(e) => setProjectDuration(prev => ({ ...prev, criticalPath: splitLines(e.target.value) }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Critical path items, one per line" /><textarea rows={3} value={joinLines(projectDuration.assumptions)} onChange={(e) => setProjectDuration(prev => ({ ...prev, assumptions: splitLines(e.target.value) }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Timeline assumptions, one per line" /></div>
               )}
 
               {activeTab === 'commercial' && (
@@ -1304,7 +1345,7 @@ export function CreateProposalModal({
                         </tr>
                       </thead>
                       <tbody>
-                        {commercial.items.map((item, index) => (
+                        {(commercial.items || []).map((item, index) => (
                           <tr key={item.id}>
                             <td className="border border-gray-300 px-4 py-2">
                               {index + 1}
@@ -1347,7 +1388,7 @@ export function CreateProposalModal({
                               />
                             </td>
                             <td className="border border-gray-300 px-4 py-2 font-medium">
-                              {item.total.toLocaleString()}
+                              {(item.total || 0).toLocaleString()}
                             </td>
                             <td className="border border-gray-300 px-4 py-2">
                               <button
@@ -1371,21 +1412,21 @@ export function CreateProposalModal({
                           <span>Subtotal:</span>
                           <span className="font-medium inline-flex items-center gap-1">
                             {commercial.currency === 'SAR' && <RiyalSymbol className="w-3 h-3" />}
-                            {commercial.subtotal.toLocaleString()} {commercial.currency !== 'SAR' && commercial.currency}
+                            {(commercial.subtotal || 0).toLocaleString()} {commercial.currency !== 'SAR' && commercial.currency}
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span>VAT ({commercial.vatRate}%):</span>
                           <span className="font-medium inline-flex items-center gap-1">
                             {commercial.currency === 'SAR' && <RiyalSymbol className="w-3 h-3" />}
-                            {commercial.vatAmount.toLocaleString()} {commercial.currency !== 'SAR' && commercial.currency}
+                            {(commercial.vatAmount || 0).toLocaleString()} {commercial.currency !== 'SAR' && commercial.currency}
                           </span>
                         </div>
                         <div className="flex justify-between border-t pt-2 font-bold text-lg">
                           <span>Grand Total:</span>
                           <span className="inline-flex items-center gap-1">
                             {commercial.currency === 'SAR' && <RiyalSymbol className="w-4 h-4" />}
-                            {commercial.total.toLocaleString()} {commercial.currency !== 'SAR' && commercial.currency}
+                            {(commercial.total || 0).toLocaleString()} {commercial.currency !== 'SAR' && commercial.currency}
                           </span>
                         </div>
                       </div>
