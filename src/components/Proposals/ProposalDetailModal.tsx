@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Calendar, User, DollarSign, Building2, Paperclip, Download, Trash2, Upload, Activity } from 'lucide-react';
+import { X, Calendar, User, DollarSign, Building2, Paperclip, Download, Trash2, Upload, Activity, Edit } from 'lucide-react';
 import { Proposal } from '../../types/proposal';
 import { format, parseISO } from 'date-fns';
 import { formatCurrencyWithSymbol } from '../../utils/format';
@@ -65,6 +65,7 @@ interface ProposalDetailModalProps {
   onUploadAttachment: (proposalId: string, file: File) => void;
   onRemoveAttachment: (proposalId: string, attachmentId: string) => void;
   onExportPDF: (proposal: Proposal) => void;
+  onEdit?: (proposal: Proposal) => void;
 }
 
 const statusColors = {
@@ -96,6 +97,7 @@ export function ProposalDetailModal({
   onUploadAttachment,
   onRemoveAttachment,
   onExportPDF,
+  onEdit,
 }: ProposalDetailModalProps) {
   const [activeTab, setActiveTab] = useState<'details' | 'attachments' | 'activity'>('details');
   const [isDragging, setIsDragging] = useState(false);
@@ -168,6 +170,15 @@ export function ProposalDetailModal({
             </span>
           </div>
           <div className="flex items-center space-x-2">
+            {onEdit && (
+              <button
+                onClick={() => onEdit(proposal)}
+                className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+              >
+                <Edit className="w-4 h-4" />
+                <span>Edit Proposal</span>
+              </button>
+            )}
             <button
               onClick={() => onExportPDF(proposal)}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"

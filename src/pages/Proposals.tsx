@@ -177,7 +177,10 @@ export function Proposals() {
         </div>
         {canCreateProposal && (
           <button 
-            onClick={() => setIsCreateModalOpen(true)}
+            onClick={() => {
+              setEditingProposal(null);
+              setIsCreateModalOpen(true);
+            }}
             className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
           >
             <Plus className="w-4 h-4" />
@@ -286,11 +289,15 @@ export function Proposals() {
               proposal={proposal}
               customer={customer}
               vendor={vendor}
-              onEdit={canEditProposal ? (proposal) => {
+              canEdit={canEditProposal}
+              canDelete={canDeleteProposal}
+              onEdit={(proposal) => {
                 setEditingProposal(proposal);
+                setIsDetailModalOpen(false);
+                setSelectedProposal(null);
                 setIsCreateModalOpen(true);
-              } : () => {}}
-              onDelete={canDeleteProposal ? handleDeleteProposal : () => {}}
+              }}
+              onDelete={handleDeleteProposal}
               onView={handleViewProposal}
               onExportPDF={handleExportPDF}
             />
@@ -312,7 +319,10 @@ export function Proposals() {
           </p>
           {canCreateProposal && !searchTerm && statusFilter === 'all' && (
             <button 
-              onClick={() => setIsCreateModalOpen(true)}
+              onClick={() => {
+                setEditingProposal(null);
+                setIsCreateModalOpen(true);
+              }}
               className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg transition-colors"
             >
               Create Proposal
@@ -348,6 +358,12 @@ export function Proposals() {
           onUploadAttachment={handleUploadAttachment}
           onRemoveAttachment={handleRemoveAttachment}
           onExportPDF={handleExportPDF}
+          onEdit={canEditProposal ? (proposal) => {
+            setEditingProposal(proposal);
+            setIsDetailModalOpen(false);
+            setSelectedProposal(null);
+            setIsCreateModalOpen(true);
+          } : undefined}
         />
       )}
     </div>

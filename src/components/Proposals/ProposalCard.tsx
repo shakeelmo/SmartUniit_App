@@ -8,6 +8,8 @@ interface ProposalCardProps {
   proposal: Proposal;
   customer?: any;
   vendor?: any;
+  canEdit?: boolean;
+  canDelete?: boolean;
   onEdit: (proposal: Proposal) => void;
   onDelete: (proposalId: string) => void;
   onView: (proposal: Proposal) => void;
@@ -64,6 +66,8 @@ export function ProposalCard({
   proposal, 
   customer, 
   vendor, 
+  canEdit = true,
+  canDelete = true,
   onEdit, 
   onDelete, 
   onView, 
@@ -110,16 +114,18 @@ export function ProposalCard({
                 <Eye className="w-4 h-4 mr-2" />
                 View Details
               </button>
-              <button
-                onClick={() => {
-                  onEdit(proposal);
-                  setShowActions(false);
-                }}
-                className="w-full px-4 py-2 text-left text-sm text-dark-700 hover:bg-gray-100 flex items-center"
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                Edit
-              </button>
+              {canEdit && (
+                <button
+                  onClick={() => {
+                    onEdit(proposal);
+                    setShowActions(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-dark-700 hover:bg-gray-100 flex items-center"
+                >
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </button>
+              )}
               <button
                 onClick={() => {
                   onExportPDF(proposal);
@@ -130,17 +136,21 @@ export function ProposalCard({
                 <Download className="w-4 h-4 mr-2" />
                 Export PDF
               </button>
-              <hr className="my-1" />
-              <button
-                onClick={() => {
-                  handleDelete();
-                  setShowActions(false);
-                }}
-                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete
-              </button>
+              {canDelete && (
+                <>
+                  <hr className="my-1" />
+                  <button
+                    onClick={() => {
+                      handleDelete();
+                      setShowActions(false);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -186,7 +196,16 @@ export function ProposalCard({
           <div className="text-xs text-dark-500">
             Updated {formatDate(proposal.updatedAt)}
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
+            {canEdit && (
+              <button
+                onClick={() => onEdit(proposal)}
+                className="inline-flex items-center text-dark-600 hover:text-dark-900 text-sm font-medium"
+              >
+                <Edit className="w-4 h-4 mr-1" />
+                Edit
+              </button>
+            )}
             <button
               onClick={() => onView(proposal)}
               className="text-primary-600 hover:text-primary-700 text-sm font-medium"
