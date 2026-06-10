@@ -3,6 +3,7 @@ const { run, get, all } = require('../db');
 const { authenticateToken, requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
+const dbClient = (process.env.DB_CLIENT || 'sqlite').toLowerCase();
 
 const sanitizeFullData = (value) => {
   if (value === null || value === undefined) return value;
@@ -48,14 +49,25 @@ const parseFullData = (row) => {
   };
 };
 
+const getProposalColumnNames = async () => {
+  if (dbClient === 'mysql') {
+    const columns = await all('SHOW COLUMNS FROM proposals');
+    return new Set(columns.map((column) => column.Field));
+  }
+
+  const columns = await all('PRAGMA table_info(proposals)');
+  return new Set(columns.map((column) => column.name));
+};
+
 const ensureFullDataColumn = async () => {
   try {
+    const columnNames = await getProposalColumnNames();
+    if (columnNames.has('full_data')) return;
+
     await run('ALTER TABLE proposals ADD COLUMN full_data TEXT');
     console.log('Added proposals.full_data column');
   } catch (error) {
-    if (!String(error.message || '').includes('duplicate column name')) {
-      console.error('Ensure proposals.full_data failed:', error);
-    }
+    console.error('Ensure proposals.full_data failed:', error);
   }
 };
 ensureFullDataColumn();
