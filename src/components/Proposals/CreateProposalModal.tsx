@@ -437,6 +437,16 @@ export function CreateProposalModal({
         value: editProposal.value?.toString() || '',
       });
       
+      if (editProposal.customerLogo && typeof editProposal.customerLogo === 'string') {
+        setCustomerLogo(editProposal.customerLogo);
+        setLogoFile(null);
+        setLogoError('');
+      } else {
+        setCustomerLogo(null);
+        setLogoFile(null);
+        setLogoError('');
+      }
+      
       if (editProposal.documentControl) {
         setDocumentControl(editProposal.documentControl);
       }

@@ -103,6 +103,17 @@ export function Proposals() {
     }
   };
 
+  const handleExportWord = (proposal: Proposal) => {
+    try {
+      const customer = customers.find(c => c.id === proposal.customerId);
+      pdfExports.exportProposalWord(proposal, customer);
+      toast.success('Word document exported successfully');
+    } catch (error) {
+      toast.error('Failed to export Word document');
+      console.error('Error exporting Word document:', error);
+    }
+  };
+
   const handleViewProposal = (proposal: Proposal) => {
     setSelectedProposal(proposal);
     setIsDetailModalOpen(true);
@@ -300,6 +311,7 @@ export function Proposals() {
               onDelete={handleDeleteProposal}
               onView={handleViewProposal}
               onExportPDF={handleExportPDF}
+              onExportWord={handleExportWord}
             />
           );
         })}
@@ -358,6 +370,7 @@ export function Proposals() {
           onUploadAttachment={handleUploadAttachment}
           onRemoveAttachment={handleRemoveAttachment}
           onExportPDF={handleExportPDF}
+          onExportWord={handleExportWord}
           onEdit={canEditProposal ? (proposal) => {
             setEditingProposal(proposal);
             setIsDetailModalOpen(false);

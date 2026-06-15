@@ -5,23 +5,26 @@ const { authenticateToken, requirePermission } = require('../middleware/auth');
 const router = express.Router();
 const dbClient = (process.env.DB_CLIENT || 'sqlite').toLowerCase();
 
-const sanitizeFullData = (value) => {
+const sanitizeFullData = (value, key = '') => {
   if (value === null || value === undefined) return value;
 
   if (typeof value === 'string') {
-    return value.startsWith('data:') ? undefined : value;
+    const isImageData = value.startsWith('data:image/');
+    const isAllowedLogo = key === 'customerLogo' && isImageData && value.length <= 3 * 1024 * 1024;
+    return value.startsWith('data:') && !isAllowedLogo ? undefined : value;
   }
 
   if (Array.isArray(value)) {
     return value
-      .map(item => sanitizeFullData(item))
+      .map(item => sanitizeFullData(item, key))
       .filter(item => item !== undefined);
   }
 
   if (typeof value === 'object') {
     return Object.fromEntries(
       Object.entries(value)
-        .map(([key, item]) => [key, sanitizeFullData(item)])
+        .filter(([childKey]) => childKey !== 'logoFile')
+        .map(([childKey, item]) => [childKey, sanitizeFullData(item, childKey)])
         .filter(([, item]) => item !== undefined)
     );
   }

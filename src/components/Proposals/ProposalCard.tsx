@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, User, DollarSign, Building2, MoreHorizontal, Edit, Trash2, Eye, Download, Paperclip } from 'lucide-react';
+import { Calendar, User, DollarSign, Building2, MoreHorizontal, Edit, Trash2, Eye, Download, Paperclip, FileText } from 'lucide-react';
 import { Proposal } from '../../types/proposal';
 import { format, parseISO } from 'date-fns';
 import { formatCurrencyWithSymbol } from '../../utils/format';
@@ -14,6 +14,7 @@ interface ProposalCardProps {
   onDelete: (proposalId: string) => void;
   onView: (proposal: Proposal) => void;
   onExportPDF: (proposal: Proposal) => void;
+  onExportWord?: (proposal: Proposal) => void;
 }
 
 const statusColors = {
@@ -71,7 +72,8 @@ export function ProposalCard({
   onEdit, 
   onDelete, 
   onView, 
-  onExportPDF 
+  onExportPDF,
+  onExportWord 
 }: ProposalCardProps) {
   const [showActions, setShowActions] = useState(false);
 
@@ -136,6 +138,18 @@ export function ProposalCard({
                 <Download className="w-4 h-4 mr-2" />
                 Export PDF
               </button>
+              {onExportWord && (
+                <button
+                  onClick={() => {
+                    onExportWord(proposal);
+                    setShowActions(false);
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-emerald-600 hover:bg-emerald-50 flex items-center"
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Export Word
+                </button>
+              )}
               {canDelete && (
                 <>
                   <hr className="my-1" />

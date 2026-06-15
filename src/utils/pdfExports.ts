@@ -75,6 +75,28 @@ export class PDFExportUtils {
     await proposalPDFGenerator.generateProposalPDF(proposal, customer);
   }
 
+  public exportProposalWord(proposal: any, customer: any): void {
+    const html = this.generateProfessionalProposalHTML(proposal, customer);
+    const documentHtml = `<!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <title>${proposal?.title || 'Proposal'}</title>
+        </head>
+        <body>${html}</body>
+      </html>`;
+    const blob = new Blob(['\ufeff', documentHtml], { type: 'application/msword;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const safeTitle = (proposal?.title || 'Proposal').replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '') || 'Proposal';
+    link.href = url;
+    link.download = `${safeTitle}_${format(new Date(), 'yyyy-MM-dd')}.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   private generateProposalExportHTML(proposal: any, customer: any): string {
     const rawDate = proposal?.createdAt || proposal?.created_at || proposal?.date || proposal?.documentControl?.date;
     const parsedDate = rawDate ? new Date(rawDate) : new Date();

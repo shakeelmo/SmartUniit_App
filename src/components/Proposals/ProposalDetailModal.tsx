@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Calendar, User, DollarSign, Building2, Paperclip, Download, Trash2, Upload, Activity, Edit } from 'lucide-react';
+import { X, Calendar, User, DollarSign, Building2, Paperclip, Download, Trash2, Upload, Activity, Edit, FileText } from 'lucide-react';
 import { Proposal } from '../../types/proposal';
 import { format, parseISO } from 'date-fns';
 import { formatCurrencyWithSymbol } from '../../utils/format';
@@ -65,6 +65,7 @@ interface ProposalDetailModalProps {
   onUploadAttachment: (proposalId: string, file: File) => void;
   onRemoveAttachment: (proposalId: string, attachmentId: string) => void;
   onExportPDF: (proposal: Proposal) => void;
+  onExportWord?: (proposal: Proposal) => void;
   onEdit?: (proposal: Proposal) => void;
 }
 
@@ -97,6 +98,7 @@ export function ProposalDetailModal({
   onUploadAttachment,
   onRemoveAttachment,
   onExportPDF,
+  onExportWord,
   onEdit,
 }: ProposalDetailModalProps) {
   const [activeTab, setActiveTab] = useState<'details' | 'attachments' | 'activity'>('details');
@@ -186,6 +188,15 @@ export function ProposalDetailModal({
               <Download className="w-4 h-4" />
               <span>Export PDF</span>
             </button>
+            {onExportWord && (
+              <button
+                onClick={() => onExportWord(proposal)}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+              >
+                <FileText className="w-4 h-4" />
+                <span>Export Word</span>
+              </button>
+            )}
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
