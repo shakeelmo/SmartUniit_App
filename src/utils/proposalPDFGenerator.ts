@@ -393,7 +393,8 @@ export class ProposalPDFGenerator {
     if (milestones.length) {
       this.subTitle('Milestones');
       milestones.forEach((milestone, index) => {
-        const amountValue = this.displayText(this.money(milestone.amount, currency));
+        const amountText = this.money(milestone.amount, currency);
+        const amountValue = currency === 'SAR' ? this.stripRiyalMarker(amountText) : this.clean(amountText);
         const formattedAmount = currency === 'SAR' ? 'SAR ' + amountValue : amountValue;
         this.paragraph((index + 1) + '. ' + milestone.description + ': ' + milestone.percentage + '% (' + formattedAmount + ')');
         (milestone.conditions || []).forEach(condition => this.bullet(condition, 1));
