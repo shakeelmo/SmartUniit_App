@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, DollarSign, User, Building2, FileText, AlertCircle, Plus, Trash2, Calendar, Clock, Upload, Image } from 'lucide-react';
-import { Proposal, DocumentControl, Introduction, RequirementUnderstanding, CustomerPrerequisites, Deliverable, AdditionalCondition, CommercialProposal, PaymentTerms, ProjectDuration, CommercialItem, DeliverableTask, PaymentMilestone, ProjectPhase } from '../../types/proposal';
+import { Proposal, DocumentControl, Introduction, RequirementUnderstanding, ProposalSiteDesign, CustomerPrerequisites, Deliverable, AdditionalCondition, CommercialProposal, PaymentTerms, ProjectDuration, CommercialItem, DeliverableTask, PaymentMilestone, ProjectPhase } from '../../types/proposal';
 import { useAuth } from '../../contexts/AuthContext';
 import { SaudiRiyalSymbol } from '../SaudiRiyalSymbol';
 
@@ -22,7 +22,7 @@ export function CreateProposalModal({
   editProposal 
 }: CreateProposalModalProps) {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'basic' | 'document' | 'introduction' | 'requirements' | 'prerequisites' | 'deliverables' | 'conditions' | 'commercial' | 'payment' | 'timeline'>('basic');
+  const [activeTab, setActiveTab] = useState<'basic' | 'document' | 'introduction' | 'requirements' | 'siteDesign' | 'prerequisites' | 'deliverables' | 'conditions' | 'commercial' | 'payment' | 'timeline'>('basic');
   
   // Basic Information
   const [basicData, setBasicData] = useState({
@@ -89,6 +89,17 @@ export function CreateProposalModal({
       'Warranty and support provisions'
     ],
   });
+
+  // Diagram / Site Design
+  const [siteDesign, setSiteDesign] = useState<ProposalSiteDesign>({
+    title: 'Diagram / Site Design',
+    description: '',
+    imageBase64: '',
+    imageMimeType: '',
+    fileName: '',
+    notes: [],
+  });
+  const [siteDesignError, setSiteDesignError] = useState<string>('');
 
   // Customer Prerequisites
   const [prerequisites, setPrerequisites] = useState<CustomerPrerequisites>({
@@ -448,6 +459,14 @@ export function CreateProposalModal({
         }));
       }
       
+      if (editProposal.siteDesign) {
+        setSiteDesign(prev => ({
+          ...prev,
+          ...editProposal.siteDesign,
+          notes: Array.isArray(editProposal.siteDesign?.notes) ? editProposal.siteDesign.notes : prev.notes,
+        }));
+      }
+      
       if (editProposal.customerPrerequisites) {
         setPrerequisites(prev => ({
           ...prev,
@@ -518,6 +537,7 @@ export function CreateProposalModal({
     { id: 'document', label: 'Document Control', icon: FileText },
     { id: 'introduction', label: 'Introduction', icon: FileText },
     { id: 'requirements', label: 'Requirements', icon: FileText },
+    { id: 'siteDesign', label: 'Diagram / Site Design', icon: Image },
     { id: 'prerequisites', label: 'Prerequisites', icon: FileText },
     { id: 'deliverables', label: 'Deliverables', icon: FileText },
     { id: 'conditions', label: 'Conditions', icon: FileText },
@@ -563,6 +583,7 @@ export function CreateProposalModal({
       documentControl,
       introduction,
       requirementUnderstanding: requirements,
+      siteDesign,
       customerPrerequisites: prerequisites,
       deliverables,
       additionalConditions: conditions,
@@ -679,6 +700,41 @@ export function CreateProposalModal({
     }));
   };
 
+  const handleSiteDesignUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setSiteDesignError('Please upload a PNG, JPG, JPEG, or GIF image.');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setSiteDesignError('Diagram image must be less than 2MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (loadEvent) => {
+      const result = String(loadEvent.target?.result || '');
+      const base64 = result.includes(',') ? result.split(',')[1] : result;
+      setSiteDesignError('');
+      setSiteDesign(prev => ({
+        ...prev,
+        imageBase64: base64,
+        imageMimeType: file.type,
+        fileName: file.name,
+      }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeSiteDesignImage = () => {
+    setSiteDesign(prev => ({ ...prev, imageBase64: '', imageMimeType: '', fileName: '' }));
+    setSiteDesignError('');
+  };
+
+  const siteDesignPreview = siteDesign.imageBase64
+    ? `data:${siteDesign.imageMimeType || 'image/png'};base64,${siteDesign.imageBase64}`
+    : '';
 
   const splitLines = (value: string) => value.split('\n').map(item => item.trim()).filter(Boolean);
   const joinLines = (items?: string[]) => (Array.isArray(items) ? items : []).join('\n');
@@ -1296,6 +1352,84 @@ export function CreateProposalModal({
                 </div>
               )}
 
+
+
+              {activeTab === 'siteDesign' && (
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold text-dark-900">Diagram / Site Design</h3>
+                  <p className="text-sm text-gray-600">
+                    Add an optional diagram, site layout, network sketch, or design image. It will appear in the proposal PDF after the Requirements section.
+                  </p>
+
+                  <div>
+                    <label className="block text-sm font-medium text-dark-700 mb-2">Section Title</label>
+                    <input
+                      type="text"
+                      value={siteDesign.title}
+                      onChange={(e) => setSiteDesign(prev => ({ ...prev, title: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      placeholder="Diagram / Site Design"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-dark-700 mb-2">Description</label>
+                    <textarea
+                      rows={4}
+                      value={siteDesign.description || ''}
+                      onChange={(e) => setSiteDesign(prev => ({ ...prev, description: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      placeholder="Describe the proposed site design, diagram assumptions, or layout notes."
+                    />
+                  </div>
+
+                  <div className="border border-gray-200 rounded-lg p-4 space-y-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-dark-700 mb-1">Diagram Image</label>
+                        <p className="text-xs text-gray-500">PNG, JPG, JPEG, or GIF up to 2MB.</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <label className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                          <Upload className="w-4 h-4 mr-2" />
+                          Upload Image
+                          <input type="file" accept="image/*" onChange={handleSiteDesignUpload} className="hidden" />
+                        </label>
+                        {siteDesign.imageBase64 && (
+                          <button
+                            type="button"
+                            onClick={removeSiteDesignImage}
+                            className="inline-flex items-center px-3 py-2 border border-red-300 rounded-lg text-sm font-medium text-red-700 bg-white hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {siteDesignError && <p className="text-sm text-red-600">{siteDesignError}</p>}
+
+                    {siteDesignPreview && (
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                        <img src={siteDesignPreview} alt="Diagram / Site Design Preview" className="max-h-80 w-full object-contain" />
+                        <p className="mt-2 text-xs text-gray-500">{siteDesign.fileName}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-dark-700 mb-2">Notes</label>
+                    <textarea
+                      rows={4}
+                      value={joinLines(siteDesign.notes)}
+                      onChange={(e) => setSiteDesign(prev => ({ ...prev, notes: splitLines(e.target.value) }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                      placeholder="Add notes one per line, such as cable paths, rack positions, access points, or site assumptions."
+                    />
+                  </div>
+                </div>
+              )}
 
               {activeTab === 'prerequisites' && (
                 <div className="space-y-6">

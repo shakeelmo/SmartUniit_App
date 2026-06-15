@@ -83,6 +83,7 @@ export class ProposalPDFGenerator {
     this.renderConfidentiality(proposal);
     this.renderIntroduction(proposal);
     this.renderRequirements(proposal);
+    this.renderSiteDesign(proposal);
     this.renderPrerequisites(proposal);
     this.renderDeliverables(proposal);
     this.renderConditions(proposal);
@@ -159,14 +160,15 @@ export class ProposalPDFGenerator {
           '2. Confidentiality Agreement',
           '3. Introduction',
           '4. Understanding to Customer Requirement',
-          '5. Customer Prerequisites',
-          '6. Deliverables Scope',
-          '7. Additional Conditions and Assumptions',
-          '8. Commercial Proposal',
-          '9. Banking Details',
-          '10. Payment Terms & Conditions',
-          '11. Duration of Project',
-          '12. SOW Acceptance',
+          '5. Diagram / Site Design',
+          '6. Customer Prerequisites',
+          '7. Deliverables Scope',
+          '8. Additional Conditions and Assumptions',
+          '9. Commercial Proposal',
+          '10. Banking Details',
+          '11. Payment Terms & Conditions',
+          '12. Duration of Project',
+          '13. SOW Acceptance',
         ].map(title => ({ title, page: 0 }));
 
     entries.forEach((entry, index) => {
@@ -230,8 +232,40 @@ export class ProposalPDFGenerator {
     this.list('Business Requirements', proposal?.requirementUnderstanding?.businessRequirements);
   }
 
+  private renderSiteDesign(proposal: Proposal) {
+    const siteDesign = proposal?.siteDesign;
+    const title = this.clean(siteDesign?.title) || 'Diagram / Site Design';
+    const notes = (siteDesign?.notes || []).map(note => this.clean(note)).filter(Boolean);
+    const hasImage = Boolean(siteDesign?.imageBase64 && siteDesign?.imageMimeType);
+    const hasContent = Boolean(this.clean(siteDesign?.description) || hasImage || notes.length);
+    if (!hasContent) return;
+
+    this.sectionTitle('5. ' + title);
+    if (siteDesign?.description) this.paragraph(siteDesign.description);
+
+    if (hasImage) {
+      const imageData = `data:${siteDesign?.imageMimeType || 'image/png'};base64,${siteDesign?.imageBase64}`;
+      const imageWidth = this.contentWidth();
+      const imageHeight = Math.min(96, imageWidth * 0.56);
+      this.ensureSpace(imageHeight + 8);
+      try {
+        const imageType = siteDesign?.imageMimeType?.includes('png') ? 'PNG' : 'JPEG';
+        this.pdf.setDrawColor(209, 213, 219);
+        this.pdf.setFillColor(249, 250, 251);
+        this.pdf.roundedRect(this.margin, this.y, imageWidth, imageHeight, 1.5, 1.5, 'FD');
+        this.pdf.addImage(imageData, imageType, this.margin + 2, this.y + 2, imageWidth - 4, imageHeight - 4, undefined, 'FAST');
+        this.y += imageHeight + 6;
+      } catch (error) {
+        console.warn('Unable to add proposal site design image:', error);
+        this.paragraph('Diagram image could not be embedded in the PDF.');
+      }
+    }
+
+    this.list('Design Notes', notes);
+  }
+
   private renderPrerequisites(proposal: Proposal) {
-    this.sectionTitle('5. Customer Prerequisites');
+    this.sectionTitle('6. Customer Prerequisites');
     const rows = proposal?.customerPrerequisites?.items || [];
     if (!rows.length) {
       this.paragraph('No prerequisites have been listed.');
@@ -246,7 +280,7 @@ export class ProposalPDFGenerator {
   }
 
   private renderDeliverables(proposal: Proposal) {
-    this.sectionTitle('6. Deliverables Scope');
+    this.sectionTitle('7. Deliverables Scope');
     const deliverables = proposal?.deliverables || [];
     if (!deliverables.length) {
       this.paragraph('No deliverables have been listed.');
@@ -255,7 +289,7 @@ export class ProposalPDFGenerator {
 
     deliverables.forEach((deliverable, index) => {
       this.keepWithNext(18);
-      this.subTitle('6.' + (index + 1) + ' ' + (this.clean(deliverable.title) || 'Deliverable'));
+      this.subTitle('7.' + (index + 1) + ' ' + (this.clean(deliverable.title) || 'Deliverable'));
       if (deliverable.description) this.paragraph(deliverable.description);
       if (deliverable.timeline) this.paragraph('Timeline: ' + deliverable.timeline);
 
@@ -273,7 +307,7 @@ export class ProposalPDFGenerator {
   }
 
   private renderConditions(proposal: Proposal) {
-    this.sectionTitle('7. Additional Conditions and Assumptions');
+    this.sectionTitle('8. Additional Conditions and Assumptions');
     const rows = proposal?.additionalConditions || [];
     if (!rows.length) {
       this.paragraph('No additional conditions have been listed.');
@@ -287,7 +321,7 @@ export class ProposalPDFGenerator {
   }
 
   private renderCommercialProposal(proposal: Proposal) {
-    this.sectionTitle('8. Commercial Proposal');
+    this.sectionTitle('9. Commercial Proposal');
     const commercial = proposal?.commercialProposal;
     const rows = commercial?.items || [];
     if (!rows.length) {
@@ -314,7 +348,7 @@ export class ProposalPDFGenerator {
   }
 
   private renderBankingDetails() {
-    this.sectionTitle('9. Banking Details');
+    this.sectionTitle('10. Banking Details');
     this.keyValueRows([
       ['Bank', this.bankingDetails.bank],
       ['IBAN', this.bankingDetails.iban],
@@ -346,7 +380,7 @@ export class ProposalPDFGenerator {
     });
   }
   private renderPaymentTerms(proposal: Proposal) {
-    this.sectionTitle('10. Payment Terms & Conditions');
+    this.sectionTitle('11. Payment Terms & Conditions');
     const terms = proposal?.paymentTerms;
     this.keyValueRows([
       ['Structure', terms?.structure],
@@ -367,7 +401,7 @@ export class ProposalPDFGenerator {
   }
 
   private renderProjectDuration(proposal: Proposal) {
-    this.sectionTitle('11. Duration of Project');
+    this.sectionTitle('12. Duration of Project');
     const duration = proposal?.projectDuration;
     this.paragraph('This project is expected to be completed within ' + (duration?.totalDays || 0) + ' days.');
     this.keyValueRows([
@@ -391,7 +425,7 @@ export class ProposalPDFGenerator {
 
 
   private renderAcceptance() {
-    this.sectionTitle('12. SOW Acceptance');
+    this.sectionTitle('13. SOW Acceptance');
     this.paragraph('By signing this document, the SOW document is officially approved and acknowledged as the only document that defines the project scope based on the signed contract.');
     this.keepWithNext(45);
     this.y += 14;

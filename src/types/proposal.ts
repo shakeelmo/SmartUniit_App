@@ -13,6 +13,7 @@ export interface Proposal {
   // Main Sections
   introduction: Introduction;
   requirementUnderstanding: RequirementUnderstanding;
+  siteDesign?: ProposalSiteDesign;
   customerPrerequisites: CustomerPrerequisites;
   deliverables: Deliverable[];
   additionalConditions: AdditionalCondition[];
@@ -55,6 +56,15 @@ export interface RequirementUnderstanding {
   highLevelRequirements: string[];
   technicalRequirements: string[];
   businessRequirements: string[];
+}
+
+export interface ProposalSiteDesign {
+  title: string;
+  description?: string;
+  imageBase64?: string;
+  imageMimeType?: string;
+  fileName?: string;
+  notes: string[];
 }
 
 export interface CustomerPrerequisites {
