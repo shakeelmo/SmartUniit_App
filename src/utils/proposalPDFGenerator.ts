@@ -382,20 +382,22 @@ export class ProposalPDFGenerator {
   private renderPaymentTerms(proposal: Proposal) {
     this.sectionTitle('11. Payment Terms & Conditions');
     const terms = proposal?.paymentTerms;
+    const currency = (terms?.currency || proposal?.commercialProposal?.currency || 'SAR').toUpperCase();
     this.keyValueRows([
       ['Structure', terms?.structure],
       ['Payment Method', (terms?.paymentMethod || []).join(', ')],
       ['Advance Payment', terms?.advancePayment ? terms.advancePayment + '%' : 'N/A'],
-      ['Late Penalty', terms?.latePenalty ? terms.latePenalty + '%' : 'N/A'],
     ]);
 
     const milestones = this.getPaymentMilestonesForDisplay(proposal);
     if (milestones.length) {
       this.subTitle('Milestones');
       milestones.forEach((milestone, index) => {
-        const amount = this.money(milestone.amount, terms?.currency || proposal?.commercialProposal?.currency);
-        this.bullet((index + 1) + '. ' + milestone.description + ': ' + milestone.percentage + '% (' + amount + ')', 0, false);
+        const amountValue = this.displayText(this.money(milestone.amount, currency));
+        const formattedAmount = currency === 'SAR' ? 'SAR ' + amountValue : amountValue;
+        this.paragraph((index + 1) + '. ' + milestone.description + ': ' + milestone.percentage + '% (' + formattedAmount + ')');
         (milestone.conditions || []).forEach(condition => this.bullet(condition, 1));
+        this.y += 1.5;
       });
     }
   }
