@@ -640,28 +640,28 @@ export function CreateProposalModal({
   const addObjective = () => {
     setIntroduction(prev => ({
       ...prev,
-      objectives: [...prev.objectives, ''],
+      objectives: [...toArray(prev.objectives), ''],
     }));
   };
 
   const updateObjective = (index: number, value: string) => {
     setIntroduction(prev => ({
       ...prev,
-      objectives: prev.objectives.map((obj, i) => i === index ? value : obj),
+      objectives: toArray(prev.objectives).map((obj, i) => i === index ? value : obj),
     }));
   };
 
   const removeObjective = (index: number) => {
     setIntroduction(prev => ({
       ...prev,
-      objectives: prev.objectives.filter((_, i) => i !== index),
+      objectives: toArray(prev.objectives).filter((_, i) => i !== index),
     }));
   };
 
   const addRequirement = (type: 'highLevelRequirements' | 'technicalRequirements' | 'businessRequirements') => {
     setRequirements(prev => ({
       ...prev,
-      [type]: [...prev[type], ''],
+      [type]: [...toArray(prev[type]), ''],
     }));
   };
 
@@ -681,19 +681,25 @@ export function CreateProposalModal({
 
 
   const splitLines = (value: string) => value.split('\n').map(item => item.trim()).filter(Boolean);
-  const joinLines = (items?: string[]) => (items || []).join('\n');
+  const joinLines = (items?: string[]) => (Array.isArray(items) ? items : []).join('\n');
+  const toArray = <T,>(items?: T[] | null): T[] => Array.isArray(items) ? items : [];
+  const formatDateInput = (value: any): string => {
+    if (!value) return '';
+    const date = value instanceof Date ? value : new Date(value);
+    return Number.isNaN(date.getTime()) ? '' : date.toISOString().split('T')[0];
+  };
 
   const addPrerequisite = () => setPrerequisites(prev => ({ ...prev, items: [...(prev.items || []), { id: Date.now().toString(), description: '', responsibility: 'customer', mandatory: true }] }));
   const updatePrerequisite = (id: string, updates: Partial<CustomerPrerequisites['items'][number]>) => setPrerequisites(prev => ({ ...prev, items: (prev.items || []).map(item => item.id === id ? { ...item, ...updates } : item) }));
   const removePrerequisite = (id: string) => setPrerequisites(prev => ({ ...prev, items: (prev.items || []).filter(item => item.id !== id) }));
 
-  const addDeliverable = () => setDeliverables(prev => [...prev, { id: Date.now().toString(), title: '', description: '', tasks: [], acceptanceCriteria: [], timeline: '', dependencies: [] }]);
-  const updateDeliverable = (id: string, updates: Partial<Deliverable>) => setDeliverables(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
-  const removeDeliverable = (id: string) => setDeliverables(prev => prev.filter(item => item.id !== id));
+  const addDeliverable = () => setDeliverables(prev => [...toArray(prev), { id: Date.now().toString(), title: '', description: '', tasks: [], acceptanceCriteria: [], timeline: '', dependencies: [] }]);
+  const updateDeliverable = (id: string, updates: Partial<Deliverable>) => setDeliverables(prev => toArray(prev).map(item => item.id === id ? { ...item, ...updates } : item));
+  const removeDeliverable = (id: string) => setDeliverables(prev => toArray(prev).filter(item => item.id !== id));
 
-  const addCondition = () => setConditions(prev => [...prev, { id: Date.now().toString(), condition: '', category: 'general' }]);
-  const updateCondition = (id: string, updates: Partial<AdditionalCondition>) => setConditions(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
-  const removeCondition = (id: string) => setConditions(prev => prev.filter(item => item.id !== id));
+  const addCondition = () => setConditions(prev => [...toArray(prev), { id: Date.now().toString(), condition: '', category: 'general' }]);
+  const updateCondition = (id: string, updates: Partial<AdditionalCondition>) => setConditions(prev => toArray(prev).map(item => item.id === id ? { ...item, ...updates } : item));
+  const removeCondition = (id: string) => setConditions(prev => toArray(prev).filter(item => item.id !== id));
 
   const addPaymentMilestone = () => setPaymentTerms(prev => ({ ...prev, milestones: [...(prev.milestones || []), { id: Date.now().toString(), description: '', percentage: 0, amount: 0, conditions: [] }] }));
   const updatePaymentMilestone = (id: string, updates: Partial<PaymentMilestone>) => setPaymentTerms(prev => ({ ...prev, milestones: (prev.milestones || []).map(item => item.id === id ? { ...item, ...updates } : item) }));
@@ -873,7 +879,7 @@ export function CreateProposalModal({
                       <label className="block text-sm font-medium text-dark-700 mb-2">Proposal Date</label>
                       <input
                         type="date"
-                        value={documentControl.date ? new Date(documentControl.date).toISOString().split('T')[0] : ''}
+                        value={formatDateInput(documentControl.date)}
                         onChange={(e) => setDocumentControl(prev => ({ ...prev, date: e.target.value ? new Date(e.target.value) : new Date() }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                       />
@@ -1055,7 +1061,7 @@ export function CreateProposalModal({
 
                     <div>
                       <label className="block text-sm font-medium text-dark-700 mb-2">Document Date</label>
-                      <input type="date" value={documentControl.date ? new Date(documentControl.date).toISOString().split('T')[0] : ''} onChange={(e) => setDocumentControl(prev => ({ ...prev, date: e.target.value ? new Date(e.target.value) : new Date() }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
+                      <input type="date" value={formatDateInput(documentControl.date)} onChange={(e) => setDocumentControl(prev => ({ ...prev, date: e.target.value ? new Date(e.target.value) : new Date() }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent" />
                     </div>
 
                     <div>
@@ -1310,11 +1316,11 @@ export function CreateProposalModal({
               )}
 
               {activeTab === 'payment' && (
-                <div className="space-y-6"><h3 className="text-lg font-semibold text-dark-900">Payment Terms</h3><div className="grid grid-cols-1 md:grid-cols-3 gap-4"><select value={paymentTerms.structure} onChange={(e) => setPaymentTerms(prev => ({ ...prev, structure: e.target.value as any }))} className="px-3 py-2 border border-gray-300 rounded-lg"><option value="milestone">Milestone</option><option value="percentage">Percentage</option><option value="fixed">Fixed</option></select><input type="number" value={paymentTerms.advancePayment || 0} onChange={(e) => setPaymentTerms(prev => ({ ...prev, advancePayment: Number(e.target.value) || 0 }))} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="Advance payment %" /><input type="number" value={paymentTerms.latePenalty || 0} onChange={(e) => setPaymentTerms(prev => ({ ...prev, latePenalty: Number(e.target.value) || 0 }))} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="Late penalty %" /></div><textarea rows={2} value={joinLines(paymentTerms.paymentMethod)} onChange={(e) => setPaymentTerms(prev => ({ ...prev, paymentMethod: splitLines(e.target.value) }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Payment methods, one per line" /><div className="flex items-center justify-between"><h4 className="font-medium text-dark-900">Milestones</h4><button type="button" onClick={addPaymentMilestone} className="text-primary-600 hover:text-primary-700 text-sm flex items-center"><Plus className="w-4 h-4 mr-1" />Add Milestone</button></div>{(paymentTerms.milestones || []).map((item) => <div key={item.id} className="border border-gray-200 rounded-lg p-4 space-y-3"><input value={item.description} onChange={(e) => updatePaymentMilestone(item.id, { description: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Milestone description" /><div className="grid grid-cols-1 md:grid-cols-3 gap-3"><input type="number" value={item.percentage} onChange={(e) => updatePaymentMilestone(item.id, { percentage: Number(e.target.value) || 0, amount: commercial.total * (Number(e.target.value) || 0) / 100 })} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="%" /><input type="number" value={item.amount} onChange={(e) => updatePaymentMilestone(item.id, { amount: Number(e.target.value) || 0 })} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="Amount" /><button type="button" onClick={() => removePaymentMilestone(item.id)} className="text-red-600 hover:text-red-800 justify-self-start"><Trash2 className="w-4 h-4" /></button></div><textarea rows={2} value={joinLines(item.conditions)} onChange={(e) => updatePaymentMilestone(item.id, { conditions: splitLines(e.target.value) })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Conditions, one per line" /></div>)}</div>
+                <div className="space-y-6"><h3 className="text-lg font-semibold text-dark-900">Payment Terms</h3><div className="grid grid-cols-1 md:grid-cols-3 gap-4"><select value={paymentTerms.structure} onChange={(e) => setPaymentTerms(prev => ({ ...prev, structure: e.target.value as any }))} className="px-3 py-2 border border-gray-300 rounded-lg"><option value="milestone">Milestone</option><option value="percentage">Percentage</option><option value="fixed">Fixed</option></select><input type="number" value={paymentTerms.advancePayment || 0} onChange={(e) => setPaymentTerms(prev => ({ ...prev, advancePayment: Number(e.target.value) || 0 }))} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="Advance payment %" /><input type="number" value={paymentTerms.latePenalty || 0} onChange={(e) => setPaymentTerms(prev => ({ ...prev, latePenalty: Number(e.target.value) || 0 }))} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="Late penalty %" /></div><textarea rows={2} value={joinLines(paymentTerms.paymentMethod)} onChange={(e) => setPaymentTerms(prev => ({ ...prev, paymentMethod: splitLines(e.target.value) }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Payment methods, one per line" /><div className="flex items-center justify-between"><h4 className="font-medium text-dark-900">Milestones</h4><button type="button" onClick={addPaymentMilestone} className="text-primary-600 hover:text-primary-700 text-sm flex items-center"><Plus className="w-4 h-4 mr-1" />Add Milestone</button></div>{(paymentTerms.milestones || []).map((item) => <div key={item.id} className="border border-gray-200 rounded-lg p-4 space-y-3"><input value={item.description} onChange={(e) => updatePaymentMilestone(item.id, { description: e.target.value })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Milestone description" /><div className="grid grid-cols-1 md:grid-cols-3 gap-3"><input type="number" value={item.percentage} onChange={(e) => updatePaymentMilestone(item.id, { percentage: Number(e.target.value) || 0, amount: (commercial.total || 0) * (Number(e.target.value) || 0) / 100 })} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="%" /><input type="number" value={item.amount} onChange={(e) => updatePaymentMilestone(item.id, { amount: Number(e.target.value) || 0 })} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="Amount" /><button type="button" onClick={() => removePaymentMilestone(item.id)} className="text-red-600 hover:text-red-800 justify-self-start"><Trash2 className="w-4 h-4" /></button></div><textarea rows={2} value={joinLines(item.conditions)} onChange={(e) => updatePaymentMilestone(item.id, { conditions: splitLines(e.target.value) })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Conditions, one per line" /></div>)}</div>
               )}
 
               {activeTab === 'timeline' && (
-                <div className="space-y-6"><div className="flex items-center justify-between"><h3 className="text-lg font-semibold text-dark-900">Project Timeline</h3><button type="button" onClick={addProjectPhase} className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"><Plus className="w-4 h-4" /><span>Add Phase</span></button></div><input type="number" value={projectDuration.totalDays} onChange={(e) => setProjectDuration(prev => ({ ...prev, totalDays: Number(e.target.value) || 0 }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Total days" /><div className="grid grid-cols-1 md:grid-cols-2 gap-3"><div><label className="block text-sm font-medium text-dark-700 mb-2">Start Date</label><input type="date" value={projectDuration.startDate ? new Date(projectDuration.startDate).toISOString().split('T')[0] : ''} onChange={(e) => setProjectDuration(prev => ({ ...prev, startDate: e.target.value ? new Date(e.target.value) : undefined }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" /></div><div><label className="block text-sm font-medium text-dark-700 mb-2">End Date</label><input type="date" value={projectDuration.endDate ? new Date(projectDuration.endDate).toISOString().split('T')[0] : ''} onChange={(e) => setProjectDuration(prev => ({ ...prev, endDate: e.target.value ? new Date(e.target.value) : undefined }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" /></div></div>{(projectDuration.phases || []).map((item) => <div key={item.id} className="border border-gray-200 rounded-lg p-4 space-y-3"><div className="flex items-center justify-between"><input value={item.name} onChange={(e) => updateProjectPhase(item.id, { name: e.target.value })} className="flex-1 px-3 py-2 border border-gray-300 rounded-lg" placeholder="Phase name" /><button type="button" onClick={() => removeProjectPhase(item.id)} className="ml-3 text-red-600 hover:text-red-800"><Trash2 className="w-4 h-4" /></button></div><div className="grid grid-cols-1 md:grid-cols-3 gap-3"><input type="number" value={item.duration} onChange={(e) => updateProjectPhase(item.id, { duration: Number(e.target.value) || 0 })} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="Duration" /><input type="number" value={item.startDay} onChange={(e) => updateProjectPhase(item.id, { startDay: Number(e.target.value) || 0 })} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="Start day" /><input type="number" value={item.endDay} onChange={(e) => updateProjectPhase(item.id, { endDay: Number(e.target.value) || 0 })} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="End day" /></div><textarea rows={2} value={joinLines(item.deliverables)} onChange={(e) => updateProjectPhase(item.id, { deliverables: splitLines(e.target.value) })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Phase deliverables, one per line" /></div>)}<textarea rows={3} value={joinLines(projectDuration.criticalPath)} onChange={(e) => setProjectDuration(prev => ({ ...prev, criticalPath: splitLines(e.target.value) }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Critical path items, one per line" /><textarea rows={3} value={joinLines(projectDuration.assumptions)} onChange={(e) => setProjectDuration(prev => ({ ...prev, assumptions: splitLines(e.target.value) }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Timeline assumptions, one per line" /></div>
+                <div className="space-y-6"><div className="flex items-center justify-between"><h3 className="text-lg font-semibold text-dark-900">Project Timeline</h3><button type="button" onClick={addProjectPhase} className="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2"><Plus className="w-4 h-4" /><span>Add Phase</span></button></div><input type="number" value={projectDuration.totalDays} onChange={(e) => setProjectDuration(prev => ({ ...prev, totalDays: Number(e.target.value) || 0 }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Total days" /><div className="grid grid-cols-1 md:grid-cols-2 gap-3"><div><label className="block text-sm font-medium text-dark-700 mb-2">Start Date</label><input type="date" value={formatDateInput(projectDuration.startDate)} onChange={(e) => setProjectDuration(prev => ({ ...prev, startDate: e.target.value ? new Date(e.target.value) : undefined }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" /></div><div><label className="block text-sm font-medium text-dark-700 mb-2">End Date</label><input type="date" value={formatDateInput(projectDuration.endDate)} onChange={(e) => setProjectDuration(prev => ({ ...prev, endDate: e.target.value ? new Date(e.target.value) : undefined }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" /></div></div>{(projectDuration.phases || []).map((item) => <div key={item.id} className="border border-gray-200 rounded-lg p-4 space-y-3"><div className="flex items-center justify-between"><input value={item.name} onChange={(e) => updateProjectPhase(item.id, { name: e.target.value })} className="flex-1 px-3 py-2 border border-gray-300 rounded-lg" placeholder="Phase name" /><button type="button" onClick={() => removeProjectPhase(item.id)} className="ml-3 text-red-600 hover:text-red-800"><Trash2 className="w-4 h-4" /></button></div><div className="grid grid-cols-1 md:grid-cols-3 gap-3"><input type="number" value={item.duration} onChange={(e) => updateProjectPhase(item.id, { duration: Number(e.target.value) || 0 })} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="Duration" /><input type="number" value={item.startDay} onChange={(e) => updateProjectPhase(item.id, { startDay: Number(e.target.value) || 0 })} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="Start day" /><input type="number" value={item.endDay} onChange={(e) => updateProjectPhase(item.id, { endDay: Number(e.target.value) || 0 })} className="px-3 py-2 border border-gray-300 rounded-lg" placeholder="End day" /></div><textarea rows={2} value={joinLines(item.deliverables)} onChange={(e) => updateProjectPhase(item.id, { deliverables: splitLines(e.target.value) })} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Phase deliverables, one per line" /></div>)}<textarea rows={3} value={joinLines(projectDuration.criticalPath)} onChange={(e) => setProjectDuration(prev => ({ ...prev, criticalPath: splitLines(e.target.value) }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Critical path items, one per line" /><textarea rows={3} value={joinLines(projectDuration.assumptions)} onChange={(e) => setProjectDuration(prev => ({ ...prev, assumptions: splitLines(e.target.value) }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Timeline assumptions, one per line" /></div>
               )}
 
               {activeTab === 'commercial' && (
