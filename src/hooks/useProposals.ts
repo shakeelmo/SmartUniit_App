@@ -214,26 +214,29 @@ export function useProposals() {
     };
   };
 
-  const sanitizeProposalPayload = (value: any): any => {
+  const sanitizeProposalPayload = (value: any, key = ''): any => {
     if (value === null || value === undefined) return value;
 
     if (typeof File !== 'undefined' && value instanceof File) return undefined;
     if (typeof Blob !== 'undefined' && value instanceof Blob) return undefined;
 
     if (typeof value === 'string') {
-      return value.startsWith('data:') ? undefined : value;
+      const isImageData = value.startsWith('data:image/');
+      const isAllowedLogo = key === 'customerLogo' && isImageData && value.length <= 3 * 1024 * 1024;
+      return value.startsWith('data:') && !isAllowedLogo ? undefined : value;
     }
 
     if (Array.isArray(value)) {
       return value
-        .map(item => sanitizeProposalPayload(item))
+        .map(item => sanitizeProposalPayload(item, key))
         .filter(item => item !== undefined);
     }
 
     if (typeof value === 'object') {
       return Object.fromEntries(
         Object.entries(value)
-          .map(([key, item]) => [key, sanitizeProposalPayload(item)])
+          .filter(([childKey]) => childKey !== 'logoFile')
+          .map(([childKey, item]) => [childKey, sanitizeProposalPayload(item, childKey)])
           .filter(([, item]) => item !== undefined)
       );
     }
