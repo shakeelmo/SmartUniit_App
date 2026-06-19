@@ -56,10 +56,19 @@ const ensureQuotationLineItemColumns = async () => {
   await addColumnIfMissing('quotation_line_items', 'custom_unit', 'TEXT', 'VARCHAR(100) NULL');
 };
 
+const ensureQuotationPointOfContactColumns = async () => {
+  await addColumnIfMissing('quotations', 'point_of_contact_title', 'TEXT', 'VARCHAR(255) NULL');
+  await addColumnIfMissing('quotations', 'point_of_contact_name', 'TEXT', 'VARCHAR(255) NULL');
+  await addColumnIfMissing('quotations', 'point_of_contact_designation', 'TEXT', 'VARCHAR(255) NULL');
+  await addColumnIfMissing('quotations', 'point_of_contact_mobile', 'TEXT', 'VARCHAR(100) NULL');
+  await addColumnIfMissing('quotations', 'point_of_contact_email', 'TEXT', 'VARCHAR(255) NULL');
+};
+
 // Get all quotations
 router.get('/', authenticateToken, requirePermission('quotations', 'read'), async (req, res) => {
   try {
     await ensureQuotationLineItemColumns();
+    await ensureQuotationPointOfContactColumns();
     const { page = 1, limit = 10, status, customer_id } = req.query;
     const offset = (page - 1) * limit;
     
@@ -118,6 +127,7 @@ router.get('/', authenticateToken, requirePermission('quotations', 'read'), asyn
 router.get('/:id', authenticateToken, requirePermission('quotations', 'read'), async (req, res) => {
   try {
     await ensureQuotationLineItemColumns();
+    await ensureQuotationPointOfContactColumns();
     const { id } = req.params;
     
     const quotation = await get(`
@@ -150,6 +160,7 @@ router.get('/:id', authenticateToken, requirePermission('quotations', 'read'), a
 router.post('/', authenticateToken, requirePermission('quotations', 'create'), async (req, res) => {
   try {
     await ensureQuotationLineItemColumns();
+    await ensureQuotationPointOfContactColumns();
     const { 
       amount, 
       total_amount, 
@@ -168,7 +179,17 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
       discountAmount,
       vatRate,
       vatAmount,
-      total
+      total,
+      point_of_contact_title,
+      point_of_contact_name,
+      point_of_contact_designation,
+      point_of_contact_mobile,
+      point_of_contact_email,
+      pointOfContactTitle,
+      pointOfContactName,
+      pointOfContactDesignation,
+      pointOfContactMobile,
+      pointOfContactEmail
     } = req.body;
     
     const finalAmount = amount ?? total_amount ?? total;
@@ -238,6 +259,11 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
       { candidates: ['discount_amount'], value: discountAmount !== undefined ? toNumber(discountAmount, 0) : 0 },
       { candidates: ['vat_rate'], value: vatRate !== undefined ? toNumber(vatRate, 15) : 15 },
       { candidates: ['vat_amount'], value: vatAmount !== undefined ? toNumber(vatAmount, 0) : 0 },
+      { candidates: ['point_of_contact_title'], value: point_of_contact_title ?? pointOfContactTitle ?? 'Smart Universe : Primary Contact of this Project' },
+      { candidates: ['point_of_contact_name'], value: point_of_contact_name ?? pointOfContactName ?? '' },
+      { candidates: ['point_of_contact_designation'], value: point_of_contact_designation ?? pointOfContactDesignation ?? '' },
+      { candidates: ['point_of_contact_mobile'], value: point_of_contact_mobile ?? pointOfContactMobile ?? '' },
+      { candidates: ['point_of_contact_email'], value: point_of_contact_email ?? pointOfContactEmail ?? '' },
     ];
 
     const insertColumns = ['id'];
@@ -245,7 +271,6 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
 
     for (const field of portableFields) {
       if (field.value === undefined) continue;
-
       const column = field.candidates.find(candidate => columnNames.has(candidate));
       if (column) {
         insertColumns.push(column);
@@ -307,6 +332,7 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
 router.put('/:id', authenticateToken, requirePermission('quotations', 'update'), async (req, res) => {
   try {
     await ensureQuotationLineItemColumns();
+    await ensureQuotationPointOfContactColumns();
     const { id } = req.params;
     console.log('Update quotation request for ID:', id);
     console.log('Request body:', req.body);
@@ -329,7 +355,17 @@ router.put('/:id', authenticateToken, requirePermission('quotations', 'update'),
       discountAmount,
       vatRate,
       vatAmount,
-      total
+      total,
+      point_of_contact_title,
+      point_of_contact_name,
+      point_of_contact_designation,
+      point_of_contact_mobile,
+      point_of_contact_email,
+      pointOfContactTitle,
+      pointOfContactName,
+      pointOfContactDesignation,
+      pointOfContactMobile,
+      pointOfContactEmail
     } = req.body;
 
     const finalAmount = amount ?? total_amount ?? total;
@@ -381,6 +417,11 @@ router.put('/:id', authenticateToken, requirePermission('quotations', 'update'),
     setIfColumnExists(['discount_amount'], discountAmount, (v) => toNumber(v, 0));
     setIfColumnExists(['vat_rate'], vatRate, (v) => toNumber(v, 15));
     setIfColumnExists(['vat_amount'], vatAmount, (v) => toNumber(v, 0));
+    setIfColumnExists(['point_of_contact_title'], point_of_contact_title ?? pointOfContactTitle, (v) => v ?? 'Smart Universe : Primary Contact of this Project');
+    setIfColumnExists(['point_of_contact_name'], point_of_contact_name ?? pointOfContactName, (v) => v ?? '');
+    setIfColumnExists(['point_of_contact_designation'], point_of_contact_designation ?? pointOfContactDesignation, (v) => v ?? '');
+    setIfColumnExists(['point_of_contact_mobile'], point_of_contact_mobile ?? pointOfContactMobile, (v) => v ?? '');
+    setIfColumnExists(['point_of_contact_email'], point_of_contact_email ?? pointOfContactEmail, (v) => v ?? '');
 
     if (columnNames.has('customer_name') && normalizedCustomerId !== undefined) {
       let legacyCustomerName = 'Unknown';

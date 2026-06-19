@@ -46,6 +46,7 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   const customer = quote.customer || {};
   const companyInfo = settings?.companyInfo || {};
   const bankingDetails = companyInfo.bankingDetails || {};
+  const pointOfContact = quote.pointOfContact || {};
   const quoteNumber = quote.quoteNumber || quote.quote_number || 'Q-001';
   const quoteDate = new Date(quote.created_at || quote.createdAt || Date.now()).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -137,6 +138,7 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
         .terms { border: 1px solid #e5e7eb; border-radius: 12px; background: #fafafa; padding: 12px 14px; min-height: 100%; box-sizing: border-box; }
         .terms p { margin: 0 0 4px; font-size: 12px; color: #374151; line-height: 1.5; white-space: pre-wrap; }
         .terms p:last-child { margin-bottom: 0; }
+        .subsection-title { margin: 14px 0 8px; font-size: 13px; font-weight: 700; color: #1e40af; }
         .content-grow { flex: 1; }
         .footer { margin-top: 20px; background: linear-gradient(180deg, #1f2937 0%, #111827 100%); color: #ffffff; padding: 14px 18px; text-align: center; font-size: 11px; border-radius: 12px; }
         .footer strong { display: block; font-size: 12px; margin-bottom: 4px; }
@@ -226,6 +228,11 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
             <p><strong>Bank:</strong> ${escapeHtml(bankingDetails.bankName || 'Saudi National Bank')}</p>
             <p><strong>IBAN:</strong> ${escapeHtml(bankingDetails.iban || 'SA3610000041000000080109')}</p>
             <p><strong>Account Number:</strong> ${escapeHtml(bankingDetails.accountNumber || '41000000080109')}</p>
+            <div class="subsection-title">${escapeHtml(pointOfContact.title || 'Smart Universe : Primary Contact of this Project')}</div>
+            <p><strong>Name:</strong> ${escapeHtml(pointOfContact.name || 'N/A')}</p>
+            <p><strong>Designation:</strong> ${escapeHtml(pointOfContact.designation || 'N/A')}</p>
+            <p><strong>Mobily Number:</strong> ${escapeHtml(pointOfContact.mobileNumber || 'N/A')}</p>
+            <p><strong>Email Address:</strong> ${escapeHtml(pointOfContact.emailAddress || 'N/A')}</p>
           </div>
         </div>
       </div>

@@ -47,6 +47,13 @@ export interface Quote {
     iban: string;
     swiftCode: string;
   };
+  pointOfContact?: {
+    title?: string;
+    name?: string;
+    designation?: string;
+    mobileNumber?: string;
+    emailAddress?: string;
+  };
   createdAt: Date;
   updatedAt: Date;
   createdBy: string;

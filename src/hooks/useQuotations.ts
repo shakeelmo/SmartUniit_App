@@ -94,6 +94,13 @@ export function useQuotations() {
         const terms = q.terms ?? q.terms_text ?? q.notes ?? '';
         const scopeOfWork = q.scope_of_work || q.scopeOfWork || '';
         const scopeOfWorkAr = q.scope_of_work_ar || q.scopeOfWorkAr || '';
+        const pointOfContact = {
+          title: q.point_of_contact_title || q.pointOfContactTitle || 'Smart Universe : Primary Contact of this Project',
+          name: q.point_of_contact_name || q.pointOfContactName || '',
+          designation: q.point_of_contact_designation || q.pointOfContactDesignation || '',
+          mobileNumber: q.point_of_contact_mobile || q.pointOfContactMobile || '',
+          emailAddress: q.point_of_contact_email || q.pointOfContactEmail || '',
+        };
         const quoteNumber = q.quotation_number || q.quote_number || q.quoteNumber || (q.id ? `Q-${new Date().getFullYear()}-${String(q.id).padStart(4, '0')}` : 'DRAFT');
 
         return {
@@ -114,6 +121,7 @@ export function useQuotations() {
           notesAr: q.notesAr || q.notes_ar || '',
           scopeOfWork,
           scopeOfWorkAr,
+          pointOfContact,
           terms,
           termsAr: q.termsAr || q.terms_ar || '',
           assignedTo: q.assignedTo || q.assigned_to || '',
@@ -204,6 +212,16 @@ export function useQuotations() {
         notes: quote.notes ?? quote.terms ?? '',
         scopeOfWork: quote.scopeOfWork ?? '',
         scopeOfWorkAr: quote.scopeOfWorkAr ?? '',
+        pointOfContactTitle: quote.pointOfContact?.title ?? 'Smart Universe : Primary Contact of this Project',
+        point_of_contact_title: quote.pointOfContact?.title ?? 'Smart Universe : Primary Contact of this Project',
+        pointOfContactName: quote.pointOfContact?.name ?? '',
+        point_of_contact_name: quote.pointOfContact?.name ?? '',
+        pointOfContactDesignation: quote.pointOfContact?.designation ?? '',
+        point_of_contact_designation: quote.pointOfContact?.designation ?? '',
+        pointOfContactMobile: quote.pointOfContact?.mobileNumber ?? '',
+        point_of_contact_mobile: quote.pointOfContact?.mobileNumber ?? '',
+        pointOfContactEmail: quote.pointOfContact?.emailAddress ?? '',
+        point_of_contact_email: quote.pointOfContact?.emailAddress ?? '',
         lineItems: quote.lineItems,
         subtotal: quote.subtotal,
         discountType: quote.discountType,
@@ -263,6 +281,16 @@ export function useQuotations() {
         currency: updates.currency || 'SAR',
         terms: updates.terms ?? updates.notes ?? '',
         notes: updates.notes ?? updates.terms ?? '',
+        pointOfContactTitle: updates.pointOfContact?.title,
+        point_of_contact_title: updates.pointOfContact?.title,
+        pointOfContactName: updates.pointOfContact?.name,
+        point_of_contact_name: updates.pointOfContact?.name,
+        pointOfContactDesignation: updates.pointOfContact?.designation,
+        point_of_contact_designation: updates.pointOfContact?.designation,
+        pointOfContactMobile: updates.pointOfContact?.mobileNumber,
+        point_of_contact_mobile: updates.pointOfContact?.mobileNumber,
+        pointOfContactEmail: updates.pointOfContact?.emailAddress,
+        point_of_contact_email: updates.pointOfContact?.emailAddress,
         scopeOfWork: updates.scopeOfWork ?? '',
         scopeOfWorkAr: updates.scopeOfWorkAr ?? '',
         subtotal: updates.subtotal,

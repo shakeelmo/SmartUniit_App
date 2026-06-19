@@ -49,6 +49,11 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
     assignedTo: user?.id || '',
     discountType: 'percentage' as 'percentage' | 'fixed',
     discountValue: 0,
+    pointOfContactTitle: 'Smart Universe : Primary Contact of this Project',
+    pointOfContactName: '',
+    pointOfContactDesignation: '',
+    pointOfContactMobile: '',
+    pointOfContactEmail: '',
   });
 
   const [lineItems, setLineItems] = useState<QuoteLineItem[]>([{
@@ -79,6 +84,11 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
         assignedTo: editQuote.assignedTo || user?.id || '',
         discountType: editQuote.discountType || 'percentage',
         discountValue: editQuote.discountValue || 0,
+        pointOfContactTitle: editQuote.pointOfContact?.title || 'Smart Universe : Primary Contact of this Project',
+        pointOfContactName: editQuote.pointOfContact?.name || '',
+        pointOfContactDesignation: editQuote.pointOfContact?.designation || '',
+        pointOfContactMobile: editQuote.pointOfContact?.mobileNumber || '',
+        pointOfContactEmail: editQuote.pointOfContact?.emailAddress || '',
       });
       
       // Ensure line items have proper totals calculated
@@ -107,6 +117,11 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
         assignedTo: user?.id || '',
         discountType: 'percentage',
         discountValue: 0,
+        pointOfContactTitle: 'Smart Universe : Primary Contact of this Project',
+        pointOfContactName: '',
+        pointOfContactDesignation: '',
+        pointOfContactMobile: '',
+        pointOfContactEmail: '',
       });
       setLineItems([{
         id: '1',
@@ -268,6 +283,13 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
       scopeOfWorkAr: formData.scopeOfWorkAr,
       terms: formData.terms,
       termsAr: formData.termsAr,
+      pointOfContact: {
+        title: formData.pointOfContactTitle,
+        name: formData.pointOfContactName,
+        designation: formData.pointOfContactDesignation,
+        mobileNumber: formData.pointOfContactMobile,
+        emailAddress: formData.pointOfContactEmail,
+      },
       assignedTo: formData.assignedTo,
       quoteNumber: editQuote ? editQuote.quoteNumber : generateQuotationNumber(),
       createdBy: user?.id || '',
@@ -325,6 +347,13 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
       scopeOfWorkAr: formData.scopeOfWorkAr,
       terms: formData.terms,
       termsAr: formData.termsAr,
+      pointOfContact: {
+        title: formData.pointOfContactTitle,
+        name: formData.pointOfContactName,
+        designation: formData.pointOfContactDesignation,
+        mobileNumber: formData.pointOfContactMobile,
+        emailAddress: formData.pointOfContactEmail,
+      },
       assignedTo: formData.assignedTo,
       createdBy: user?.id || '',
       createdAt: editQuote?.createdAt || new Date(),
@@ -890,6 +919,77 @@ Timeline: 4-6 weeks from project approval"
               <p><strong>IBAN:</strong> SA3610000041000000080109</p>
               <p><strong>Account:</strong> 41000000080109</p>
               <p><strong>VAT:</strong> 300155266800003</p>
+            </div>
+          </div>
+
+          <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
+            <h3 className="text-lg font-semibold text-dark-900 mb-2">
+              Point of Contact
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              This will appear under Banking Details in the quotation document.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-dark-700 mb-2">
+                  Section Title
+                </label>
+                <input
+                  type="text"
+                  value={formData.pointOfContactTitle}
+                  onChange={(e) => setFormData(prev => ({ ...prev, pointOfContactTitle: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="Smart Universe : Primary Contact of this Project"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-dark-700 mb-2">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  value={formData.pointOfContactName}
+                  onChange={(e) => setFormData(prev => ({ ...prev, pointOfContactName: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="Contact name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-dark-700 mb-2">
+                  Designation
+                </label>
+                <input
+                  type="text"
+                  value={formData.pointOfContactDesignation}
+                  onChange={(e) => setFormData(prev => ({ ...prev, pointOfContactDesignation: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="Designation"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-dark-700 mb-2">
+                  Mobile Number
+                </label>
+                <input
+                  type="text"
+                  value={formData.pointOfContactMobile}
+                  onChange={(e) => setFormData(prev => ({ ...prev, pointOfContactMobile: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="Mobile number"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-dark-700 mb-2">
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={formData.pointOfContactEmail}
+                  onChange={(e) => setFormData(prev => ({ ...prev, pointOfContactEmail: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  placeholder="Email address"
+                />
+              </div>
             </div>
           </div>
 
