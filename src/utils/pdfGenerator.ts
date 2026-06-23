@@ -265,39 +265,44 @@ function drawCompanyHeader(
   arabicHeaderImages?: { full?: string; compact?: string }
 ) {
   const companyInfo = settings?.companyInfo || {};
-  const englishLeft = 28;
-  const englishWidth = 80;
-  const quoteBoxTop = 32;
-  const quoteBoxX = 136;
-  const quoteBoxWidth = 62;
+  const leftColX = 12;
+  const leftTextX = 29;
+  const leftColWidth = 74;
+  const middleColX = 92;
+  const middleColWidth = 56;
+  const rightColX = 154;
+  const rightColWidth = 44;
+  const quoteBoxTop = 11;
+  const quoteBoxX = rightColX;
+  const quoteBoxWidth = rightColWidth;
 
   pdf.setFillColor(255, 255, 255);
   pdf.rect(0, 0, 210, HEADER_HEIGHT, 'F');
 
   try {
-    pdf.addImage(SMART_UNIVERSE_LOGO_BASE64, 'JPEG', 12, 10, 15, 15, undefined, 'FAST');
+    pdf.addImage(SMART_UNIVERSE_LOGO_BASE64, 'JPEG', leftColX, 10, 14, 14, undefined, 'FAST');
   } catch {
     // Keep the export working even if the image fails to decode.
   }
 
   const companyName = companyInfo.name || 'Smart Universe Communication and Information Technology';
-  const wrappedName = pdf.splitTextToSize(companyName, englishWidth);
+  const wrappedName = pdf.splitTextToSize(companyName, leftColWidth - 10).slice(0, 2);
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(29, 78, 216);
-  pdf.setFontSize(wrappedName.length > 1 ? 13.5 : 15.5);
-  pdf.text(wrappedName.slice(0, 2), englishLeft, 15);
+  pdf.setFontSize(wrappedName.length > 1 ? 11.5 : 12.5);
+  pdf.text(wrappedName, leftTextX, 15);
 
   pdf.setFont('helvetica', 'normal');
   pdf.setTextColor(55, 65, 81);
-  pdf.setFontSize(8.1);
+  pdf.setFontSize(7.2);
   const addressLines = pdf.splitTextToSize(
     companyInfo.address || 'Office # 3 ln, Al Dirah Dist, P.O.Box 12633, Riyadh - 11461 KSA',
-    englishWidth
+    leftColWidth - 10
   );
-  pdf.text(addressLines, englishLeft, 24.5);
-  pdf.text(`Tel: ${companyInfo.phone || '011-4917295'}`, englishLeft, 37.5);
-  pdf.text(`VAT: ${companyInfo.vatNumber || '314076518400003'}`, englishLeft, 43);
-  pdf.text(`CR: ${companyInfo.crNumber || '1010973808'}`, englishLeft, 48.5);
+  pdf.text(addressLines, leftTextX, 24);
+  pdf.text(`Tel: ${companyInfo.phone || '011-4917295'}`, leftTextX, 35.5);
+  pdf.text(`VAT: ${companyInfo.vatNumber || '314076518400003'}`, leftTextX, 40.5);
+  pdf.text(`CR: ${companyInfo.crNumber || '1010973808'}`, leftTextX, 45.5);
 
   const arabicImage = arabicHeaderImages?.full || arabicHeaderImages?.compact;
   if (arabicImage) {
@@ -305,9 +310,9 @@ function drawCompanyHeader(
       pdf.addImage(
         arabicImage,
         'PNG',
-        108,
-        11,
-        74,
+        middleColX,
+        12,
+        middleColWidth,
         14,
         undefined,
         'FAST'
@@ -317,19 +322,19 @@ function drawCompanyHeader(
     }
   } else {
     const arabicName = companyInfo.nameAr || 'مؤسسة الكون الذكي للاتصالات و تقنية المعلومات';
-    const arabicNameLines = splitArabicText(pdf, arabicName, 54, 11.2);
+    const arabicNameLines = splitArabicText(pdf, arabicName, middleColWidth, 10.2);
     pdf.setTextColor(30, 64, 175);
-    pdf.setFontSize(11.2);
+    pdf.setFontSize(10.2);
     let arabicNameY = 16;
-    arabicNameLines.slice(0, 3).forEach((line) => {
-      drawArabicText(pdf, line, 196, arabicNameY, { align: 'right' });
+    arabicNameLines.slice(0, 2).forEach((line) => {
+      drawArabicText(pdf, line, middleColX + middleColWidth, arabicNameY, { align: 'right' });
       arabicNameY += 4.1;
     });
   }
 
   pdf.setDrawColor(209, 213, 219);
   pdf.setFillColor(248, 250, 252);
-  pdf.roundedRect(quoteBoxX, quoteBoxTop, quoteBoxWidth, 18, 3, 3, 'FD');
+  pdf.roundedRect(quoteBoxX, quoteBoxTop, quoteBoxWidth, 16, 3, 3, 'FD');
 
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(107, 114, 128);
@@ -366,19 +371,21 @@ function drawHeader(
   pdf.setTextColor(30, 64, 175);
   pdf.setFontSize(9);
   if (!includeCustomer) {
-    pdf.text('Quotation #', 141, 16);
-    pdf.text(quoteNumber, 194, 16, { align: 'right' });
-    pdf.text('Date', 141, 22);
-    pdf.text(quoteDate, 194, 22, { align: 'right' });
+    pdf.setFontSize(7.2);
+    pdf.text('Quotation #', rightColX + 3, 17);
+    pdf.text(quoteNumber, rightColX + quoteBoxWidth - 3, 17, { align: 'right' });
+    pdf.text('Date', rightColX + 3, 22.5);
+    pdf.text(quoteDate, rightColX + quoteBoxWidth - 3, 22.5, { align: 'right' });
     pdf.setDrawColor(219, 228, 240);
     pdf.line(12, CONTINUATION_TABLE_START_Y - 4, 198, CONTINUATION_TABLE_START_Y - 4);
     return;
   }
 
-  pdf.text('Quotation #', 141, 16);
-  pdf.text(quoteNumber, 194, 16, { align: 'right' });
-  pdf.text('Date', 141, 22);
-  pdf.text(quoteDate, 194, 22, { align: 'right' });
+  pdf.setFontSize(7.2);
+  pdf.text('Quotation #', rightColX + 3, 17);
+  pdf.text(quoteNumber, rightColX + quoteBoxWidth - 3, 17, { align: 'right' });
+  pdf.text('Date', rightColX + 3, 22.5);
+  pdf.text(quoteDate, rightColX + quoteBoxWidth - 3, 22.5, { align: 'right' });
 
   pdf.setFontSize(16);
   pdf.text('Quotation', 12, 66);
