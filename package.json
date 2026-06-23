@@ -3,6 +3,7 @@
   "private": true,
   "version": "1.2.0",
   "scripts": {
+    "prebuild": "rm -rf public/assets && rm -f public/index.html && find public -maxdepth 1 -name '._*' -delete",
     "dev": "vite",
     "build": "rm -rf dist && vite build && if [ -f public/.htaccess ]; then cp public/.htaccess dist/.htaccess; fi",
     "lint": "eslint .",
