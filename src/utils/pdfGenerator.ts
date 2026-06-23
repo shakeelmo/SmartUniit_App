@@ -8,7 +8,7 @@ let amiriFontReadyPromise: Promise<void> | null = null;
 let arabicHeaderImagePromise: Promise<{ full?: string; compact?: string }> | null = null;
 
 const FIRST_PAGE_TABLE_START_Y = 96;
-const CONTINUATION_TABLE_START_Y = 38;
+const CONTINUATION_TABLE_START_Y = 44;
 const PAGE_FOOTER_TOP_MARGIN = 28;
 
 function escapeHtml(value: any): string {
@@ -271,7 +271,7 @@ function drawCompanyHeader(
   const arabicRightX = 196;
 
   pdf.setFillColor(255, 255, 255);
-  pdf.rect(0, 0, 210, compact ? 34 : 56, 'F');
+  pdf.rect(0, 0, 210, compact ? 40 : 56, 'F');
 
   try {
     pdf.addImage(SMART_UNIVERSE_LOGO_BASE64, 'JPEG', 12, logoTop, compact ? 12 : 16, compact ? 12 : 16, undefined, 'FAST');
@@ -304,7 +304,16 @@ function drawCompanyHeader(
   const arabicImage = compact ? arabicHeaderImages?.compact : arabicHeaderImages?.full;
   if (arabicImage) {
     try {
-      pdf.addImage(arabicImage, 'PNG', compact ? 112 : 110, compact ? 5.5 : 8, compact ? 54 : 72, compact ? 11 : 28, undefined, 'FAST');
+      pdf.addImage(
+        arabicImage,
+        'PNG',
+        compact ? 118 : 112,
+        compact ? 27 : 29,
+        compact ? 54 : 80,
+        compact ? 8 : 18,
+        undefined,
+        'FAST'
+      );
     } catch {
       // fall back to text mode below if image decoding fails
     }
@@ -597,7 +606,7 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
 
   pdf.setFont('helvetica', 'normal');
   pdf.setTextColor(55, 65, 81);
-  pdf.setFontSize(6.7);
+  pdf.setFontSize(6.2);
   pdf.text(wrappedTerms, leftX + 4.5, boxTop + 11.5, { maxWidth: boxWidth - 9, lineHeightFactor: 1.08 });
   pdf.setFontSize(7.6);
   pdf.text(wrappedBank, rightX + 4.5, boxTop + 11.5, { maxWidth: boxWidth - 9, lineHeightFactor: 1.12 });
