@@ -5,6 +5,7 @@ import amiriFontUrl from '../../Amiri-Regular.ttf?url';
 
 let riyalSymbolImagePromise: Promise<string | undefined> | null = null;
 let amiriFontReadyPromise: Promise<void> | null = null;
+let arabicHeaderImagePromise: Promise<{ full?: string; compact?: string }> | null = null;
 
 const FIRST_PAGE_TABLE_START_Y = 96;
 const CONTINUATION_TABLE_START_Y = 38;
@@ -99,6 +100,95 @@ async function ensureAmiriFont(pdf: jsPDF): Promise<void> {
   await amiriFontReadyPromise;
 }
 
+async function loadArabicHeaderImages(settings: any): Promise<{ full?: string; compact?: string }> {
+  if (arabicHeaderImagePromise) {
+    return arabicHeaderImagePromise;
+  }
+  if (typeof document === 'undefined') return {};
+
+  arabicHeaderImagePromise = (async () => {
+    try {
+      const font = new FontFace('AmiriCanvas', `url(${amiriFontUrl})`);
+      await font.load();
+      (document as any).fonts?.add(font);
+      await (document as any).fonts?.ready;
+    } catch {
+      // Fall back to system fonts if the explicit font face fails.
+    }
+
+    const companyInfo = settings?.companyInfo || {};
+    const fullLines = [
+      companyInfo.nameAr || 'مؤسسة الكون الذكي للاتصالات و تقنية المعلومات',
+      companyInfo.addressAr || 'مكتب رقم 3، حي الديرة، ص.ب 12633، الرياض 11461، المملكة العربية السعودية',
+      `رقم الضريبة المضافة: ${companyInfo.vatNumber || '314076518400003'}`,
+      `السجل التجاري: ${companyInfo.crNumber || '1010973808'}`,
+    ];
+    const compactLines = [companyInfo.nameAr || 'مؤسسة الكون الذكي للاتصالات و تقنية المعلومات'];
+
+    const renderBlock = (lines: string[], width: number, height: number, styles: { titleSize: number; bodySize: number }) => {
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return undefined;
+
+      ctx.clearRect(0, 0, width, height);
+      ctx.textAlign = 'right';
+      ctx.direction = 'rtl';
+      ctx.fillStyle = '#1e40af';
+      ctx.font = `700 ${styles.titleSize}px "AmiriCanvas", "Amiri", "Tahoma", sans-serif`;
+
+      const maxTextWidth = width - 8;
+      const wrapLine = (text: string, font: string) => {
+        ctx.font = font;
+        const words = text.split(' ');
+        const rendered: string[] = [];
+        let current = '';
+        for (const word of words) {
+          const next = current ? `${current} ${word}` : word;
+          if (ctx.measureText(next).width > maxTextWidth && current) {
+            rendered.push(current);
+            current = word;
+          } else {
+            current = next;
+          }
+        }
+        if (current) rendered.push(current);
+        return rendered;
+      };
+
+      let y = styles.titleSize;
+      const titleFont = `700 ${styles.titleSize}px "AmiriCanvas", "Amiri", "Tahoma", sans-serif`;
+      const bodyFont = `400 ${styles.bodySize}px "AmiriCanvas", "Amiri", "Tahoma", sans-serif`;
+      wrapLine(lines[0], titleFont).slice(0, 3).forEach((line) => {
+        ctx.font = titleFont;
+        ctx.fillStyle = '#1e40af';
+        ctx.fillText(line, width - 4, y);
+        y += styles.titleSize + 2;
+      });
+
+      for (const line of lines.slice(1)) {
+        const wrapped = wrapLine(line, bodyFont);
+        ctx.font = bodyFont;
+        ctx.fillStyle = '#374151';
+        wrapped.slice(0, 2).forEach((segment) => {
+          ctx.fillText(segment, width - 4, y);
+          y += styles.bodySize + 2;
+        });
+      }
+
+      return canvas.toDataURL('image/png');
+    };
+
+    return {
+      full: renderBlock(fullLines, 300, 150, { titleSize: 24, bodySize: 16 }),
+      compact: renderBlock(compactLines, 220, 46, { titleSize: 18, bodySize: 14 }),
+    };
+  })();
+
+  return arabicHeaderImagePromise;
+}
+
 function drawCurrencyValue(
   pdf: jsPDF,
   amountText: string,
@@ -167,7 +257,13 @@ function splitArabicText(pdf: jsPDF, text: string, width: number, fontSize: numb
   return Array.isArray(lines) ? lines : [String(lines)];
 }
 
-function drawCompanyHeader(pdf: jsPDF, settings: any, pageNumber: number, compact = false) {
+function drawCompanyHeader(
+  pdf: jsPDF,
+  settings: any,
+  pageNumber: number,
+  compact = false,
+  arabicHeaderImages?: { full?: string; compact?: string }
+) {
   const companyInfo = settings?.companyInfo || {};
   const englishTop = compact ? 8 : 16;
   const logoTop = compact ? 7 : 10;
@@ -205,30 +301,23 @@ function drawCompanyHeader(pdf: jsPDF, settings: any, pageNumber: number, compac
     pdf.text(`CR: ${companyInfo.crNumber || '1010973808'}`, 27, 50);
   }
 
-  const arabicName = companyInfo.nameAr || 'مؤسسة الكون الذكي للاتصالات و تقنية المعلومات';
-  const arabicAddress = companyInfo.addressAr || 'مكتب رقم 3، حي الديرة، ص.ب 12633، الرياض 11461، المملكة العربية السعودية';
-  const arabicNameLines = splitArabicText(pdf, arabicName, compact ? 42 : 54, compact ? 8.9 : 11.2);
-  const arabicAddressLines = compact
-    ? []
-    : splitArabicText(pdf, arabicAddress, 58, 8.6);
-
-  pdf.setTextColor(30, 64, 175);
-  pdf.setFontSize(compact ? 8.9 : 11.2);
-  let arabicNameY = compact ? 10 : 13;
-  arabicNameLines.slice(0, compact ? 2 : 3).forEach((line) => {
-    drawArabicText(pdf, line, arabicRightX, arabicNameY, { align: 'right' });
-    arabicNameY += compact ? 3.6 : 4.1;
-  });
-  if (!compact) {
-    pdf.setTextColor(55, 65, 81);
-    pdf.setFontSize(8.7);
-    let arabicY = arabicNameY + 1.2;
-    arabicAddressLines.forEach((line: string) => {
-      drawArabicText(pdf, line, arabicRightX, arabicY, { align: 'right' });
-      arabicY += 4.2;
+  const arabicImage = compact ? arabicHeaderImages?.compact : arabicHeaderImages?.full;
+  if (arabicImage) {
+    try {
+      pdf.addImage(arabicImage, 'PNG', compact ? 112 : 110, compact ? 5.5 : 8, compact ? 54 : 72, compact ? 11 : 28, undefined, 'FAST');
+    } catch {
+      // fall back to text mode below if image decoding fails
+    }
+  } else {
+    const arabicName = companyInfo.nameAr || 'مؤسسة الكون الذكي للاتصالات و تقنية المعلومات';
+    const arabicNameLines = splitArabicText(pdf, arabicName, compact ? 42 : 54, compact ? 8.9 : 11.2);
+    pdf.setTextColor(30, 64, 175);
+    pdf.setFontSize(compact ? 8.9 : 11.2);
+    let arabicNameY = compact ? 10 : 13;
+    arabicNameLines.slice(0, compact ? 2 : 3).forEach((line) => {
+      drawArabicText(pdf, line, arabicRightX, arabicNameY, { align: 'right' });
+      arabicNameY += compact ? 3.6 : 4.1;
     });
-    drawArabicText(pdf, `رقم الضريبة المضافة: ${companyInfo.vatNumber || '314076518400003'}`, arabicRightX, Math.min(arabicY + 2.6, 36.5), { align: 'right' });
-    drawArabicText(pdf, `السجل التجاري: ${companyInfo.crNumber || '1010973808'}`, arabicRightX, Math.min(arabicY + 7, 41), { align: 'right' });
   }
 
   pdf.setDrawColor(209, 213, 219);
@@ -241,7 +330,14 @@ function drawCompanyHeader(pdf: jsPDF, settings: any, pageNumber: number, compac
   pdf.text(`Page ${pageNumber}`, 198, compact ? 5.5 : 8, { align: 'right' });
 }
 
-function drawHeader(pdf: jsPDF, quote: any, settings: any, pageNumber: number, includeCustomer = true) {
+function drawHeader(
+  pdf: jsPDF,
+  quote: any,
+  settings: any,
+  pageNumber: number,
+  includeCustomer = true,
+  arabicHeaderImages?: { full?: string; compact?: string }
+) {
   const customer = quote.customer || {};
   const quoteNumber = quote.quoteNumber || quote.quote_number || 'Q-001';
   const quoteDate = new Date(quote.created_at || quote.createdAt || Date.now()).toLocaleDateString('en-US', {
@@ -257,7 +353,7 @@ function drawHeader(pdf: jsPDF, quote: any, settings: any, pageNumber: number, i
       })
     : '30 days';
 
-  drawCompanyHeader(pdf, settings, pageNumber, !includeCustomer);
+  drawCompanyHeader(pdf, settings, pageNumber, !includeCustomer, arabicHeaderImages);
 
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(30, 64, 175);
@@ -319,6 +415,7 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   const riyalSymbolImage = await loadRiyalSymbolImage();
   const pdf = new jsPDF('p', 'mm', 'a4');
   await ensureAmiriFont(pdf);
+  const arabicHeaderImages = await loadArabicHeaderImages(settings);
   const lineItems = (quote.lineItems || [])
     .map((item: any) => {
       const quantity = Number(item.quantity || 0);
@@ -351,7 +448,7 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   const termsLines = splitLines(quote.terms || 'Payment terms: 30 days from invoice date');
 
   let pageNumber = 1;
-  drawHeader(pdf, quote, settings, pageNumber, true);
+  drawHeader(pdf, quote, settings, pageNumber, true, arabicHeaderImages);
 
   const bodyRows: RowInput[] = lineItems.length
       ? lineItems.map((item: any, index: number) => ([
@@ -401,7 +498,7 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
     didDrawPage: (data) => {
       if (data.pageNumber > 1) {
         pageNumber = data.pageNumber;
-        drawHeader(pdf, quote, settings, pageNumber, false);
+        drawHeader(pdf, quote, settings, pageNumber, false, arabicHeaderImages);
       }
       drawFooter(pdf);
     },
@@ -425,7 +522,7 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
     }
     pdf.addPage();
     pageNumber += 1;
-    drawHeader(pdf, quote, settings, pageNumber, false);
+    drawHeader(pdf, quote, settings, pageNumber, false, arabicHeaderImages);
     drawFooter(pdf);
     currentY = CONTINUATION_TABLE_START_Y;
   };
@@ -500,7 +597,7 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
 
   pdf.setFont('helvetica', 'normal');
   pdf.setTextColor(55, 65, 81);
-  pdf.setFontSize(7.1);
+  pdf.setFontSize(6.7);
   pdf.text(wrappedTerms, leftX + 4.5, boxTop + 11.5, { maxWidth: boxWidth - 9, lineHeightFactor: 1.08 });
   pdf.setFontSize(7.6);
   pdf.text(wrappedBank, rightX + 4.5, boxTop + 11.5, { maxWidth: boxWidth - 9, lineHeightFactor: 1.12 });
