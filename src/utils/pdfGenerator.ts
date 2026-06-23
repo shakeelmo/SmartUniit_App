@@ -7,17 +7,19 @@ let riyalSymbolImagePromise: Promise<string | undefined> | null = null;
 let amiriFontReadyPromise: Promise<void> | null = null;
 let arabicHeaderImagePromise: Promise<{ full?: string; compact?: string }> | null = null;
 
-const HEADER_HEIGHT = 58;
-const FIRST_PAGE_TABLE_START_Y = 98;
-const CONTINUATION_TABLE_START_Y = 62;
+const HEADER_HEIGHT = 62;
+const FIRST_PAGE_TABLE_START_Y = 102;
+const CONTINUATION_TABLE_START_Y = 66;
 const PAGE_FOOTER_TOP_MARGIN = 24;
 const HEADER_LEFT_COL_X = 12;
 const HEADER_LEFT_TEXT_X = 29;
-const HEADER_LEFT_COL_WIDTH = 74;
-const HEADER_MIDDLE_COL_X = 92;
-const HEADER_MIDDLE_COL_WIDTH = 56;
-const HEADER_RIGHT_COL_X = 154;
-const HEADER_RIGHT_COL_WIDTH = 44;
+const HEADER_LEFT_COL_WIDTH = 62;
+const HEADER_MIDDLE_COL_X = 108;
+const HEADER_MIDDLE_COL_WIDTH = 58;
+const HEADER_RIGHT_COL_X = 150;
+const HEADER_RIGHT_COL_WIDTH = 48;
+const HEADER_QUOTE_BOX_TOP = 23;
+const HEADER_QUOTE_BOX_HEIGHT = 16;
 
 function escapeHtml(value: any): string {
   return String(value ?? '')
@@ -272,7 +274,7 @@ function drawCompanyHeader(
   arabicHeaderImages?: { full?: string; compact?: string }
 ) {
   const companyInfo = settings?.companyInfo || {};
-  const quoteBoxTop = 11;
+  const quoteBoxTop = HEADER_QUOTE_BOX_TOP;
   const quoteBoxX = HEADER_RIGHT_COL_X;
   const quoteBoxWidth = HEADER_RIGHT_COL_WIDTH;
 
@@ -286,34 +288,34 @@ function drawCompanyHeader(
   }
 
   const companyName = companyInfo.name || 'Smart Universe Communication and Information Technology';
-  const wrappedName = pdf.splitTextToSize(companyName, HEADER_LEFT_COL_WIDTH - 10).slice(0, 2);
+  const wrappedName = pdf.splitTextToSize(companyName, HEADER_LEFT_COL_WIDTH - 6).slice(0, 2);
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(29, 78, 216);
-  pdf.setFontSize(wrappedName.length > 1 ? 11.5 : 12.5);
-  pdf.text(wrappedName, HEADER_LEFT_TEXT_X, 15);
+  pdf.setFontSize(wrappedName.length > 1 ? 10.4 : 11.2);
+  pdf.text(wrappedName, HEADER_LEFT_TEXT_X, 14.5);
 
   pdf.setFont('helvetica', 'normal');
   pdf.setTextColor(55, 65, 81);
-  pdf.setFontSize(7.2);
+  pdf.setFontSize(6.9);
   const addressLines = pdf.splitTextToSize(
     companyInfo.address || 'Office # 3 ln, Al Dirah Dist, P.O.Box 12633, Riyadh - 11461 KSA',
-    HEADER_LEFT_COL_WIDTH - 10
+    HEADER_LEFT_COL_WIDTH - 6
   );
-  pdf.text(addressLines, HEADER_LEFT_TEXT_X, 24);
-  pdf.text(`Tel: ${companyInfo.phone || '011-4917295'}`, HEADER_LEFT_TEXT_X, 35.5);
-  pdf.text(`VAT: ${companyInfo.vatNumber || '314076518400003'}`, HEADER_LEFT_TEXT_X, 40.5);
-  pdf.text(`CR: ${companyInfo.crNumber || '1010973808'}`, HEADER_LEFT_TEXT_X, 45.5);
+  pdf.text(addressLines, HEADER_LEFT_TEXT_X, 22);
+  pdf.text(`Tel: ${companyInfo.phone || '011-4917295'}`, HEADER_LEFT_TEXT_X, 35);
+  pdf.text(`VAT: ${companyInfo.vatNumber || '314076518400003'}`, HEADER_LEFT_TEXT_X, 40);
+  pdf.text(`CR: ${companyInfo.crNumber || '1010973808'}`, HEADER_LEFT_TEXT_X, 45);
 
-  const arabicImage = arabicHeaderImages?.full || arabicHeaderImages?.compact;
+  const arabicImage = arabicHeaderImages?.compact || arabicHeaderImages?.full;
   if (arabicImage) {
     try {
       pdf.addImage(
         arabicImage,
         'PNG',
         HEADER_MIDDLE_COL_X,
-        12,
+        11,
         HEADER_MIDDLE_COL_WIDTH,
-        14,
+        10.5,
         undefined,
         'FAST'
       );
@@ -322,19 +324,21 @@ function drawCompanyHeader(
     }
   } else {
     const arabicName = companyInfo.nameAr || 'مؤسسة الكون الذكي للاتصالات و تقنية المعلومات';
-    const arabicNameLines = splitArabicText(pdf, arabicName, HEADER_MIDDLE_COL_WIDTH, 10.2);
+    const arabicNameLines = splitArabicText(pdf, arabicName, HEADER_MIDDLE_COL_WIDTH, 9.3);
     pdf.setTextColor(30, 64, 175);
-    pdf.setFontSize(10.2);
-    let arabicNameY = 16;
+    pdf.setFontSize(9.3);
+    let arabicNameY = 15;
     arabicNameLines.slice(0, 2).forEach((line) => {
       drawArabicText(pdf, line, HEADER_MIDDLE_COL_X + HEADER_MIDDLE_COL_WIDTH, arabicNameY, { align: 'right' });
-      arabicNameY += 4.1;
+      arabicNameY += 3.8;
     });
   }
 
   pdf.setDrawColor(209, 213, 219);
   pdf.setFillColor(248, 250, 252);
-  pdf.roundedRect(quoteBoxX, quoteBoxTop, quoteBoxWidth, 16, 3, 3, 'FD');
+  pdf.roundedRect(quoteBoxX, quoteBoxTop, quoteBoxWidth, HEADER_QUOTE_BOX_HEIGHT, 3, 3, 'FD');
+  pdf.setDrawColor(219, 228, 240);
+  pdf.line(12, HEADER_HEIGHT, 198, HEADER_HEIGHT);
 
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(107, 114, 128);
@@ -372,44 +376,44 @@ function drawHeader(
   pdf.setFontSize(9);
   if (!includeCustomer) {
     pdf.setFontSize(7.2);
-    pdf.text('Quotation #', HEADER_RIGHT_COL_X + 3, 17);
-    pdf.text(quoteNumber, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 3, 17, { align: 'right' });
-    pdf.text('Date', HEADER_RIGHT_COL_X + 3, 22.5);
-    pdf.text(quoteDate, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 3, 22.5, { align: 'right' });
+    pdf.text('Quotation #', HEADER_RIGHT_COL_X + 3, HEADER_QUOTE_BOX_TOP + 5.5);
+    pdf.text(quoteNumber, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 3, HEADER_QUOTE_BOX_TOP + 5.5, { align: 'right' });
+    pdf.text('Date', HEADER_RIGHT_COL_X + 3, HEADER_QUOTE_BOX_TOP + 11.2);
+    pdf.text(quoteDate, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 3, HEADER_QUOTE_BOX_TOP + 11.2, { align: 'right' });
     pdf.setDrawColor(219, 228, 240);
     pdf.line(12, CONTINUATION_TABLE_START_Y - 4, 198, CONTINUATION_TABLE_START_Y - 4);
     return;
   }
 
   pdf.setFontSize(7.2);
-  pdf.text('Quotation #', HEADER_RIGHT_COL_X + 3, 17);
-  pdf.text(quoteNumber, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 3, 17, { align: 'right' });
-  pdf.text('Date', HEADER_RIGHT_COL_X + 3, 22.5);
-  pdf.text(quoteDate, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 3, 22.5, { align: 'right' });
+  pdf.text('Quotation #', HEADER_RIGHT_COL_X + 3, HEADER_QUOTE_BOX_TOP + 5.5);
+  pdf.text(quoteNumber, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 3, HEADER_QUOTE_BOX_TOP + 5.5, { align: 'right' });
+  pdf.text('Date', HEADER_RIGHT_COL_X + 3, HEADER_QUOTE_BOX_TOP + 11.2);
+  pdf.text(quoteDate, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 3, HEADER_QUOTE_BOX_TOP + 11.2, { align: 'right' });
 
   pdf.setFontSize(16);
-  pdf.text('Quotation', 12, 66);
+  pdf.text('Quotation', 12, 70);
 
   pdf.setFillColor(249, 250, 251);
   pdf.setDrawColor(229, 231, 235);
-  pdf.roundedRect(12, 70, 186, 22, 3, 3, 'FD');
+  pdf.roundedRect(12, 74, 186, 22, 3, 3, 'FD');
 
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(30, 58, 138);
   pdf.setFontSize(10);
-  pdf.text('Bill To', 16, 77);
+  pdf.text('Bill To', 16, 81);
 
   pdf.setFont('helvetica', 'normal');
   pdf.setTextColor(55, 65, 81);
   pdf.setFontSize(8.5);
-  pdf.text(`Name: ${customer.name || 'N/A'}`, 16, 83);
-  pdf.text(`Company: ${customer.company || 'N/A'}`, 16, 88);
-  pdf.text(`Phone: ${customer.phone || 'N/A'}`, 100, 83);
-  pdf.text(`Email: ${customer.email || 'N/A'}`, 100, 88);
-  pdf.text(`Valid Until: ${validUntil}`, 16, 93);
+  pdf.text(`Name: ${customer.name || 'N/A'}`, 16, 87);
+  pdf.text(`Company: ${customer.company || 'N/A'}`, 16, 92);
+  pdf.text(`Phone: ${customer.phone || 'N/A'}`, 100, 87);
+  pdf.text(`Email: ${customer.email || 'N/A'}`, 100, 92);
+  pdf.text(`Valid Until: ${validUntil}`, 16, 97);
 
   pdf.setDrawColor(219, 228, 240);
-  pdf.line(12, 96, 198, 96);
+  pdf.line(12, 100, 198, 100);
 }
 
 function drawFooter(pdf: jsPDF) {
@@ -503,11 +507,11 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
     },
     columnStyles: {
       0: { cellWidth: 10, halign: 'center' },
-      1: { cellWidth: 28, halign: 'center' },
-      2: { cellWidth: 74 },
+      1: { cellWidth: 34, halign: 'left' },
+      2: { cellWidth: 68 },
       3: { cellWidth: 15, halign: 'center' },
-      4: { cellWidth: 28, halign: 'right' },
-      5: { cellWidth: 31, halign: 'right' },
+      4: { cellWidth: 27, halign: 'right' },
+      5: { cellWidth: 32, halign: 'right' },
     },
     didDrawPage: (data) => {
       if (data.pageNumber > 1) {
@@ -527,9 +531,8 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
     },
     didParseCell: (data) => {
       if (data.section === 'body' && data.column.index === 1) {
-        const raw = Array.isArray(data.cell.text) ? data.cell.text.join(' ') : String(data.cell.text || '');
-        data.cell.text = raw.replace(/-/g, '-\u200b');
-        data.cell.styles.fontSize = 8;
+        data.cell.styles.fontSize = 8.1;
+        data.cell.styles.overflow = 'linebreak';
       }
     },
   });
@@ -574,15 +577,21 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   pdf.text('Total', 118, currentY);
   drawCurrencyValue(pdf, formatCurrencyAmount(total), 198, currentY, { align: 'right', iconDataUrl: riyalSymbolImage, iconW: 3.4, iconH: 3.4, gap: 1.4 });
 
-  currentY += 4;
+  currentY += 6;
 
-  const leftBoxWidth = 106;
-  const rightBoxWidth = 74;
-  const boxGap = 6;
-  const leftX = 12;
-  const rightX = leftX + leftBoxWidth + boxGap;
+  const contentLeft = 12;
+  const contentWidth = 186;
+  const cardPadding = 4.5;
+  const titleGap = 7;
+  const termsLineHeight = 4.6;
+  const infoLineHeight = 4.5;
+  const availablePageBottom = pageHeight - PAGE_FOOTER_TOP_MARGIN;
 
-  const bankLines = [
+  const termsTextLines = termsLines.length ? termsLines : ['Payment terms: 30 days from invoice date'];
+  const normalizedTerms = termsTextLines.map((line) => line.replace(/\r/g, '').trim()).filter(Boolean);
+  const wrappedTerms = normalizedTerms.flatMap((line) => pdf.splitTextToSize(line, contentWidth - cardPadding * 2 - 2));
+
+  const infoLines = [
     `Bank: ${bankingDetails.bankName || 'Saudi National Bank'}`,
     `IBAN: ${bankingDetails.iban || 'SA3610000041000000080109'}`,
     `Account Number: ${bankingDetails.accountNumber || '41000000080109'}`,
@@ -593,37 +602,60 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
     `Mobily Number: ${pointOfContact.mobileNumber || 'N/A'}`,
     `Email Address: ${pointOfContact.emailAddress || 'N/A'}`,
   ];
+  const wrappedInfo = infoLines.flatMap((line) => line ? pdf.splitTextToSize(line, contentWidth - cardPadding * 2 - 2) : ['']);
 
-  const termsTextLines = termsLines.length ? termsLines : ['Payment terms: 30 days from invoice date'];
-  const normalizedTerms = termsTextLines.map((line) => line.replace(/\r/g, '').trim()).filter(Boolean);
-  const wrappedTerms = normalizedTerms.flatMap((line) => pdf.splitTextToSize(line, leftBoxWidth - 12));
-  const wrappedBank = bankLines.flatMap((line) => line ? pdf.splitTextToSize(line, rightBoxWidth - 10) : ['']);
-  const termsLineHeight = 4.4;
-  const bankLineHeight = 4.1;
-  const contentHeight = Math.max(wrappedTerms.length * termsLineHeight + 18, wrappedBank.length * bankLineHeight + 18);
-  const boxHeight = Math.max(60, contentHeight);
+  const drawCard = (title: string, lines: string[], lineHeight: number, startY: number, minHeight = 0) => {
+    const boxHeight = Math.max(minHeight, lines.length * lineHeight + titleGap + cardPadding * 2);
+    pdf.setFillColor(251, 252, 254);
+    pdf.setDrawColor(203, 213, 225);
+    pdf.setLineWidth(0.45);
+    pdf.roundedRect(contentLeft, startY, contentWidth, boxHeight, 2.5, 2.5, 'FD');
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(30, 64, 175);
+    pdf.setFontSize(10);
+    pdf.text(title, contentLeft + cardPadding, startY + 6);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(55, 65, 81);
+    pdf.setFontSize(title === 'Terms & Conditions' ? 7.7 : 8.2);
+    pdf.text(lines, contentLeft + cardPadding, startY + titleGap + cardPadding, {
+      maxWidth: contentWidth - cardPadding * 2,
+      lineHeightFactor: title === 'Terms & Conditions' ? 1.34 : 1.28,
+    });
+    return startY + boxHeight + 6;
+  };
 
-  ensureSpace(boxHeight + 6);
-  const boxTop = currentY;
+  let remainingTerms = [...wrappedTerms];
+  while (remainingTerms.length) {
+    const maxLinesThisPage = Math.max(
+      1,
+      Math.floor((availablePageBottom - currentY - titleGap - cardPadding * 2 - 4) / termsLineHeight)
+    );
+    const termsChunk = remainingTerms.splice(0, maxLinesThisPage);
+    currentY = drawCard(
+      remainingTerms.length ? 'Terms & Conditions (continued)' : 'Terms & Conditions',
+      termsChunk,
+      termsLineHeight,
+      currentY
+    );
+    if (remainingTerms.length) {
+      pdf.addPage();
+      pageNumber += 1;
+      drawHeader(pdf, quote, settings, pageNumber, false, arabicHeaderImages);
+      drawFooter(pdf);
+      currentY = CONTINUATION_TABLE_START_Y;
+    }
+  }
 
-  pdf.setFillColor(251, 252, 254);
-  pdf.setDrawColor(203, 213, 225);
-  pdf.setLineWidth(0.45);
-  pdf.roundedRect(leftX, boxTop, leftBoxWidth, boxHeight, 2.5, 2.5, 'FD');
-  pdf.roundedRect(rightX, boxTop, rightBoxWidth, boxHeight, 2.5, 2.5, 'FD');
+  const infoCardMinHeight = 44;
+  if (currentY + Math.max(infoCardMinHeight, wrappedInfo.length * infoLineHeight + titleGap + cardPadding * 2) > availablePageBottom) {
+    pdf.addPage();
+    pageNumber += 1;
+    drawHeader(pdf, quote, settings, pageNumber, false, arabicHeaderImages);
+    drawFooter(pdf);
+    currentY = CONTINUATION_TABLE_START_Y;
+  }
 
-  pdf.setFont('helvetica', 'bold');
-  pdf.setTextColor(30, 64, 175);
-  pdf.setFontSize(10);
-  pdf.text('Terms & Conditions', leftX + 4, boxTop + 6);
-  pdf.text('Banking Details', rightX + 4, boxTop + 6);
-
-  pdf.setFont('helvetica', 'normal');
-  pdf.setTextColor(55, 65, 81);
-  pdf.setFontSize(7.1);
-  pdf.text(wrappedTerms, leftX + 4.5, boxTop + 11.5, { maxWidth: leftBoxWidth - 9, lineHeightFactor: 1.45 });
-  pdf.setFontSize(7.3);
-  pdf.text(wrappedBank, rightX + 4.5, boxTop + 11.5, { maxWidth: rightBoxWidth - 8, lineHeightFactor: 1.28 });
+  drawCard('Banking Details & Primary Contact', wrappedInfo, infoLineHeight, currentY, infoCardMinHeight);
 
   return pdf.output('blob');
 }
