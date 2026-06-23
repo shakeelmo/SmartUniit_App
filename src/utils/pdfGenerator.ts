@@ -181,10 +181,13 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
     head: [['S#', 'Item', 'Description', 'Qty', 'Unit Price', 'Total']],
     body: bodyRows,
     theme: 'grid',
+    showHead: 'everyPage',
+    rowPageBreak: 'avoid',
     styles: {
       font: 'helvetica',
-      fontSize: 8,
-      cellPadding: 2.5,
+      fontSize: 8.8,
+      cellPadding: { top: 3.2, right: 2.8, bottom: 3.2, left: 2.8 },
+      minCellHeight: 9.5,
       lineColor: [209, 213, 219],
       lineWidth: 0.2,
       textColor: [31, 41, 55],
@@ -196,6 +199,7 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       halign: 'center',
+      minCellHeight: 10,
     },
     columnStyles: {
       0: { cellWidth: 10, halign: 'center' },
