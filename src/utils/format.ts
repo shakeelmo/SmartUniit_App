@@ -1,5 +1,5 @@
 // src/utils/format.ts
-export const SAR_SYMBOL = 'SAR';
+export const SAR_SYMBOL = '﷼';
 export const SAUDI_RIYAL_SYMBOL = SAR_SYMBOL;
 
 export function formatCurrency(amount: number, currency: string = 'SAR', locale: string = 'en-US') {

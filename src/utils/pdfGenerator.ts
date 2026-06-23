@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable, { type RowInput } from 'jspdf-autotable';
 import { SMART_UNIVERSE_LOGO_BASE64 } from './logoBase64';
 
-const SAUDI_RIYAL_SYMBOL = 'SAR';
+let riyalSymbolImagePromise: Promise<string | undefined> | null = null;
 
 function escapeHtml(value: any): string {
   return String(value ?? '')
@@ -13,11 +13,11 @@ function escapeHtml(value: any): string {
     .replace(/'/g, '&#39;');
 }
 
-function formatCurrency(amount: number): string {
-  return `${SAUDI_RIYAL_SYMBOL} ${Number(amount || 0).toLocaleString('en-US', {
+function formatCurrencyAmount(amount: number): string {
+  return Number(amount || 0).toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  })}`;
+  });
 }
 
 function splitLines(value: any): string[] {
@@ -26,6 +26,87 @@ function splitLines(value: any): string[] {
     .map((line) => line.trim())
     .filter(Boolean);
   return text.length ? text : [];
+}
+
+async function loadRiyalSymbolImage(): Promise<string | undefined> {
+  if (riyalSymbolImagePromise) return riyalSymbolImagePromise;
+  if (typeof document === 'undefined') return undefined;
+
+  riyalSymbolImagePromise = new Promise((resolve) => {
+    try {
+      const img = new Image();
+      img.src = '/Riyal_symbol.svg';
+      img.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = 48;
+          canvas.height = 48;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(undefined);
+            return;
+          }
+          ctx.clearRect(0, 0, 48, 48);
+          ctx.drawImage(img, 0, 0, 48, 48);
+          resolve(canvas.toDataURL('image/png'));
+        } catch {
+          resolve(undefined);
+        }
+      };
+      img.onerror = () => resolve(undefined);
+    } catch {
+      resolve(undefined);
+    }
+  });
+
+  return riyalSymbolImagePromise;
+}
+
+function drawCurrencyValue(
+  pdf: jsPDF,
+  amountText: string,
+  x: number,
+  y: number,
+  options: {
+    align?: 'left' | 'right';
+    iconDataUrl?: string;
+    iconW?: number;
+    iconH?: number;
+    gap?: number;
+  } = {}
+) {
+  const align = options.align || 'right';
+  const iconDataUrl = options.iconDataUrl;
+  const iconW = options.iconW ?? 3.1;
+  const iconH = options.iconH ?? 3.1;
+  const gap = options.gap ?? 1.2;
+
+  if (align === 'right') {
+    const amountWidth = pdf.getTextWidth(amountText);
+    const startX = x - amountWidth - gap - iconW;
+    if (iconDataUrl) {
+      try {
+        pdf.addImage(iconDataUrl, 'PNG', startX, y - 2.6, iconW, iconH, undefined, 'FAST');
+      } catch {
+        pdf.text('SAR', startX, y);
+      }
+    } else {
+      pdf.text('SAR', startX, y);
+    }
+    pdf.text(amountText, x, y, { align: 'right' });
+    return;
+  }
+
+  if (iconDataUrl) {
+    try {
+      pdf.addImage(iconDataUrl, 'PNG', x, y - 2.6, iconW, iconH, undefined, 'FAST');
+    } catch {
+      pdf.text('SAR', x, y);
+    }
+  } else {
+    pdf.text('SAR', x, y);
+  }
+  pdf.text(amountText, x + iconW + gap, y, { align: 'left' });
 }
 
 function drawHeader(pdf: jsPDF, quote: any, settings: any, pageNumber: number) {
@@ -129,6 +210,7 @@ function drawFooter(pdf: jsPDF) {
 }
 
 export async function generateQuotationPDF(quote: any, settings: any = {}) {
+  const riyalSymbolImage = await loadRiyalSymbolImage();
   const lineItems = (quote.lineItems || [])
     .map((item: any) => {
       const quantity = Number(item.quantity || 0);
@@ -165,13 +247,13 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   drawHeader(pdf, quote, settings, pageNumber);
 
   const bodyRows: RowInput[] = lineItems.length
-    ? lineItems.map((item: any, index: number) => ([
+      ? lineItems.map((item: any, index: number) => ([
         String(index + 1),
         String(item.itemCode || item.code || item.sku || item.partNumber || '-'),
         String(item.description || item.name || '-'),
         String(item.quantity),
-        formatCurrency(item.unitPrice),
-        formatCurrency(item.total),
+        formatCurrencyAmount(item.unitPrice),
+        formatCurrencyAmount(item.total),
       ]))
     : [[ '', '', 'No items to display', '', '', '' ]];
 
@@ -216,6 +298,15 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
       }
       drawFooter(pdf);
     },
+    didDrawCell: (data) => {
+      if (data.section !== 'body') return;
+      if (data.column.index !== 4 && data.column.index !== 5) return;
+      const text = Array.isArray(data.cell.text) ? data.cell.text.join(' ') : String(data.cell.text || '');
+      if (!text.trim()) return;
+      const rightX = data.cell.x + data.cell.width - data.cell.padding('right');
+      const centerY = data.cell.y + data.cell.height / 2 + 1;
+      drawCurrencyValue(pdf, text, rightX, centerY, { align: 'right', iconDataUrl: riyalSymbolImage, iconW: 2.7, iconH: 2.7, gap: 0.8 });
+    },
   });
 
   let currentY = (pdf as any).lastAutoTable.finalY + 6;
@@ -240,15 +331,15 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   pdf.setFontSize(9);
   currentY += 5;
   pdf.text('Subtotal', 118, currentY);
-  pdf.text(formatCurrency(subtotal), 198, currentY, { align: 'right' });
+  drawCurrencyValue(pdf, formatCurrencyAmount(subtotal), 198, currentY, { align: 'right', iconDataUrl: riyalSymbolImage });
   if (discountAmount > 0) {
     currentY += 5;
     pdf.text(`Discount${discountType === 'percentage' ? ` (${discountValue}%)` : ''}`, 118, currentY);
-    pdf.text(`- ${formatCurrency(discountAmount)}`, 198, currentY, { align: 'right' });
+    pdf.text(`- ${formatCurrencyAmount(discountAmount)}`, 198, currentY, { align: 'right' });
   }
   currentY += 5;
   pdf.text(`VAT (${vatRate}%)`, 118, currentY);
-  pdf.text(formatCurrency(vatAmount), 198, currentY, { align: 'right' });
+  drawCurrencyValue(pdf, formatCurrencyAmount(vatAmount), 198, currentY, { align: 'right', iconDataUrl: riyalSymbolImage });
   currentY += 2;
   pdf.setDrawColor(203, 213, 225);
   pdf.line(118, currentY, 198, currentY);
@@ -256,7 +347,7 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   pdf.setFontSize(12);
   pdf.setTextColor(30, 64, 175);
   pdf.text('Total', 118, currentY);
-  pdf.text(formatCurrency(total), 198, currentY, { align: 'right' });
+  drawCurrencyValue(pdf, formatCurrencyAmount(total), 198, currentY, { align: 'right', iconDataUrl: riyalSymbolImage, iconW: 3.4, iconH: 3.4, gap: 1.4 });
 
   currentY += 8;
   ensureSpace(66);
