@@ -624,15 +624,29 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
     return startY + boxHeight + 6;
   };
 
+  const currentPageTermsCapacity = Math.max(
+    0,
+    Math.floor((availablePageBottom - currentY - titleGap - cardPadding * 2 - 4) / termsLineHeight)
+  );
+  if (currentPageTermsCapacity < 6) {
+    pdf.addPage();
+    pageNumber += 1;
+    drawHeader(pdf, quote, settings, pageNumber, false, arabicHeaderImages);
+    drawFooter(pdf);
+    currentY = CONTINUATION_TABLE_START_Y;
+  }
+
   let remainingTerms = [...wrappedTerms];
+  let termsCardIndex = 0;
   while (remainingTerms.length) {
     const maxLinesThisPage = Math.max(
       1,
       Math.floor((availablePageBottom - currentY - titleGap - cardPadding * 2 - 4) / termsLineHeight)
     );
     const termsChunk = remainingTerms.splice(0, maxLinesThisPage);
+    termsCardIndex += 1;
     currentY = drawCard(
-      remainingTerms.length ? 'Terms & Conditions (continued)' : 'Terms & Conditions',
+      termsCardIndex === 1 ? 'Terms & Conditions' : 'Terms & Conditions (continued)',
       termsChunk,
       termsLineHeight,
       currentY
