@@ -8,7 +8,7 @@ let amiriFontReadyPromise: Promise<void> | null = null;
 
 const FIRST_PAGE_TABLE_START_Y = 96;
 const CONTINUATION_TABLE_START_Y = 38;
-const PAGE_FOOTER_TOP_MARGIN = 18;
+const PAGE_FOOTER_TOP_MARGIN = 28;
 
 function escapeHtml(value: any): string {
   return String(value ?? '')
@@ -156,6 +156,17 @@ function drawArabicText(pdf: jsPDF, text: string, x: number, y: number, options?
   pdf.setFont(previousFont.fontName, previousFont.fontStyle);
 }
 
+function splitArabicText(pdf: jsPDF, text: string, width: number, fontSize: number): string[] {
+  const previousFont = pdf.getFont();
+  const previousSize = pdf.getFontSize();
+  pdf.setFont('Amiri', 'normal');
+  pdf.setFontSize(fontSize);
+  const lines = pdf.splitTextToSize(text, width);
+  pdf.setFont(previousFont.fontName, previousFont.fontStyle);
+  pdf.setFontSize(previousSize);
+  return Array.isArray(lines) ? lines : [String(lines)];
+}
+
 function drawCompanyHeader(pdf: jsPDF, settings: any, pageNumber: number, compact = false) {
   const companyInfo = settings?.companyInfo || {};
   const englishTop = compact ? 8 : 16;
@@ -196,26 +207,28 @@ function drawCompanyHeader(pdf: jsPDF, settings: any, pageNumber: number, compac
 
   const arabicName = companyInfo.nameAr || 'مؤسسة الكون الذكي للاتصالات و تقنية المعلومات';
   const arabicAddress = companyInfo.addressAr || 'مكتب رقم 3، حي الديرة، ص.ب 12633، الرياض 11461، المملكة العربية السعودية';
-  const arabicNameLines = compact
-    ? [arabicName]
-    : [arabicName];
+  const arabicNameLines = splitArabicText(pdf, arabicName, compact ? 42 : 54, compact ? 8.9 : 11.2);
   const arabicAddressLines = compact
     ? []
-    : pdf.splitTextToSize(arabicAddress, 58);
+    : splitArabicText(pdf, arabicAddress, 58, 8.6);
 
   pdf.setTextColor(30, 64, 175);
-  pdf.setFontSize(compact ? 9.8 : 12.5);
-  drawArabicText(pdf, arabicNameLines[0], arabicRightX, compact ? 12 : 14, { align: 'right' });
+  pdf.setFontSize(compact ? 8.9 : 11.2);
+  let arabicNameY = compact ? 10 : 13;
+  arabicNameLines.slice(0, compact ? 2 : 3).forEach((line) => {
+    drawArabicText(pdf, line, arabicRightX, arabicNameY, { align: 'right' });
+    arabicNameY += compact ? 3.6 : 4.1;
+  });
   if (!compact) {
     pdf.setTextColor(55, 65, 81);
     pdf.setFontSize(8.7);
-    let arabicY = 21;
+    let arabicY = arabicNameY + 1.2;
     arabicAddressLines.forEach((line: string) => {
       drawArabicText(pdf, line, arabicRightX, arabicY, { align: 'right' });
       arabicY += 4.2;
     });
-    drawArabicText(pdf, `رقم الضريبة المضافة: ${companyInfo.vatNumber || '314076518400003'}`, arabicRightX, 35.5, { align: 'right' });
-    drawArabicText(pdf, `السجل التجاري: ${companyInfo.crNumber || '1010973808'}`, arabicRightX, 40, { align: 'right' });
+    drawArabicText(pdf, `رقم الضريبة المضافة: ${companyInfo.vatNumber || '314076518400003'}`, arabicRightX, Math.min(arabicY + 2.6, 36.5), { align: 'right' });
+    drawArabicText(pdf, `السجل التجاري: ${companyInfo.crNumber || '1010973808'}`, arabicRightX, Math.min(arabicY + 7, 41), { align: 'right' });
   }
 
   pdf.setDrawColor(209, 213, 219);
@@ -464,9 +477,11 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
 
   const termsTextLines = termsLines.length ? termsLines : ['Payment terms: 30 days from invoice date'];
   const normalizedTerms = termsTextLines.map((line) => line.replace(/\r/g, '').trim()).filter(Boolean);
-  const wrappedTerms = normalizedTerms.flatMap((line) => pdf.splitTextToSize(line, boxWidth - 10));
+  const wrappedTerms = normalizedTerms.flatMap((line) => pdf.splitTextToSize(line, boxWidth - 11));
   const wrappedBank = bankLines.flatMap((line) => line ? pdf.splitTextToSize(line, boxWidth - 8) : ['']);
-  const contentHeight = Math.max(wrappedTerms.length * 4.5 + 18, wrappedBank.length * 4.5 + 18);
+  const termsLineHeight = 3.9;
+  const bankLineHeight = 4.1;
+  const contentHeight = Math.max(wrappedTerms.length * termsLineHeight + 18, wrappedBank.length * bankLineHeight + 18);
   const boxHeight = Math.max(60, contentHeight);
 
   ensureSpace(boxHeight + 6);
@@ -485,9 +500,10 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
 
   pdf.setFont('helvetica', 'normal');
   pdf.setTextColor(55, 65, 81);
-  pdf.setFontSize(7.9);
-  pdf.text(wrappedTerms, leftX + 4.5, boxTop + 11.5, { maxWidth: boxWidth - 9 });
-  pdf.text(wrappedBank, rightX + 4.5, boxTop + 11.5, { maxWidth: boxWidth - 9 });
+  pdf.setFontSize(7.1);
+  pdf.text(wrappedTerms, leftX + 4.5, boxTop + 11.5, { maxWidth: boxWidth - 9, lineHeightFactor: 1.08 });
+  pdf.setFontSize(7.6);
+  pdf.text(wrappedBank, rightX + 4.5, boxTop + 11.5, { maxWidth: boxWidth - 9, lineHeightFactor: 1.12 });
 
   return pdf.output('blob');
 }
