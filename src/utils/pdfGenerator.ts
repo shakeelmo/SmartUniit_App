@@ -267,7 +267,7 @@ function drawCompanyHeader(
   const companyInfo = settings?.companyInfo || {};
   const englishLeft = 28;
   const englishWidth = 80;
-  const quoteBoxTop = 9;
+  const quoteBoxTop = 32;
   const quoteBoxX = 136;
   const quoteBoxWidth = 62;
 
@@ -305,10 +305,10 @@ function drawCompanyHeader(
       pdf.addImage(
         arabicImage,
         'PNG',
-        112,
+        108,
         11,
-        84,
-        18,
+        74,
+        14,
         undefined,
         'FAST'
       );
