@@ -7,9 +7,10 @@ let riyalSymbolImagePromise: Promise<string | undefined> | null = null;
 let amiriFontReadyPromise: Promise<void> | null = null;
 let arabicHeaderImagePromise: Promise<{ full?: string; compact?: string }> | null = null;
 
-const FIRST_PAGE_TABLE_START_Y = 96;
-const CONTINUATION_TABLE_START_Y = 44;
-const PAGE_FOOTER_TOP_MARGIN = 28;
+const HEADER_HEIGHT = 58;
+const FIRST_PAGE_TABLE_START_Y = 98;
+const CONTINUATION_TABLE_START_Y = 62;
+const PAGE_FOOTER_TOP_MARGIN = 24;
 
 function escapeHtml(value: any): string {
   return String(value ?? '')
@@ -261,56 +262,53 @@ function drawCompanyHeader(
   pdf: jsPDF,
   settings: any,
   pageNumber: number,
-  compact = false,
   arabicHeaderImages?: { full?: string; compact?: string }
 ) {
   const companyInfo = settings?.companyInfo || {};
-  const englishTop = compact ? 8 : 16;
-  const logoTop = compact ? 7 : 10;
-  const quoteBoxTop = compact ? 7 : 10;
-  const arabicRightX = 196;
+  const englishLeft = 28;
+  const englishWidth = 80;
+  const quoteBoxTop = 9;
+  const quoteBoxX = 136;
+  const quoteBoxWidth = 62;
 
   pdf.setFillColor(255, 255, 255);
-  pdf.rect(0, 0, 210, compact ? 40 : 56, 'F');
+  pdf.rect(0, 0, 210, HEADER_HEIGHT, 'F');
 
   try {
-    pdf.addImage(SMART_UNIVERSE_LOGO_BASE64, 'JPEG', 12, logoTop, compact ? 12 : 16, compact ? 12 : 16, undefined, 'FAST');
+    pdf.addImage(SMART_UNIVERSE_LOGO_BASE64, 'JPEG', 12, 10, 15, 15, undefined, 'FAST');
   } catch {
     // Keep the export working even if the image fails to decode.
   }
 
+  const companyName = companyInfo.name || 'Smart Universe Communication and Information Technology';
+  const wrappedName = pdf.splitTextToSize(companyName, englishWidth);
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(29, 78, 216);
-  pdf.setFontSize(compact ? 15 : 18);
-  pdf.text(companyInfo.name || 'Smart Universe', 27, englishTop);
-  pdf.setFontSize(compact ? 7.5 : 9);
-  pdf.text('FOR COMMUNICATIONS AND', 27, englishTop + 5);
-  pdf.text('INFORMATION TECHNOLOGY', 27, englishTop + 9.5);
+  pdf.setFontSize(wrappedName.length > 1 ? 13.5 : 15.5);
+  pdf.text(wrappedName.slice(0, 2), englishLeft, 15);
 
   pdf.setFont('helvetica', 'normal');
   pdf.setTextColor(55, 65, 81);
-  pdf.setFontSize(compact ? 7.1 : 8.5);
+  pdf.setFontSize(8.1);
   const addressLines = pdf.splitTextToSize(
     companyInfo.address || 'Office # 3 ln, Al Dirah Dist, P.O.Box 12633, Riyadh - 11461 KSA',
-    compact ? 60 : 74
+    englishWidth
   );
-  pdf.text(addressLines, 27, englishTop + 14.5);
-  pdf.text(`Tel: ${companyInfo.phone || '011-4917295'}`, 27, compact ? 30 : 42);
-  if (!compact) {
-    pdf.text(`VAT: ${companyInfo.vatNumber || '314076518400003'}`, 27, 46);
-    pdf.text(`CR: ${companyInfo.crNumber || '1010973808'}`, 27, 50);
-  }
+  pdf.text(addressLines, englishLeft, 24.5);
+  pdf.text(`Tel: ${companyInfo.phone || '011-4917295'}`, englishLeft, 37.5);
+  pdf.text(`VAT: ${companyInfo.vatNumber || '314076518400003'}`, englishLeft, 43);
+  pdf.text(`CR: ${companyInfo.crNumber || '1010973808'}`, englishLeft, 48.5);
 
-  const arabicImage = compact ? arabicHeaderImages?.compact : arabicHeaderImages?.full;
+  const arabicImage = arabicHeaderImages?.full || arabicHeaderImages?.compact;
   if (arabicImage) {
     try {
       pdf.addImage(
         arabicImage,
         'PNG',
-        compact ? 118 : 112,
-        compact ? 27 : 29,
-        compact ? 54 : 80,
-        compact ? 8 : 18,
+        112,
+        11,
+        84,
+        18,
         undefined,
         'FAST'
       );
@@ -319,24 +317,24 @@ function drawCompanyHeader(
     }
   } else {
     const arabicName = companyInfo.nameAr || 'مؤسسة الكون الذكي للاتصالات و تقنية المعلومات';
-    const arabicNameLines = splitArabicText(pdf, arabicName, compact ? 42 : 54, compact ? 8.9 : 11.2);
+    const arabicNameLines = splitArabicText(pdf, arabicName, 54, 11.2);
     pdf.setTextColor(30, 64, 175);
-    pdf.setFontSize(compact ? 8.9 : 11.2);
-    let arabicNameY = compact ? 10 : 13;
-    arabicNameLines.slice(0, compact ? 2 : 3).forEach((line) => {
-      drawArabicText(pdf, line, arabicRightX, arabicNameY, { align: 'right' });
-      arabicNameY += compact ? 3.6 : 4.1;
+    pdf.setFontSize(11.2);
+    let arabicNameY = 16;
+    arabicNameLines.slice(0, 3).forEach((line) => {
+      drawArabicText(pdf, line, 196, arabicNameY, { align: 'right' });
+      arabicNameY += 4.1;
     });
   }
 
   pdf.setDrawColor(209, 213, 219);
   pdf.setFillColor(248, 250, 252);
-  pdf.roundedRect(132, quoteBoxTop, 66, compact ? 18 : 20, 3, 3, 'FD');
+  pdf.roundedRect(quoteBoxX, quoteBoxTop, quoteBoxWidth, 18, 3, 3, 'FD');
 
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(107, 114, 128);
   pdf.setFontSize(8);
-  pdf.text(`Page ${pageNumber}`, 198, compact ? 5.5 : 8, { align: 'right' });
+  pdf.text(`Page ${pageNumber}`, 198, 6.5, { align: 'right' });
 }
 
 function drawHeader(
@@ -362,49 +360,49 @@ function drawHeader(
       })
     : '30 days';
 
-  drawCompanyHeader(pdf, settings, pageNumber, !includeCustomer, arabicHeaderImages);
+  drawCompanyHeader(pdf, settings, pageNumber, arabicHeaderImages);
 
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(30, 64, 175);
   pdf.setFontSize(9);
   if (!includeCustomer) {
-    pdf.text('Quotation #', 137, 14);
-    pdf.text(quoteNumber, 187, 14, { align: 'right' });
-    pdf.text('Date', 137, 20);
-    pdf.text(quoteDate, 187, 20, { align: 'right' });
+    pdf.text('Quotation #', 141, 16);
+    pdf.text(quoteNumber, 194, 16, { align: 'right' });
+    pdf.text('Date', 141, 22);
+    pdf.text(quoteDate, 194, 22, { align: 'right' });
     pdf.setDrawColor(219, 228, 240);
     pdf.line(12, CONTINUATION_TABLE_START_Y - 4, 198, CONTINUATION_TABLE_START_Y - 4);
     return;
   }
 
-  pdf.text('Quotation #', 137, 17);
-  pdf.text(quoteNumber, 187, 17, { align: 'right' });
-  pdf.text('Date', 137, 23);
-  pdf.text(quoteDate, 187, 23, { align: 'right' });
+  pdf.text('Quotation #', 141, 16);
+  pdf.text(quoteNumber, 194, 16, { align: 'right' });
+  pdf.text('Date', 141, 22);
+  pdf.text(quoteDate, 194, 22, { align: 'right' });
 
   pdf.setFontSize(16);
-  pdf.text('Quotation', 12, 62);
+  pdf.text('Quotation', 12, 66);
 
   pdf.setFillColor(249, 250, 251);
   pdf.setDrawColor(229, 231, 235);
-  pdf.roundedRect(12, 66, 186, 22, 3, 3, 'FD');
+  pdf.roundedRect(12, 70, 186, 22, 3, 3, 'FD');
 
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(30, 58, 138);
   pdf.setFontSize(10);
-  pdf.text('Bill To', 16, 73);
+  pdf.text('Bill To', 16, 77);
 
   pdf.setFont('helvetica', 'normal');
   pdf.setTextColor(55, 65, 81);
   pdf.setFontSize(8.5);
-  pdf.text(`Name: ${customer.name || 'N/A'}`, 16, 79);
-  pdf.text(`Company: ${customer.company || 'N/A'}`, 16, 84);
-  pdf.text(`Phone: ${customer.phone || 'N/A'}`, 100, 79);
-  pdf.text(`Email: ${customer.email || 'N/A'}`, 100, 84);
-  pdf.text(`Valid Until: ${validUntil}`, 16, 89);
+  pdf.text(`Name: ${customer.name || 'N/A'}`, 16, 83);
+  pdf.text(`Company: ${customer.company || 'N/A'}`, 16, 88);
+  pdf.text(`Phone: ${customer.phone || 'N/A'}`, 100, 83);
+  pdf.text(`Email: ${customer.email || 'N/A'}`, 100, 88);
+  pdf.text(`Valid Until: ${validUntil}`, 16, 93);
 
   pdf.setDrawColor(219, 228, 240);
-  pdf.line(12, 92, 198, 92);
+  pdf.line(12, 96, 198, 96);
 }
 
 function drawFooter(pdf: jsPDF) {
@@ -518,7 +516,14 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
       if (!text.trim()) return;
       const rightX = data.cell.x + data.cell.width - data.cell.padding('right');
       const centerY = data.cell.y + data.cell.height / 2 + 1;
-      drawCurrencyValue(pdf, text, rightX, centerY, { align: 'right', iconDataUrl: riyalSymbolImage, iconW: 2.7, iconH: 2.7, gap: 0.8 });
+      drawCurrencyValue(pdf, text, rightX, centerY, { align: 'right', iconDataUrl: riyalSymbolImage, iconW: 3.4, iconH: 3.4, gap: 1 });
+    },
+    didParseCell: (data) => {
+      if (data.section === 'body' && data.column.index === 1) {
+        const raw = Array.isArray(data.cell.text) ? data.cell.text.join(' ') : String(data.cell.text || '');
+        data.cell.text = raw.replace(/-/g, '-\u200b');
+        data.cell.styles.fontSize = 8;
+      }
     },
   });
 
@@ -562,12 +567,13 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   pdf.text('Total', 118, currentY);
   drawCurrencyValue(pdf, formatCurrencyAmount(total), 198, currentY, { align: 'right', iconDataUrl: riyalSymbolImage, iconW: 3.4, iconH: 3.4, gap: 1.4 });
 
-  currentY += 8;
+  currentY += 4;
 
-  const boxWidth = 90;
+  const leftBoxWidth = 106;
+  const rightBoxWidth = 74;
   const boxGap = 6;
   const leftX = 12;
-  const rightX = leftX + boxWidth + boxGap;
+  const rightX = leftX + leftBoxWidth + boxGap;
 
   const bankLines = [
     `Bank: ${bankingDetails.bankName || 'Saudi National Bank'}`,
@@ -583,9 +589,9 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
 
   const termsTextLines = termsLines.length ? termsLines : ['Payment terms: 30 days from invoice date'];
   const normalizedTerms = termsTextLines.map((line) => line.replace(/\r/g, '').trim()).filter(Boolean);
-  const wrappedTerms = normalizedTerms.flatMap((line) => pdf.splitTextToSize(line, boxWidth - 11));
-  const wrappedBank = bankLines.flatMap((line) => line ? pdf.splitTextToSize(line, boxWidth - 8) : ['']);
-  const termsLineHeight = 3.9;
+  const wrappedTerms = normalizedTerms.flatMap((line) => pdf.splitTextToSize(line, leftBoxWidth - 12));
+  const wrappedBank = bankLines.flatMap((line) => line ? pdf.splitTextToSize(line, rightBoxWidth - 10) : ['']);
+  const termsLineHeight = 4.4;
   const bankLineHeight = 4.1;
   const contentHeight = Math.max(wrappedTerms.length * termsLineHeight + 18, wrappedBank.length * bankLineHeight + 18);
   const boxHeight = Math.max(60, contentHeight);
@@ -593,10 +599,11 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   ensureSpace(boxHeight + 6);
   const boxTop = currentY;
 
-  pdf.setFillColor(250, 250, 250);
-  pdf.setDrawColor(229, 231, 235);
-  pdf.roundedRect(leftX, boxTop, boxWidth, boxHeight, 2.5, 2.5, 'FD');
-  pdf.roundedRect(rightX, boxTop, boxWidth, boxHeight, 2.5, 2.5, 'FD');
+  pdf.setFillColor(251, 252, 254);
+  pdf.setDrawColor(203, 213, 225);
+  pdf.setLineWidth(0.45);
+  pdf.roundedRect(leftX, boxTop, leftBoxWidth, boxHeight, 2.5, 2.5, 'FD');
+  pdf.roundedRect(rightX, boxTop, rightBoxWidth, boxHeight, 2.5, 2.5, 'FD');
 
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(30, 64, 175);
@@ -606,10 +613,10 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
 
   pdf.setFont('helvetica', 'normal');
   pdf.setTextColor(55, 65, 81);
-  pdf.setFontSize(6.2);
-  pdf.text(wrappedTerms, leftX + 4.5, boxTop + 11.5, { maxWidth: boxWidth - 9, lineHeightFactor: 1.08 });
-  pdf.setFontSize(7.6);
-  pdf.text(wrappedBank, rightX + 4.5, boxTop + 11.5, { maxWidth: boxWidth - 9, lineHeightFactor: 1.12 });
+  pdf.setFontSize(7.1);
+  pdf.text(wrappedTerms, leftX + 4.5, boxTop + 11.5, { maxWidth: leftBoxWidth - 9, lineHeightFactor: 1.45 });
+  pdf.setFontSize(7.3);
+  pdf.text(wrappedBank, rightX + 4.5, boxTop + 11.5, { maxWidth: rightBoxWidth - 8, lineHeightFactor: 1.28 });
 
   return pdf.output('blob');
 }
