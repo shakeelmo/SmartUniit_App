@@ -11,6 +11,13 @@ const HEADER_HEIGHT = 58;
 const FIRST_PAGE_TABLE_START_Y = 98;
 const CONTINUATION_TABLE_START_Y = 62;
 const PAGE_FOOTER_TOP_MARGIN = 24;
+const HEADER_LEFT_COL_X = 12;
+const HEADER_LEFT_TEXT_X = 29;
+const HEADER_LEFT_COL_WIDTH = 74;
+const HEADER_MIDDLE_COL_X = 92;
+const HEADER_MIDDLE_COL_WIDTH = 56;
+const HEADER_RIGHT_COL_X = 154;
+const HEADER_RIGHT_COL_WIDTH = 44;
 
 function escapeHtml(value: any): string {
   return String(value ?? '')
@@ -265,44 +272,37 @@ function drawCompanyHeader(
   arabicHeaderImages?: { full?: string; compact?: string }
 ) {
   const companyInfo = settings?.companyInfo || {};
-  const leftColX = 12;
-  const leftTextX = 29;
-  const leftColWidth = 74;
-  const middleColX = 92;
-  const middleColWidth = 56;
-  const rightColX = 154;
-  const rightColWidth = 44;
   const quoteBoxTop = 11;
-  const quoteBoxX = rightColX;
-  const quoteBoxWidth = rightColWidth;
+  const quoteBoxX = HEADER_RIGHT_COL_X;
+  const quoteBoxWidth = HEADER_RIGHT_COL_WIDTH;
 
   pdf.setFillColor(255, 255, 255);
   pdf.rect(0, 0, 210, HEADER_HEIGHT, 'F');
 
   try {
-    pdf.addImage(SMART_UNIVERSE_LOGO_BASE64, 'JPEG', leftColX, 10, 14, 14, undefined, 'FAST');
+    pdf.addImage(SMART_UNIVERSE_LOGO_BASE64, 'JPEG', HEADER_LEFT_COL_X, 10, 14, 14, undefined, 'FAST');
   } catch {
     // Keep the export working even if the image fails to decode.
   }
 
   const companyName = companyInfo.name || 'Smart Universe Communication and Information Technology';
-  const wrappedName = pdf.splitTextToSize(companyName, leftColWidth - 10).slice(0, 2);
+  const wrappedName = pdf.splitTextToSize(companyName, HEADER_LEFT_COL_WIDTH - 10).slice(0, 2);
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(29, 78, 216);
   pdf.setFontSize(wrappedName.length > 1 ? 11.5 : 12.5);
-  pdf.text(wrappedName, leftTextX, 15);
+  pdf.text(wrappedName, HEADER_LEFT_TEXT_X, 15);
 
   pdf.setFont('helvetica', 'normal');
   pdf.setTextColor(55, 65, 81);
   pdf.setFontSize(7.2);
   const addressLines = pdf.splitTextToSize(
     companyInfo.address || 'Office # 3 ln, Al Dirah Dist, P.O.Box 12633, Riyadh - 11461 KSA',
-    leftColWidth - 10
+    HEADER_LEFT_COL_WIDTH - 10
   );
-  pdf.text(addressLines, leftTextX, 24);
-  pdf.text(`Tel: ${companyInfo.phone || '011-4917295'}`, leftTextX, 35.5);
-  pdf.text(`VAT: ${companyInfo.vatNumber || '314076518400003'}`, leftTextX, 40.5);
-  pdf.text(`CR: ${companyInfo.crNumber || '1010973808'}`, leftTextX, 45.5);
+  pdf.text(addressLines, HEADER_LEFT_TEXT_X, 24);
+  pdf.text(`Tel: ${companyInfo.phone || '011-4917295'}`, HEADER_LEFT_TEXT_X, 35.5);
+  pdf.text(`VAT: ${companyInfo.vatNumber || '314076518400003'}`, HEADER_LEFT_TEXT_X, 40.5);
+  pdf.text(`CR: ${companyInfo.crNumber || '1010973808'}`, HEADER_LEFT_TEXT_X, 45.5);
 
   const arabicImage = arabicHeaderImages?.full || arabicHeaderImages?.compact;
   if (arabicImage) {
@@ -310,9 +310,9 @@ function drawCompanyHeader(
       pdf.addImage(
         arabicImage,
         'PNG',
-        middleColX,
+        HEADER_MIDDLE_COL_X,
         12,
-        middleColWidth,
+        HEADER_MIDDLE_COL_WIDTH,
         14,
         undefined,
         'FAST'
@@ -322,12 +322,12 @@ function drawCompanyHeader(
     }
   } else {
     const arabicName = companyInfo.nameAr || 'مؤسسة الكون الذكي للاتصالات و تقنية المعلومات';
-    const arabicNameLines = splitArabicText(pdf, arabicName, middleColWidth, 10.2);
+    const arabicNameLines = splitArabicText(pdf, arabicName, HEADER_MIDDLE_COL_WIDTH, 10.2);
     pdf.setTextColor(30, 64, 175);
     pdf.setFontSize(10.2);
     let arabicNameY = 16;
     arabicNameLines.slice(0, 2).forEach((line) => {
-      drawArabicText(pdf, line, middleColX + middleColWidth, arabicNameY, { align: 'right' });
+      drawArabicText(pdf, line, HEADER_MIDDLE_COL_X + HEADER_MIDDLE_COL_WIDTH, arabicNameY, { align: 'right' });
       arabicNameY += 4.1;
     });
   }
@@ -372,20 +372,20 @@ function drawHeader(
   pdf.setFontSize(9);
   if (!includeCustomer) {
     pdf.setFontSize(7.2);
-    pdf.text('Quotation #', rightColX + 3, 17);
-    pdf.text(quoteNumber, rightColX + quoteBoxWidth - 3, 17, { align: 'right' });
-    pdf.text('Date', rightColX + 3, 22.5);
-    pdf.text(quoteDate, rightColX + quoteBoxWidth - 3, 22.5, { align: 'right' });
+    pdf.text('Quotation #', HEADER_RIGHT_COL_X + 3, 17);
+    pdf.text(quoteNumber, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 3, 17, { align: 'right' });
+    pdf.text('Date', HEADER_RIGHT_COL_X + 3, 22.5);
+    pdf.text(quoteDate, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 3, 22.5, { align: 'right' });
     pdf.setDrawColor(219, 228, 240);
     pdf.line(12, CONTINUATION_TABLE_START_Y - 4, 198, CONTINUATION_TABLE_START_Y - 4);
     return;
   }
 
   pdf.setFontSize(7.2);
-  pdf.text('Quotation #', rightColX + 3, 17);
-  pdf.text(quoteNumber, rightColX + quoteBoxWidth - 3, 17, { align: 'right' });
-  pdf.text('Date', rightColX + 3, 22.5);
-  pdf.text(quoteDate, rightColX + quoteBoxWidth - 3, 22.5, { align: 'right' });
+  pdf.text('Quotation #', HEADER_RIGHT_COL_X + 3, 17);
+  pdf.text(quoteNumber, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 3, 17, { align: 'right' });
+  pdf.text('Date', HEADER_RIGHT_COL_X + 3, 22.5);
+  pdf.text(quoteDate, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 3, 22.5, { align: 'right' });
 
   pdf.setFontSize(16);
   pdf.text('Quotation', 12, 66);
