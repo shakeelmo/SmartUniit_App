@@ -13,13 +13,13 @@ const CONTINUATION_TABLE_START_Y = 66;
 const PAGE_FOOTER_TOP_MARGIN = 24;
 const HEADER_LEFT_COL_X = 12;
 const HEADER_LEFT_TEXT_X = 29;
-const HEADER_LEFT_COL_WIDTH = 62;
-const HEADER_MIDDLE_COL_X = 116;
-const HEADER_MIDDLE_COL_WIDTH = 70;
-const HEADER_RIGHT_COL_X = 150;
-const HEADER_RIGHT_COL_WIDTH = 48;
-const HEADER_QUOTE_BOX_TOP = 31;
-const HEADER_QUOTE_BOX_HEIGHT = 16;
+const HEADER_LEFT_COL_WIDTH = 72;
+const HEADER_MIDDLE_COL_X = 114;
+const HEADER_MIDDLE_COL_WIDTH = 62;
+const HEADER_RIGHT_COL_X = 162;
+const HEADER_RIGHT_COL_WIDTH = 36;
+const HEADER_QUOTE_BOX_TOP = 33;
+const HEADER_QUOTE_BOX_HEIGHT = 18;
 
 function escapeHtml(value: any): string {
   return String(value ?? '')
@@ -288,11 +288,11 @@ function drawCompanyHeader(
   }
 
   const companyName = companyInfo.name || 'Smart Universe Communication and Information Technology';
-  const wrappedName = pdf.splitTextToSize(companyName, HEADER_LEFT_COL_WIDTH - 6).slice(0, 2);
+  const wrappedName = pdf.splitTextToSize(companyName, HEADER_LEFT_COL_WIDTH - 8).slice(0, 3);
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(29, 78, 216);
-  pdf.setFontSize(wrappedName.length > 1 ? 10.4 : 11.2);
-  pdf.text(wrappedName, HEADER_LEFT_TEXT_X, 14.5);
+  pdf.setFontSize(wrappedName.length > 2 ? 8.6 : wrappedName.length > 1 ? 9.4 : 10.4);
+  pdf.text(wrappedName, HEADER_LEFT_TEXT_X, 13.5);
 
   pdf.setFont('helvetica', 'normal');
   pdf.setTextColor(55, 65, 81);
@@ -308,35 +308,28 @@ function drawCompanyHeader(
 
   pdf.setDrawColor(219, 228, 240);
   pdf.setFillColor(255, 255, 255);
-  pdf.roundedRect(HEADER_MIDDLE_COL_X, 8, HEADER_MIDDLE_COL_WIDTH, 19, 3, 3, 'FD');
-
-  const arabicImage = arabicHeaderImages?.full || arabicHeaderImages?.compact;
-  if (arabicImage) {
-    try {
-      pdf.addImage(
-        arabicImage,
-        'PNG',
-        HEADER_MIDDLE_COL_X + 2,
-        10,
-        HEADER_MIDDLE_COL_WIDTH - 4,
-        14,
-        undefined,
-        'FAST'
-      );
-    } catch {
-      // fall back to text mode below if image decoding fails
-    }
-  } else {
-    const arabicName = companyInfo.nameAr || 'مؤسسة الكون الذكي للاتصالات و تقنية المعلومات';
-    const arabicNameLines = splitArabicText(pdf, arabicName, HEADER_MIDDLE_COL_WIDTH - 6, 8.8);
-    pdf.setTextColor(30, 64, 175);
-    pdf.setFontSize(8.8);
-    let arabicNameY = 14;
-    arabicNameLines.slice(0, 3).forEach((line) => {
-      drawArabicText(pdf, line, HEADER_MIDDLE_COL_X + HEADER_MIDDLE_COL_WIDTH - 3, arabicNameY, { align: 'right' });
-      arabicNameY += 3.3;
-    });
-  }
+  pdf.roundedRect(HEADER_MIDDLE_COL_X, 8, HEADER_MIDDLE_COL_WIDTH, 21, 3, 3, 'FD');
+  const arabicName = companyInfo.nameAr || 'مؤسسة الكون الذكي للاتصالات و تقنية المعلومات';
+  const arabicAddress = companyInfo.addressAr || 'مكتب رقم 3، حي الديرة، ص.ب 12633، الرياض 11461، المملكة العربية السعودية';
+  const arabicVat = `رقم الضريبة المضافة: ${companyInfo.vatNumber || '314076518400003'}`;
+  const arabicCr = `السجل التجاري: ${companyInfo.crNumber || '1010973808'}`;
+  const arabicNameLines = splitArabicText(pdf, arabicName, HEADER_MIDDLE_COL_WIDTH - 6, 9.2);
+  const arabicAddressLines = splitArabicText(pdf, arabicAddress, HEADER_MIDDLE_COL_WIDTH - 6, 6.3);
+  pdf.setTextColor(30, 64, 175);
+  pdf.setFontSize(9.2);
+  let arabicY = 13;
+  arabicNameLines.slice(0, 2).forEach((line) => {
+    drawArabicText(pdf, line, HEADER_MIDDLE_COL_X + HEADER_MIDDLE_COL_WIDTH - 3, arabicY, { align: 'right' });
+    arabicY += 3.8;
+  });
+  pdf.setTextColor(55, 65, 81);
+  pdf.setFontSize(6.3);
+  arabicAddressLines.slice(0, 2).forEach((line) => {
+    drawArabicText(pdf, line, HEADER_MIDDLE_COL_X + HEADER_MIDDLE_COL_WIDTH - 3, arabicY, { align: 'right' });
+    arabicY += 2.9;
+  });
+  drawArabicText(pdf, arabicVat, HEADER_MIDDLE_COL_X + HEADER_MIDDLE_COL_WIDTH - 3, arabicY + 0.6, { align: 'right' });
+  drawArabicText(pdf, arabicCr, HEADER_MIDDLE_COL_X + HEADER_MIDDLE_COL_WIDTH - 3, arabicY + 3.5, { align: 'right' });
 
   pdf.setDrawColor(209, 213, 219);
   pdf.setFillColor(248, 250, 252);
@@ -379,21 +372,21 @@ function drawHeader(
   pdf.setTextColor(30, 64, 175);
   pdf.setFontSize(9);
   if (!includeCustomer) {
-    pdf.setFontSize(7.2);
-    pdf.text('Quotation #', HEADER_RIGHT_COL_X + 3, HEADER_QUOTE_BOX_TOP + 5.5);
-    pdf.text(quoteNumber, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 3, HEADER_QUOTE_BOX_TOP + 5.5, { align: 'right' });
-    pdf.text('Date', HEADER_RIGHT_COL_X + 3, HEADER_QUOTE_BOX_TOP + 11.2);
-    pdf.text(quoteDate, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 3, HEADER_QUOTE_BOX_TOP + 11.2, { align: 'right' });
+    pdf.setFontSize(6.3);
+    pdf.text('Quotation #', HEADER_RIGHT_COL_X + 2.5, HEADER_QUOTE_BOX_TOP + 5.5);
+    pdf.text(quoteNumber, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 2.5, HEADER_QUOTE_BOX_TOP + 5.5, { align: 'right' });
+    pdf.text('Date', HEADER_RIGHT_COL_X + 2.5, HEADER_QUOTE_BOX_TOP + 11.8);
+    pdf.text(quoteDate, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 2.5, HEADER_QUOTE_BOX_TOP + 11.8, { align: 'right' });
     pdf.setDrawColor(219, 228, 240);
     pdf.line(12, CONTINUATION_TABLE_START_Y - 4, 198, CONTINUATION_TABLE_START_Y - 4);
     return;
   }
 
-  pdf.setFontSize(7.2);
-  pdf.text('Quotation #', HEADER_RIGHT_COL_X + 3, HEADER_QUOTE_BOX_TOP + 5.5);
-  pdf.text(quoteNumber, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 3, HEADER_QUOTE_BOX_TOP + 5.5, { align: 'right' });
-  pdf.text('Date', HEADER_RIGHT_COL_X + 3, HEADER_QUOTE_BOX_TOP + 11.2);
-  pdf.text(quoteDate, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 3, HEADER_QUOTE_BOX_TOP + 11.2, { align: 'right' });
+  pdf.setFontSize(6.3);
+  pdf.text('Quotation #', HEADER_RIGHT_COL_X + 2.5, HEADER_QUOTE_BOX_TOP + 5.5);
+  pdf.text(quoteNumber, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 2.5, HEADER_QUOTE_BOX_TOP + 5.5, { align: 'right' });
+  pdf.text('Date', HEADER_RIGHT_COL_X + 2.5, HEADER_QUOTE_BOX_TOP + 11.8);
+  pdf.text(quoteDate, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 2.5, HEADER_QUOTE_BOX_TOP + 11.8, { align: 'right' });
 
   pdf.setFontSize(16);
   pdf.text('Quotation', 12, 70);
@@ -618,15 +611,14 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   const termsLineHeight = 3.5;
   const infoLineHeight = 4;
   const availableHeight = availablePageBottom - boxTop;
-  const termsHeight = wrappedTerms.length * termsLineHeight + 15;
-  const infoHeight = wrappedInfo.length * infoLineHeight + 15;
-  const boxHeight = Math.min(availableHeight, Math.max(60, termsHeight, infoHeight));
+  const termsHeight = Math.min(availableHeight, Math.max(34, wrappedTerms.length * termsLineHeight + 15));
+  const infoHeight = Math.min(availableHeight, Math.max(28, wrappedInfo.length * infoLineHeight + 15));
 
   pdf.setFillColor(251, 252, 254);
   pdf.setDrawColor(203, 213, 225);
   pdf.setLineWidth(0.45);
-  pdf.roundedRect(leftX, boxTop, leftBoxWidth, boxHeight, 2.5, 2.5, 'FD');
-  pdf.roundedRect(rightX, boxTop, rightBoxWidth, boxHeight, 2.5, 2.5, 'FD');
+  pdf.roundedRect(leftX, boxTop, leftBoxWidth, termsHeight, 2.5, 2.5, 'FD');
+  pdf.roundedRect(rightX, boxTop, rightBoxWidth, infoHeight, 2.5, 2.5, 'FD');
 
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(30, 64, 175);
