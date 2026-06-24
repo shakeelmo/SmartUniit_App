@@ -389,16 +389,22 @@ function drawHeader(
   pdf.setFontSize(16);
   pdf.text('Quotation', 12, 70);
 
-  const leftDetailX = 16;
-  const rightDetailX = 110;
-  const detailWidth = 80;
-  const customerAddressLines = pdf.splitTextToSize(`Address: ${customer.address || 'N/A'}`, detailWidth);
-  const customerEmailValueLines = pdf.splitTextToSize(String(customer.email || 'N/A'), detailWidth);
-  const billToTextBottom = Math.max(
-    92 + customerAddressLines.length * 4.2,
-    92 + customerEmailValueLines.length * 4.2 + 5.2
+  const leftLabelX = 16;
+  const leftValueX = 31;
+  const rightLabelX = 110;
+  const rightValueX = 126;
+  const leftValueWidth = 68;
+  const rightValueWidth = 66;
+  const addressValueLines = pdf.splitTextToSize(String(customer.address || 'N/A'), leftValueWidth);
+  const emailValueLines = pdf.splitTextToSize(String(customer.email || 'N/A'), rightValueWidth);
+  const leftTextBottom = 97 + Math.max(0, addressValueLines.length - 1) * 4.2;
+  const rightTextBottom = Math.max(
+    87,
+    92 + Math.max(0, emailValueLines.length - 1) * 4.2,
+    97
   );
-  const billToBoxHeight = Math.max(24, billToTextBottom - 74 + 3);
+  const billToTextBottom = Math.max(leftTextBottom, rightTextBottom);
+  const billToBoxHeight = Math.max(24, billToTextBottom - 74 + 6);
 
   pdf.setFillColor(249, 250, 251);
   pdf.setDrawColor(229, 231, 235);
@@ -412,13 +418,20 @@ function drawHeader(
   pdf.setFont('helvetica', 'normal');
   pdf.setTextColor(55, 65, 81);
   pdf.setFontSize(8.5);
-  pdf.text(`Name: ${customer.name || 'N/A'}`, leftDetailX, 87);
-  pdf.text(`Company: ${customer.company || 'N/A'}`, leftDetailX, 92);
-  pdf.text(customerAddressLines, leftDetailX, 97, { maxWidth: detailWidth, lineHeightFactor: 1.08 });
-  pdf.text(`Phone: ${customer.phone || 'N/A'}`, rightDetailX, 87);
-  pdf.text('Email:', rightDetailX, 92);
-  pdf.text(customerEmailValueLines, rightDetailX, 97, { maxWidth: detailWidth, lineHeightFactor: 1.08 });
-  pdf.text(`Valid Until: ${validUntil}`, rightDetailX, 102 + Math.max(0, customerEmailValueLines.length - 1) * 4.2);
+  pdf.text('Name:', leftLabelX, 87);
+  pdf.text(String(customer.name || 'N/A'), leftValueX, 87);
+  pdf.text('Phone:', rightLabelX, 87);
+  pdf.text(String(customer.phone || 'N/A'), rightValueX, 87);
+
+  pdf.text('Company:', leftLabelX, 92);
+  pdf.text(String(customer.company || 'N/A'), leftValueX, 92);
+  pdf.text('Email:', rightLabelX, 92);
+  pdf.text(emailValueLines, rightValueX, 92, { maxWidth: rightValueWidth, lineHeightFactor: 1.08 });
+
+  pdf.text('Address:', leftLabelX, 97);
+  pdf.text(addressValueLines, leftValueX, 97, { maxWidth: leftValueWidth, lineHeightFactor: 1.08 });
+  pdf.text('Valid Until:', rightLabelX, 97);
+  pdf.text(String(validUntil), rightValueX, 97);
 
   pdf.setDrawColor(219, 228, 240);
   const dividerY = 74 + billToBoxHeight + 8;
