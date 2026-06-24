@@ -192,8 +192,8 @@ async function loadArabicHeaderImages(settings: any): Promise<{ full?: string; c
     };
 
     return {
-      full: renderBlock(fullLines, 1400, 460, { titleSize: 68, bodySize: 40 }),
-      compact: renderBlock(compactLines, 760, 200, { titleSize: 46, bodySize: 28 }),
+      full: renderBlock(fullLines, 1500, 280, { titleSize: 84, bodySize: 48 }),
+      compact: renderBlock(compactLines, 820, 120, { titleSize: 58, bodySize: 34 }),
     };
   })();
 
