@@ -192,8 +192,8 @@ async function loadArabicHeaderImages(settings: any): Promise<{ full?: string; c
     };
 
     return {
-      full: renderBlock(fullLines, 1200, 420, { titleSize: 68, bodySize: 34 }),
-      compact: renderBlock(compactLines, 720, 180, { titleSize: 46, bodySize: 26 }),
+      full: renderBlock(fullLines, 1400, 460, { titleSize: 68, bodySize: 40 }),
+      compact: renderBlock(compactLines, 760, 200, { titleSize: 46, bodySize: 28 }),
     };
   })();
 
@@ -302,10 +302,11 @@ function drawCompanyHeader(
     companyInfo.address || 'Office # 3 ln, Al Dirah Dist, P.O.Box 12633, Riyadh - 11461 KSA',
     HEADER_LEFT_COL_WIDTH - 6
   );
-  pdf.text(addressLines, HEADER_LEFT_TEXT_X, 22);
-  pdf.text(`Tel: ${companyInfo.phone || '011-4917295'}`, HEADER_LEFT_TEXT_X, 35);
-  pdf.text(`VAT: ${companyInfo.vatNumber || '314076518400003'}`, HEADER_LEFT_TEXT_X, 40);
-  pdf.text(`CR: ${companyInfo.crNumber || '1010973808'}`, HEADER_LEFT_TEXT_X, 45);
+  pdf.text(addressLines, HEADER_LEFT_TEXT_X, 22, { lineHeightFactor: 1.05 });
+  const companyDetailsTop = 36;
+  pdf.text(`Tel: ${companyInfo.phone || '011-4917295'}`, HEADER_LEFT_TEXT_X, companyDetailsTop);
+  pdf.text(`VAT: ${companyInfo.vatNumber || '314076518400003'}`, HEADER_LEFT_TEXT_X, companyDetailsTop + 5);
+  pdf.text(`CR: ${companyInfo.crNumber || '1010973808'}`, HEADER_LEFT_TEXT_X, companyDetailsTop + 10);
 
   pdf.setDrawColor(219, 228, 240);
   pdf.setFillColor(255, 255, 255);
@@ -392,10 +393,10 @@ function drawHeader(
   const rightDetailX = 110;
   const detailWidth = 80;
   const customerAddressLines = pdf.splitTextToSize(`Address: ${customer.address || 'N/A'}`, detailWidth);
-  const customerEmailLines = pdf.splitTextToSize(`Email: ${customer.email || 'N/A'}`, detailWidth);
+  const customerEmailValueLines = pdf.splitTextToSize(String(customer.email || 'N/A'), detailWidth);
   const billToTextBottom = Math.max(
     92 + customerAddressLines.length * 4.2,
-    87 + customerEmailLines.length * 4.2 + 5.2
+    92 + customerEmailValueLines.length * 4.2 + 5.2
   );
   const billToBoxHeight = Math.max(24, billToTextBottom - 74 + 3);
 
@@ -415,8 +416,9 @@ function drawHeader(
   pdf.text(`Company: ${customer.company || 'N/A'}`, leftDetailX, 92);
   pdf.text(customerAddressLines, leftDetailX, 97, { maxWidth: detailWidth, lineHeightFactor: 1.08 });
   pdf.text(`Phone: ${customer.phone || 'N/A'}`, rightDetailX, 87);
-  pdf.text(customerEmailLines, rightDetailX, 92, { maxWidth: detailWidth, lineHeightFactor: 1.08 });
-  pdf.text(`Valid Until: ${validUntil}`, rightDetailX, 97 + Math.max(0, customerEmailLines.length - 1) * 4.2);
+  pdf.text('Email:', rightDetailX, 92);
+  pdf.text(customerEmailValueLines, rightDetailX, 97, { maxWidth: detailWidth, lineHeightFactor: 1.08 });
+  pdf.text(`Valid Until: ${validUntil}`, rightDetailX, 102 + Math.max(0, customerEmailValueLines.length - 1) * 4.2);
 
   pdf.setDrawColor(219, 228, 240);
   const dividerY = 74 + billToBoxHeight + 8;
@@ -587,12 +589,13 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
 
   const termsTextLines = termsLines.length ? termsLines : ['Payment terms: 30 days from invoice date'];
   const normalizedTerms = termsTextLines.map((line) => line.replace(/\r/g, '').trim()).filter(Boolean);
-  const infoLines = [
+  const contactHeading = pointOfContact.title || 'Smart Universe : Primary Contact of this Project';
+  const bankingLines = [
     `Bank: ${bankingDetails.bankName || 'Saudi National Bank'}`,
     `IBAN: ${bankingDetails.iban || 'SA3610000041000000080109'}`,
     `Account Number: ${bankingDetails.accountNumber || '41000000080109'}`,
-    '',
-    pointOfContact.title || 'Smart Universe : Primary Contact of this Project',
+  ];
+  const contactLines = [
     `Name: ${pointOfContact.name || 'N/A'}`,
     `Designation: ${pointOfContact.designation || 'N/A'}`,
     `Mobily Number: ${pointOfContact.mobileNumber || 'N/A'}`,
@@ -615,14 +618,23 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(6.4);
   const wrappedTerms = normalizedTerms.flatMap((line) => pdf.splitTextToSize(line, leftBoxWidth - cardPadding * 2));
-  pdf.setFontSize(6.9);
-  const wrappedInfo = infoLines.flatMap((line) => line ? pdf.splitTextToSize(line, rightBoxWidth - cardPadding * 2) : ['']);
+  pdf.setFontSize(6.6);
+  const wrappedBanking = bankingLines.flatMap((line) => pdf.splitTextToSize(line, rightBoxWidth - cardPadding * 2));
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(7.1);
+  const wrappedContactHeading = pdf.splitTextToSize(contactHeading, rightBoxWidth - cardPadding * 2);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(6.6);
+  const wrappedContact = contactLines.flatMap((line) => pdf.splitTextToSize(line, rightBoxWidth - cardPadding * 2));
 
   const termsLineHeight = 3.05;
-  const infoLineHeight = 3.45;
+  const infoLineHeight = 3.55;
   const availableHeight = availablePageBottom - boxTop;
   const termsHeight = Math.min(availableHeight, wrappedTerms.length * termsLineHeight + 13.5);
-  const infoHeight = Math.min(availableHeight, wrappedInfo.length * infoLineHeight + 13.5);
+  const infoHeight = Math.min(
+    availableHeight,
+    wrappedBanking.length * infoLineHeight + wrappedContactHeading.length * 4.1 + wrappedContact.length * infoLineHeight + 22
+  );
 
   pdf.setFillColor(251, 252, 254);
   pdf.setDrawColor(203, 213, 225);
@@ -643,8 +655,27 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
     maxWidth: leftBoxWidth - cardPadding * 2,
     lineHeightFactor: 1.08,
   });
-  pdf.setFontSize(6.9);
-  pdf.text(wrappedInfo, rightX + cardPadding, boxTop + 11, {
+  let infoY = boxTop + 11;
+  pdf.setFont('helvetica', 'normal');
+  pdf.setTextColor(55, 65, 81);
+  pdf.setFontSize(6.6);
+  pdf.text(wrappedBanking, rightX + cardPadding, infoY, {
+    maxWidth: rightBoxWidth - cardPadding * 2,
+    lineHeightFactor: 1.1,
+  });
+  infoY += wrappedBanking.length * infoLineHeight + 3;
+  pdf.setFont('helvetica', 'bold');
+  pdf.setTextColor(30, 64, 175);
+  pdf.setFontSize(7.1);
+  pdf.text(wrappedContactHeading, rightX + cardPadding, infoY, {
+    maxWidth: rightBoxWidth - cardPadding * 2,
+    lineHeightFactor: 1.08,
+  });
+  infoY += wrappedContactHeading.length * 4.1 + 2.2;
+  pdf.setFont('helvetica', 'normal');
+  pdf.setTextColor(55, 65, 81);
+  pdf.setFontSize(6.6);
+  pdf.text(wrappedContact, rightX + cardPadding, infoY, {
     maxWidth: rightBoxWidth - cardPadding * 2,
     lineHeightFactor: 1.1,
   });
