@@ -191,8 +191,8 @@ async function loadArabicHeaderImages(settings: any): Promise<{ full?: string; c
     };
 
     return {
-      full: renderBlock(fullLines, 300, 150, { titleSize: 24, bodySize: 16 }),
-      compact: renderBlock(compactLines, 220, 46, { titleSize: 18, bodySize: 14 }),
+      full: renderBlock(fullLines, 900, 300, { titleSize: 54, bodySize: 28 }),
+      compact: renderBlock(compactLines, 520, 120, { titleSize: 34, bodySize: 22 }),
     };
   })();
 
@@ -288,11 +288,11 @@ function drawCompanyHeader(
   }
 
   const companyName = companyInfo.name || 'Smart Universe Communication and Information Technology';
-  const wrappedName = pdf.splitTextToSize(companyName, HEADER_LEFT_COL_WIDTH - 8).slice(0, 3);
+  const wrappedName = pdf.splitTextToSize(companyName, HEADER_LEFT_COL_WIDTH - 6).slice(0, 4);
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(29, 78, 216);
-  pdf.setFontSize(wrappedName.length > 2 ? 8.6 : wrappedName.length > 1 ? 9.4 : 10.4);
-  pdf.text(wrappedName, HEADER_LEFT_TEXT_X, 13.5);
+  pdf.setFontSize(wrappedName.length > 3 ? 7.2 : wrappedName.length > 2 ? 8 : wrappedName.length > 1 ? 8.8 : 9.6);
+  pdf.text(wrappedName, HEADER_LEFT_TEXT_X, 12.8);
 
   pdf.setFont('helvetica', 'normal');
   pdf.setTextColor(55, 65, 81);
@@ -309,27 +309,23 @@ function drawCompanyHeader(
   pdf.setDrawColor(219, 228, 240);
   pdf.setFillColor(255, 255, 255);
   pdf.roundedRect(HEADER_MIDDLE_COL_X, 8, HEADER_MIDDLE_COL_WIDTH, 21, 3, 3, 'FD');
-  const arabicName = companyInfo.nameAr || 'مؤسسة الكون الذكي للاتصالات و تقنية المعلومات';
-  const arabicAddress = companyInfo.addressAr || 'مكتب رقم 3، حي الديرة، ص.ب 12633، الرياض 11461، المملكة العربية السعودية';
-  const arabicVat = `رقم الضريبة المضافة: ${companyInfo.vatNumber || '314076518400003'}`;
-  const arabicCr = `السجل التجاري: ${companyInfo.crNumber || '1010973808'}`;
-  const arabicNameLines = splitArabicText(pdf, arabicName, HEADER_MIDDLE_COL_WIDTH - 6, 9.2);
-  const arabicAddressLines = splitArabicText(pdf, arabicAddress, HEADER_MIDDLE_COL_WIDTH - 6, 6.3);
-  pdf.setTextColor(30, 64, 175);
-  pdf.setFontSize(9.2);
-  let arabicY = 13;
-  arabicNameLines.slice(0, 2).forEach((line) => {
-    drawArabicText(pdf, line, HEADER_MIDDLE_COL_X + HEADER_MIDDLE_COL_WIDTH - 3, arabicY, { align: 'right' });
-    arabicY += 3.8;
-  });
-  pdf.setTextColor(55, 65, 81);
-  pdf.setFontSize(6.3);
-  arabicAddressLines.slice(0, 2).forEach((line) => {
-    drawArabicText(pdf, line, HEADER_MIDDLE_COL_X + HEADER_MIDDLE_COL_WIDTH - 3, arabicY, { align: 'right' });
-    arabicY += 2.9;
-  });
-  drawArabicText(pdf, arabicVat, HEADER_MIDDLE_COL_X + HEADER_MIDDLE_COL_WIDTH - 3, arabicY + 0.6, { align: 'right' });
-  drawArabicText(pdf, arabicCr, HEADER_MIDDLE_COL_X + HEADER_MIDDLE_COL_WIDTH - 3, arabicY + 3.5, { align: 'right' });
+  const arabicImage = arabicHeaderImages?.full || arabicHeaderImages?.compact;
+  if (arabicImage) {
+    try {
+      pdf.addImage(
+        arabicImage,
+        'PNG',
+        HEADER_MIDDLE_COL_X + 1.5,
+        9,
+        HEADER_MIDDLE_COL_WIDTH - 3,
+        18,
+        undefined,
+        'FAST'
+      );
+    } catch {
+      // ignore and keep box visible
+    }
+  }
 
   pdf.setDrawColor(209, 213, 219);
   pdf.setFillColor(248, 250, 252);
