@@ -6,6 +6,7 @@ import amiriFontUrl from '../../Amiri-Regular.ttf?url';
 let riyalSymbolImagePromise: Promise<string | undefined> | null = null;
 let amiriFontReadyPromise: Promise<void> | null = null;
 let arabicHeaderImagePromise: Promise<{ full?: string; compact?: string }> | null = null;
+const ARABIC_COMPANY_NAME = 'شركة الكون الذكي للاتصالات و تقنية المعلومات';
 
 const HEADER_HEIGHT = 64;
 const FIRST_PAGE_TABLE_START_Y = 107;
@@ -13,12 +14,12 @@ const CONTINUATION_TABLE_START_Y = 66;
 const PAGE_FOOTER_TOP_MARGIN = 24;
 const HEADER_LEFT_COL_X = 12;
 const HEADER_LEFT_TEXT_X = 29;
-const HEADER_LEFT_COL_WIDTH = 72;
-const HEADER_MIDDLE_COL_X = 114;
-const HEADER_MIDDLE_COL_WIDTH = 62;
-const HEADER_RIGHT_COL_X = 162;
-const HEADER_RIGHT_COL_WIDTH = 36;
-const HEADER_QUOTE_BOX_TOP = 33;
+const HEADER_LEFT_COL_WIDTH = 78;
+const HEADER_MIDDLE_COL_X = 112;
+const HEADER_MIDDLE_COL_WIDTH = 86;
+const HEADER_RIGHT_COL_X = 154;
+const HEADER_RIGHT_COL_WIDTH = 44;
+const HEADER_QUOTE_BOX_TOP = 31;
 const HEADER_QUOTE_BOX_HEIGHT = 18;
 
 function escapeHtml(value: any): string {
@@ -128,12 +129,12 @@ async function loadArabicHeaderImages(settings: any): Promise<{ full?: string; c
 
     const companyInfo = settings?.companyInfo || {};
     const fullLines = [
-      companyInfo.nameAr || 'مؤسسة الكون الذكي للاتصالات و تقنية المعلومات',
+      ARABIC_COMPANY_NAME,
       companyInfo.addressAr || 'مكتب رقم 3، حي الديرة، ص.ب 12633، الرياض 11461، المملكة العربية السعودية',
       `رقم الضريبة المضافة: ${companyInfo.vatNumber || '314076518400003'}`,
       `السجل التجاري: ${companyInfo.crNumber || '1010973808'}`,
     ];
-    const compactLines = [companyInfo.nameAr || 'مؤسسة الكون الذكي للاتصالات و تقنية المعلومات'];
+    const compactLines = [ARABIC_COMPANY_NAME];
 
     const renderBlock = (lines: string[], width: number, height: number, styles: { titleSize: number; bodySize: number }) => {
       const canvas = document.createElement('canvas');
@@ -191,8 +192,8 @@ async function loadArabicHeaderImages(settings: any): Promise<{ full?: string; c
     };
 
     return {
-      full: renderBlock(fullLines, 900, 300, { titleSize: 54, bodySize: 28 }),
-      compact: renderBlock(compactLines, 520, 120, { titleSize: 34, bodySize: 22 }),
+      full: renderBlock(fullLines, 1200, 420, { titleSize: 68, bodySize: 34 }),
+      compact: renderBlock(compactLines, 720, 180, { titleSize: 46, bodySize: 26 }),
     };
   })();
 
@@ -315,10 +316,10 @@ function drawCompanyHeader(
       pdf.addImage(
         arabicImage,
         'PNG',
-        HEADER_MIDDLE_COL_X + 1.5,
-        9,
-        HEADER_MIDDLE_COL_WIDTH - 3,
-        18,
+        HEADER_MIDDLE_COL_X + 1,
+        8.8,
+        HEADER_MIDDLE_COL_WIDTH - 2,
+        17.5,
         undefined,
         'FAST'
       );
@@ -346,7 +347,7 @@ function drawHeader(
   pageNumber: number,
   includeCustomer = true,
   arabicHeaderImages?: { full?: string; compact?: string }
-) {
+): number {
   const customer = quote.customer || {};
   const quoteNumber = quote.quoteNumber || quote.quote_number || 'Q-001';
   const quoteDate = new Date(quote.created_at || quote.createdAt || Date.now()).toLocaleDateString('en-US', {
@@ -368,46 +369,59 @@ function drawHeader(
   pdf.setTextColor(30, 64, 175);
   pdf.setFontSize(9);
   if (!includeCustomer) {
-    pdf.setFontSize(6.3);
-    pdf.text('Quotation #', HEADER_RIGHT_COL_X + 2.5, HEADER_QUOTE_BOX_TOP + 5.5);
-    pdf.text(quoteNumber, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 2.5, HEADER_QUOTE_BOX_TOP + 5.5, { align: 'right' });
-    pdf.text('Date', HEADER_RIGHT_COL_X + 2.5, HEADER_QUOTE_BOX_TOP + 11.8);
-    pdf.text(quoteDate, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 2.5, HEADER_QUOTE_BOX_TOP + 11.8, { align: 'right' });
+    pdf.setFontSize(5.7);
+    pdf.text('Quotation #', HEADER_RIGHT_COL_X + 2.2, HEADER_QUOTE_BOX_TOP + 5.4);
+    pdf.text(quoteNumber, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 2.2, HEADER_QUOTE_BOX_TOP + 5.4, { align: 'right' });
+    pdf.text('Date', HEADER_RIGHT_COL_X + 2.2, HEADER_QUOTE_BOX_TOP + 11.3);
+    pdf.text(quoteDate, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 2.2, HEADER_QUOTE_BOX_TOP + 11.3, { align: 'right' });
     pdf.setDrawColor(219, 228, 240);
     pdf.line(12, CONTINUATION_TABLE_START_Y - 4, 198, CONTINUATION_TABLE_START_Y - 4);
-    return;
+    return CONTINUATION_TABLE_START_Y - 4;
   }
 
-  pdf.setFontSize(6.3);
-  pdf.text('Quotation #', HEADER_RIGHT_COL_X + 2.5, HEADER_QUOTE_BOX_TOP + 5.5);
-  pdf.text(quoteNumber, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 2.5, HEADER_QUOTE_BOX_TOP + 5.5, { align: 'right' });
-  pdf.text('Date', HEADER_RIGHT_COL_X + 2.5, HEADER_QUOTE_BOX_TOP + 11.8);
-  pdf.text(quoteDate, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 2.5, HEADER_QUOTE_BOX_TOP + 11.8, { align: 'right' });
+  pdf.setFontSize(5.7);
+  pdf.text('Quotation #', HEADER_RIGHT_COL_X + 2.2, HEADER_QUOTE_BOX_TOP + 5.4);
+  pdf.text(quoteNumber, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 2.2, HEADER_QUOTE_BOX_TOP + 5.4, { align: 'right' });
+  pdf.text('Date', HEADER_RIGHT_COL_X + 2.2, HEADER_QUOTE_BOX_TOP + 11.3);
+  pdf.text(quoteDate, HEADER_RIGHT_COL_X + HEADER_RIGHT_COL_WIDTH - 2.2, HEADER_QUOTE_BOX_TOP + 11.3, { align: 'right' });
 
   pdf.setFontSize(16);
   pdf.text('Quotation', 12, 70);
 
+  const leftDetailX = 16;
+  const rightDetailX = 110;
+  const detailWidth = 80;
+  const customerAddressLines = pdf.splitTextToSize(`Address: ${customer.address || 'N/A'}`, detailWidth);
+  const customerEmailLines = pdf.splitTextToSize(`Email: ${customer.email || 'N/A'}`, detailWidth);
+  const billToTextBottom = Math.max(
+    92 + customerAddressLines.length * 4.2,
+    87 + customerEmailLines.length * 4.2 + 5.2
+  );
+  const billToBoxHeight = Math.max(24, billToTextBottom - 74 + 3);
+
   pdf.setFillColor(249, 250, 251);
   pdf.setDrawColor(229, 231, 235);
-  pdf.roundedRect(12, 74, 186, 22, 3, 3, 'FD');
+  pdf.roundedRect(12, 74, 186, billToBoxHeight, 3, 3, 'FD');
 
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(30, 58, 138);
   pdf.setFontSize(10);
-  pdf.text('Bill To', 16, 81);
+  pdf.text('Bill To', leftDetailX, 81);
 
   pdf.setFont('helvetica', 'normal');
   pdf.setTextColor(55, 65, 81);
   pdf.setFontSize(8.5);
-  pdf.text(`Name: ${customer.name || 'N/A'}`, 16, 87);
-  pdf.text(`Company: ${customer.company || 'N/A'}`, 16, 92);
-  pdf.text(`Address: ${customer.address || 'N/A'}`, 16, 97);
-  pdf.text(`Phone: ${customer.phone || 'N/A'}`, 110, 87);
-  pdf.text(`Email: ${customer.email || 'N/A'}`, 110, 92);
-  pdf.text(`Valid Until: ${validUntil}`, 110, 97);
+  pdf.text(`Name: ${customer.name || 'N/A'}`, leftDetailX, 87);
+  pdf.text(`Company: ${customer.company || 'N/A'}`, leftDetailX, 92);
+  pdf.text(customerAddressLines, leftDetailX, 97, { maxWidth: detailWidth, lineHeightFactor: 1.08 });
+  pdf.text(`Phone: ${customer.phone || 'N/A'}`, rightDetailX, 87);
+  pdf.text(customerEmailLines, rightDetailX, 92, { maxWidth: detailWidth, lineHeightFactor: 1.08 });
+  pdf.text(`Valid Until: ${validUntil}`, rightDetailX, 97 + Math.max(0, customerEmailLines.length - 1) * 4.2);
 
   pdf.setDrawColor(219, 228, 240);
-  pdf.line(12, 104, 198, 104);
+  const dividerY = 74 + billToBoxHeight + 8;
+  pdf.line(12, dividerY, 198, dividerY);
+  return dividerY;
 }
 
 function drawFooter(pdf: jsPDF) {
@@ -460,7 +474,7 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   const termsLines = splitLines(quote.terms || 'Payment terms: 30 days from invoice date');
 
   let pageNumber = 1;
-  drawHeader(pdf, quote, settings, pageNumber, true, arabicHeaderImages);
+  const firstPageDividerY = drawHeader(pdf, quote, settings, pageNumber, true, arabicHeaderImages);
 
   const bodyRows: RowInput[] = lineItems.length
       ? lineItems.map((item: any, index: number) => ([
@@ -474,7 +488,7 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
     : [[ '', '', 'No items to display', '', '', '' ]];
 
   autoTable(pdf, {
-    startY: FIRST_PAGE_TABLE_START_Y,
+    startY: Math.max(FIRST_PAGE_TABLE_START_Y, firstPageDividerY + 3),
     margin: { left: 12, right: 12, top: CONTINUATION_TABLE_START_Y, bottom: 24 },
     head: [['S#', 'Item', 'Description', 'Qty', 'Unit Price', 'Total']],
     body: bodyRows,
@@ -607,8 +621,8 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   const termsLineHeight = 3.5;
   const infoLineHeight = 4;
   const availableHeight = availablePageBottom - boxTop;
-  const termsHeight = Math.min(availableHeight, Math.max(34, wrappedTerms.length * termsLineHeight + 15));
-  const infoHeight = Math.min(availableHeight, Math.max(28, wrappedInfo.length * infoLineHeight + 15));
+  const termsHeight = Math.min(availableHeight, wrappedTerms.length * termsLineHeight + 16);
+  const infoHeight = Math.min(availableHeight, wrappedInfo.length * infoLineHeight + 16);
 
   pdf.setFillColor(251, 252, 254);
   pdf.setDrawColor(203, 213, 225);
