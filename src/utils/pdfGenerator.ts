@@ -8,7 +8,7 @@ let amiriFontReadyPromise: Promise<void> | null = null;
 let arabicHeaderImagePromise: Promise<{ full?: string; compact?: string }> | null = null;
 const ARABIC_COMPANY_NAME = 'شركة الكون الذكي للاتصالات و تقنية المعلومات';
 
-const HEADER_HEIGHT = 64;
+const HEADER_HEIGHT = 72;
 const FIRST_PAGE_TABLE_START_Y = 107;
 const CONTINUATION_TABLE_START_Y = 66;
 const PAGE_FOOTER_TOP_MARGIN = 24;
@@ -19,7 +19,7 @@ const HEADER_MIDDLE_COL_X = 112;
 const HEADER_MIDDLE_COL_WIDTH = 86;
 const HEADER_RIGHT_COL_X = 154;
 const HEADER_RIGHT_COL_WIDTH = 44;
-const HEADER_QUOTE_BOX_TOP = 31;
+const HEADER_QUOTE_BOX_TOP = 39;
 const HEADER_QUOTE_BOX_HEIGHT = 18;
 
 function escapeHtml(value: any): string {
@@ -192,8 +192,8 @@ async function loadArabicHeaderImages(settings: any): Promise<{ full?: string; c
     };
 
     return {
-      full: renderBlock(fullLines, 1500, 280, { titleSize: 84, bodySize: 48 }),
-      compact: renderBlock(compactLines, 820, 120, { titleSize: 58, bodySize: 34 }),
+      full: renderBlock(fullLines, 1600, 360, { titleSize: 92, bodySize: 56 }),
+      compact: renderBlock(compactLines, 860, 150, { titleSize: 62, bodySize: 38 }),
     };
   })();
 
@@ -310,7 +310,7 @@ function drawCompanyHeader(
 
   pdf.setDrawColor(219, 228, 240);
   pdf.setFillColor(255, 255, 255);
-  pdf.roundedRect(HEADER_MIDDLE_COL_X, 8, HEADER_MIDDLE_COL_WIDTH, 21, 3, 3, 'FD');
+  pdf.roundedRect(HEADER_MIDDLE_COL_X, 6.5, HEADER_MIDDLE_COL_WIDTH, 28, 3, 3, 'FD');
   const arabicImage = arabicHeaderImages?.full || arabicHeaderImages?.compact;
   if (arabicImage) {
     try {
@@ -318,9 +318,9 @@ function drawCompanyHeader(
         arabicImage,
         'PNG',
         HEADER_MIDDLE_COL_X + 1,
-        8.8,
+        7.3,
         HEADER_MIDDLE_COL_WIDTH - 2,
-        17.5,
+        24,
         undefined,
         'FAST'
       );
