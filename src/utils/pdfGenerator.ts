@@ -7,18 +7,18 @@ let riyalSymbolImagePromise: Promise<string | undefined> | null = null;
 let amiriFontReadyPromise: Promise<void> | null = null;
 let arabicHeaderImagePromise: Promise<{ full?: string; compact?: string }> | null = null;
 
-const HEADER_HEIGHT = 62;
-const FIRST_PAGE_TABLE_START_Y = 102;
+const HEADER_HEIGHT = 64;
+const FIRST_PAGE_TABLE_START_Y = 107;
 const CONTINUATION_TABLE_START_Y = 66;
 const PAGE_FOOTER_TOP_MARGIN = 24;
 const HEADER_LEFT_COL_X = 12;
 const HEADER_LEFT_TEXT_X = 29;
 const HEADER_LEFT_COL_WIDTH = 62;
-const HEADER_MIDDLE_COL_X = 108;
-const HEADER_MIDDLE_COL_WIDTH = 58;
+const HEADER_MIDDLE_COL_X = 116;
+const HEADER_MIDDLE_COL_WIDTH = 70;
 const HEADER_RIGHT_COL_X = 150;
 const HEADER_RIGHT_COL_WIDTH = 48;
-const HEADER_QUOTE_BOX_TOP = 23;
+const HEADER_QUOTE_BOX_TOP = 31;
 const HEADER_QUOTE_BOX_HEIGHT = 16;
 
 function escapeHtml(value: any): string {
@@ -306,16 +306,20 @@ function drawCompanyHeader(
   pdf.text(`VAT: ${companyInfo.vatNumber || '314076518400003'}`, HEADER_LEFT_TEXT_X, 40);
   pdf.text(`CR: ${companyInfo.crNumber || '1010973808'}`, HEADER_LEFT_TEXT_X, 45);
 
-  const arabicImage = arabicHeaderImages?.compact || arabicHeaderImages?.full;
+  pdf.setDrawColor(219, 228, 240);
+  pdf.setFillColor(255, 255, 255);
+  pdf.roundedRect(HEADER_MIDDLE_COL_X, 8, HEADER_MIDDLE_COL_WIDTH, 19, 3, 3, 'FD');
+
+  const arabicImage = arabicHeaderImages?.full || arabicHeaderImages?.compact;
   if (arabicImage) {
     try {
       pdf.addImage(
         arabicImage,
         'PNG',
-        HEADER_MIDDLE_COL_X,
-        11,
-        HEADER_MIDDLE_COL_WIDTH,
-        10.5,
+        HEADER_MIDDLE_COL_X + 2,
+        10,
+        HEADER_MIDDLE_COL_WIDTH - 4,
+        14,
         undefined,
         'FAST'
       );
@@ -324,13 +328,13 @@ function drawCompanyHeader(
     }
   } else {
     const arabicName = companyInfo.nameAr || 'مؤسسة الكون الذكي للاتصالات و تقنية المعلومات';
-    const arabicNameLines = splitArabicText(pdf, arabicName, HEADER_MIDDLE_COL_WIDTH, 9.3);
+    const arabicNameLines = splitArabicText(pdf, arabicName, HEADER_MIDDLE_COL_WIDTH - 6, 8.8);
     pdf.setTextColor(30, 64, 175);
-    pdf.setFontSize(9.3);
-    let arabicNameY = 15;
-    arabicNameLines.slice(0, 2).forEach((line) => {
-      drawArabicText(pdf, line, HEADER_MIDDLE_COL_X + HEADER_MIDDLE_COL_WIDTH, arabicNameY, { align: 'right' });
-      arabicNameY += 3.8;
+    pdf.setFontSize(8.8);
+    let arabicNameY = 14;
+    arabicNameLines.slice(0, 3).forEach((line) => {
+      drawArabicText(pdf, line, HEADER_MIDDLE_COL_X + HEADER_MIDDLE_COL_WIDTH - 3, arabicNameY, { align: 'right' });
+      arabicNameY += 3.3;
     });
   }
 
@@ -408,12 +412,13 @@ function drawHeader(
   pdf.setFontSize(8.5);
   pdf.text(`Name: ${customer.name || 'N/A'}`, 16, 87);
   pdf.text(`Company: ${customer.company || 'N/A'}`, 16, 92);
-  pdf.text(`Phone: ${customer.phone || 'N/A'}`, 100, 87);
-  pdf.text(`Email: ${customer.email || 'N/A'}`, 100, 92);
-  pdf.text(`Valid Until: ${validUntil}`, 16, 97);
+  pdf.text(`Address: ${customer.address || 'N/A'}`, 16, 97);
+  pdf.text(`Phone: ${customer.phone || 'N/A'}`, 110, 87);
+  pdf.text(`Email: ${customer.email || 'N/A'}`, 110, 92);
+  pdf.text(`Valid Until: ${validUntil}`, 110, 97);
 
   pdf.setDrawColor(219, 228, 240);
-  pdf.line(12, 100, 198, 100);
+  pdf.line(12, 104, 198, 104);
 }
 
 function drawFooter(pdf: jsPDF) {
@@ -577,20 +582,8 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   pdf.text('Total', 118, currentY);
   drawCurrencyValue(pdf, formatCurrencyAmount(total), 198, currentY, { align: 'right', iconDataUrl: riyalSymbolImage, iconW: 3.4, iconH: 3.4, gap: 1.4 });
 
-  currentY += 6;
-
-  const contentLeft = 12;
-  const contentWidth = 186;
-  const cardPadding = 4.5;
-  const titleGap = 7;
-  const termsLineHeight = 4.6;
-  const infoLineHeight = 4.5;
-  const availablePageBottom = pageHeight - PAGE_FOOTER_TOP_MARGIN;
-
   const termsTextLines = termsLines.length ? termsLines : ['Payment terms: 30 days from invoice date'];
   const normalizedTerms = termsTextLines.map((line) => line.replace(/\r/g, '').trim()).filter(Boolean);
-  const wrappedTerms = normalizedTerms.flatMap((line) => pdf.splitTextToSize(line, contentWidth - cardPadding * 2 - 2));
-
   const infoLines = [
     `Bank: ${bankingDetails.bankName || 'Saudi National Bank'}`,
     `IBAN: ${bankingDetails.iban || 'SA3610000041000000080109'}`,
@@ -602,74 +595,57 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
     `Mobily Number: ${pointOfContact.mobileNumber || 'N/A'}`,
     `Email Address: ${pointOfContact.emailAddress || 'N/A'}`,
   ];
-  const wrappedInfo = infoLines.flatMap((line) => line ? pdf.splitTextToSize(line, contentWidth - cardPadding * 2 - 2) : ['']);
+  pdf.addPage();
+  pageNumber += 1;
+  drawHeader(pdf, quote, settings, pageNumber, false, arabicHeaderImages);
+  drawFooter(pdf);
 
-  const drawCard = (title: string, lines: string[], lineHeight: number, startY: number, minHeight = 0) => {
-    const boxHeight = Math.max(minHeight, lines.length * lineHeight + titleGap + cardPadding * 2);
-    pdf.setFillColor(251, 252, 254);
-    pdf.setDrawColor(203, 213, 225);
-    pdf.setLineWidth(0.45);
-    pdf.roundedRect(contentLeft, startY, contentWidth, boxHeight, 2.5, 2.5, 'FD');
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(30, 64, 175);
-    pdf.setFontSize(10);
-    pdf.text(title, contentLeft + cardPadding, startY + 6);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(55, 65, 81);
-    pdf.setFontSize(title === 'Terms & Conditions' ? 7.7 : 8.2);
-    pdf.text(lines, contentLeft + cardPadding, startY + titleGap + cardPadding, {
-      maxWidth: contentWidth - cardPadding * 2,
-      lineHeightFactor: title === 'Terms & Conditions' ? 1.34 : 1.28,
-    });
-    return startY + boxHeight + 6;
-  };
+  const boxTop = CONTINUATION_TABLE_START_Y;
+  const availablePageBottom = pageHeight - PAGE_FOOTER_TOP_MARGIN;
+  const leftX = 12;
+  const gap = 4;
+  const leftBoxWidth = 92;
+  const rightBoxWidth = 90;
+  const rightX = leftX + leftBoxWidth + gap;
+  const cardPadding = 4;
 
-  const currentPageTermsCapacity = Math.max(
-    0,
-    Math.floor((availablePageBottom - currentY - titleGap - cardPadding * 2 - 4) / termsLineHeight)
-  );
-  if (currentPageTermsCapacity < 6) {
-    pdf.addPage();
-    pageNumber += 1;
-    drawHeader(pdf, quote, settings, pageNumber, false, arabicHeaderImages);
-    drawFooter(pdf);
-    currentY = CONTINUATION_TABLE_START_Y;
-  }
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(6.4);
+  const wrappedTerms = normalizedTerms.flatMap((line) => pdf.splitTextToSize(line, leftBoxWidth - cardPadding * 2));
+  pdf.setFontSize(6.9);
+  const wrappedInfo = infoLines.flatMap((line) => line ? pdf.splitTextToSize(line, rightBoxWidth - cardPadding * 2) : ['']);
 
-  let remainingTerms = [...wrappedTerms];
-  let termsCardIndex = 0;
-  while (remainingTerms.length) {
-    const maxLinesThisPage = Math.max(
-      1,
-      Math.floor((availablePageBottom - currentY - titleGap - cardPadding * 2 - 4) / termsLineHeight)
-    );
-    const termsChunk = remainingTerms.splice(0, maxLinesThisPage);
-    termsCardIndex += 1;
-    currentY = drawCard(
-      termsCardIndex === 1 ? 'Terms & Conditions' : 'Terms & Conditions (continued)',
-      termsChunk,
-      termsLineHeight,
-      currentY
-    );
-    if (remainingTerms.length) {
-      pdf.addPage();
-      pageNumber += 1;
-      drawHeader(pdf, quote, settings, pageNumber, false, arabicHeaderImages);
-      drawFooter(pdf);
-      currentY = CONTINUATION_TABLE_START_Y;
-    }
-  }
+  const termsLineHeight = 3.5;
+  const infoLineHeight = 4;
+  const availableHeight = availablePageBottom - boxTop;
+  const termsHeight = wrappedTerms.length * termsLineHeight + 15;
+  const infoHeight = wrappedInfo.length * infoLineHeight + 15;
+  const boxHeight = Math.min(availableHeight, Math.max(60, termsHeight, infoHeight));
 
-  const infoCardMinHeight = 44;
-  if (currentY + Math.max(infoCardMinHeight, wrappedInfo.length * infoLineHeight + titleGap + cardPadding * 2) > availablePageBottom) {
-    pdf.addPage();
-    pageNumber += 1;
-    drawHeader(pdf, quote, settings, pageNumber, false, arabicHeaderImages);
-    drawFooter(pdf);
-    currentY = CONTINUATION_TABLE_START_Y;
-  }
+  pdf.setFillColor(251, 252, 254);
+  pdf.setDrawColor(203, 213, 225);
+  pdf.setLineWidth(0.45);
+  pdf.roundedRect(leftX, boxTop, leftBoxWidth, boxHeight, 2.5, 2.5, 'FD');
+  pdf.roundedRect(rightX, boxTop, rightBoxWidth, boxHeight, 2.5, 2.5, 'FD');
 
-  drawCard('Banking Details & Primary Contact', wrappedInfo, infoLineHeight, currentY, infoCardMinHeight);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setTextColor(30, 64, 175);
+  pdf.setFontSize(10);
+  pdf.text('Terms & Conditions', leftX + cardPadding, boxTop + 6);
+  pdf.text('Banking Details', rightX + cardPadding, boxTop + 6);
+
+  pdf.setFont('helvetica', 'normal');
+  pdf.setTextColor(55, 65, 81);
+  pdf.setFontSize(6.4);
+  pdf.text(wrappedTerms, leftX + cardPadding, boxTop + 11, {
+    maxWidth: leftBoxWidth - cardPadding * 2,
+    lineHeightFactor: 1.08,
+  });
+  pdf.setFontSize(6.9);
+  pdf.text(wrappedInfo, rightX + cardPadding, boxTop + 11, {
+    maxWidth: rightBoxWidth - cardPadding * 2,
+    lineHeightFactor: 1.1,
+  });
 
   return pdf.output('blob');
 }
