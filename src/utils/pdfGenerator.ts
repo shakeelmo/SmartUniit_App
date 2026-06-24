@@ -292,21 +292,21 @@ function drawCompanyHeader(
   const wrappedName = pdf.splitTextToSize(companyName, HEADER_LEFT_COL_WIDTH - 6).slice(0, 4);
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(29, 78, 216);
-  pdf.setFontSize(wrappedName.length > 3 ? 7.2 : wrappedName.length > 2 ? 8 : wrappedName.length > 1 ? 8.8 : 9.6);
-  pdf.text(wrappedName, HEADER_LEFT_TEXT_X, 12.8);
+  pdf.setFontSize(wrappedName.length > 3 ? 8.2 : wrappedName.length > 2 ? 8.9 : wrappedName.length > 1 ? 9.5 : 10.3);
+  pdf.text(wrappedName, HEADER_LEFT_TEXT_X, 13.2, { lineHeightFactor: 1.02 });
 
   pdf.setFont('helvetica', 'normal');
   pdf.setTextColor(55, 65, 81);
-  pdf.setFontSize(6.9);
+  pdf.setFontSize(7.9);
   const addressLines = pdf.splitTextToSize(
     companyInfo.address || 'Office # 3 ln, Al Dirah Dist, P.O.Box 12633, Riyadh - 11461 KSA',
     HEADER_LEFT_COL_WIDTH - 6
   );
-  pdf.text(addressLines, HEADER_LEFT_TEXT_X, 22, { lineHeightFactor: 1.05 });
-  const companyDetailsTop = 36;
+  pdf.text(addressLines, HEADER_LEFT_TEXT_X, 24.5, { lineHeightFactor: 1.02 });
+  const companyDetailsTop = 33.5;
   pdf.text(`Tel: ${companyInfo.phone || '011-4917295'}`, HEADER_LEFT_TEXT_X, companyDetailsTop);
-  pdf.text(`VAT: ${companyInfo.vatNumber || '314076518400003'}`, HEADER_LEFT_TEXT_X, companyDetailsTop + 5);
-  pdf.text(`CR: ${companyInfo.crNumber || '1010973808'}`, HEADER_LEFT_TEXT_X, companyDetailsTop + 10);
+  pdf.text(`VAT: ${companyInfo.vatNumber || '314076518400003'}`, HEADER_LEFT_TEXT_X, companyDetailsTop + 5.3);
+  pdf.text(`CR: ${companyInfo.crNumber || '1010973808'}`, HEADER_LEFT_TEXT_X, companyDetailsTop + 10.6);
 
   pdf.setDrawColor(219, 228, 240);
   pdf.setFillColor(255, 255, 255);
