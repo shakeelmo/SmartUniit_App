@@ -607,8 +607,8 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   const availablePageBottom = pageHeight - PAGE_FOOTER_TOP_MARGIN;
   const leftX = 12;
   const gap = 4;
-  const leftBoxWidth = 92;
-  const rightBoxWidth = 90;
+  const leftBoxWidth = 100;
+  const rightBoxWidth = 82;
   const rightX = leftX + leftBoxWidth + gap;
   const cardPadding = 4;
 
@@ -618,11 +618,11 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   pdf.setFontSize(6.9);
   const wrappedInfo = infoLines.flatMap((line) => line ? pdf.splitTextToSize(line, rightBoxWidth - cardPadding * 2) : ['']);
 
-  const termsLineHeight = 3.5;
-  const infoLineHeight = 4;
+  const termsLineHeight = 3.05;
+  const infoLineHeight = 3.45;
   const availableHeight = availablePageBottom - boxTop;
-  const termsHeight = Math.min(availableHeight, wrappedTerms.length * termsLineHeight + 16);
-  const infoHeight = Math.min(availableHeight, wrappedInfo.length * infoLineHeight + 16);
+  const termsHeight = Math.min(availableHeight, wrappedTerms.length * termsLineHeight + 13.5);
+  const infoHeight = Math.min(availableHeight, wrappedInfo.length * infoLineHeight + 13.5);
 
   pdf.setFillColor(251, 252, 254);
   pdf.setDrawColor(203, 213, 225);
