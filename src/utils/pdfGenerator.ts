@@ -398,11 +398,7 @@ function drawHeader(
   const addressValueLines = pdf.splitTextToSize(String(customer.address || 'N/A'), leftValueWidth);
   const emailValueLines = pdf.splitTextToSize(String(customer.email || 'N/A'), rightValueWidth);
   const leftTextBottom = 97 + Math.max(0, addressValueLines.length - 1) * 4.2;
-  const rightTextBottom = Math.max(
-    87,
-    92 + Math.max(0, emailValueLines.length - 1) * 4.2,
-    97
-  );
+  const rightTextBottom = Math.max(97, 92 + Math.max(0, emailValueLines.length - 1) * 4.2);
   const billToTextBottom = Math.max(leftTextBottom, rightTextBottom);
   const billToBoxHeight = Math.max(24, billToTextBottom - 74 + 6);
 
@@ -413,7 +409,7 @@ function drawHeader(
   pdf.setFont('helvetica', 'bold');
   pdf.setTextColor(30, 58, 138);
   pdf.setFontSize(10);
-  pdf.text('Bill To', leftDetailX, 81);
+  pdf.text('Bill To', leftLabelX, 81);
 
   pdf.setFont('helvetica', 'normal');
   pdf.setTextColor(55, 65, 81);
