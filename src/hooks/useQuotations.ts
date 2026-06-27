@@ -271,35 +271,45 @@ export function useQuotations() {
             : null)
         : undefined;
 
+      const normalizedLineItems = Array.isArray(updates.lineItems)
+        ? updates.lineItems.map((item: any) => ({
+            itemCode: item.itemCode || item.item_code || item.code || item.sku || item.partNumber || '',
+            description: item.description || item.name || '',
+            quantity: Number(item.quantity) || 0,
+            unit: item.unit || 'piece',
+            customUnit: item.customUnit || item.custom_unit || '',
+            unitPrice: Number(item.unitPrice ?? item.unit_price) || 0,
+            total: Number(item.total ?? item.total_price) || 0,
+          }))
+        : [];
+
+      const normalizedValidUntil = updates.validUntil
+        ? new Date(updates.validUntil).toISOString()
+        : undefined;
+
       const payload = {
-        ...updates,
-        customerId: validCustomerId,
         customer_id: validCustomerId,
         amount: amount,
         total_amount: amount,
-        total: amount,
         currency: updates.currency || 'SAR',
-        terms: updates.terms ?? updates.notes ?? '',
-        notes: updates.notes ?? updates.terms ?? '',
-        pointOfContactTitle: updates.pointOfContact?.title,
         point_of_contact_title: updates.pointOfContact?.title,
-        pointOfContactName: updates.pointOfContact?.name,
         point_of_contact_name: updates.pointOfContact?.name,
-        pointOfContactDesignation: updates.pointOfContact?.designation,
         point_of_contact_designation: updates.pointOfContact?.designation,
-        pointOfContactMobile: updates.pointOfContact?.mobileNumber,
         point_of_contact_mobile: updates.pointOfContact?.mobileNumber,
-        pointOfContactEmail: updates.pointOfContact?.emailAddress,
         point_of_contact_email: updates.pointOfContact?.emailAddress,
+        valid_until: normalizedValidUntil,
+        terms: updates.terms ?? updates.notes ?? '',
+        notes: updates.notes ?? '',
         scopeOfWork: updates.scopeOfWork ?? '',
         scopeOfWorkAr: updates.scopeOfWorkAr ?? '',
-        subtotal: updates.subtotal,
+        status: updates.status,
+        subtotal: Number(updates.subtotal) || 0,
         discountType: updates.discountType,
-        discountValue: updates.discountValue,
-        discountAmount: updates.discountAmount,
-        vatRate: updates.vatRate,
-        vatAmount: updates.vatAmount,
-        lineItems: updates.lineItems,
+        discountValue: Number(updates.discountValue) || 0,
+        discountAmount: Number(updates.discountAmount) || 0,
+        vatRate: Number(updates.vatRate) || 15,
+        vatAmount: Number(updates.vatAmount) || 0,
+        lineItems: normalizedLineItems,
       };
       
       console.log('Updating quotation with payload:', payload);
