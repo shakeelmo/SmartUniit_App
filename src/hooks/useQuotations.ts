@@ -298,10 +298,6 @@ export function useQuotations() {
         point_of_contact_mobile: updates.pointOfContact?.mobileNumber,
         point_of_contact_email: updates.pointOfContact?.emailAddress,
         valid_until: normalizedValidUntil,
-        terms: updates.terms ?? updates.notes ?? '',
-        notes: updates.notes ?? '',
-        scopeOfWork: updates.scopeOfWork ?? '',
-        scopeOfWorkAr: updates.scopeOfWorkAr ?? '',
         status: updates.status,
         subtotal: Number(updates.subtotal) || 0,
         discountType: updates.discountType,
@@ -313,6 +309,28 @@ export function useQuotations() {
       
       console.log('Updating quotation with payload:', payload);
       const { quotation } = await api.updateQuotation(id, payload);
+
+      const termsPayload = updates.terms !== undefined || updates.notes !== undefined
+        ? {
+            terms: updates.terms ?? updates.notes ?? '',
+            notes: updates.notes ?? '',
+          }
+        : null;
+
+      if (termsPayload) {
+        await api.updateQuotation(id, termsPayload);
+      }
+
+      const scopePayload = updates.scopeOfWork !== undefined || updates.scopeOfWorkAr !== undefined
+        ? {
+            scopeOfWork: updates.scopeOfWork ?? '',
+            scopeOfWorkAr: updates.scopeOfWorkAr ?? '',
+          }
+        : null;
+
+      if (scopePayload) {
+        await api.updateQuotation(id, scopePayload);
+      }
 
       if (Array.isArray(updates.lineItems)) {
         await api.clearQuotationLineItems(id);
