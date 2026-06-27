@@ -328,8 +328,7 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
   }
 });
 
-// Update quotation
-router.put('/:id', authenticateToken, requirePermission('quotations', 'update'), async (req, res) => {
+const handleUpdateQuotation = async (req, res) => {
   try {
     await ensureQuotationLineItemColumns();
     await ensureQuotationPointOfContactColumns();
@@ -486,7 +485,11 @@ router.put('/:id', authenticateToken, requirePermission('quotations', 'update'),
     console.error('Update quotation error:', error);
     res.status(500).json({ error: 'Internal server error', details: error.message });
   }
-});
+};
+
+// Update quotation
+router.put('/:id', authenticateToken, requirePermission('quotations', 'update'), handleUpdateQuotation);
+router.post('/:id/update', authenticateToken, requirePermission('quotations', 'update'), handleUpdateQuotation);
 
 // Delete quotation
 router.delete('/:id', authenticateToken, requirePermission('quotations', 'delete'), async (req, res) => {

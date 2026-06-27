@@ -337,8 +337,8 @@ class ApiService {
   }
 
   async updateQuotation(id: string, data: any) {
-    return this.request<{ quotation: any }>(`/quotations/${id}`, {
-      method: 'PUT',
+    return this.request<{ quotation: any }>(`/quotations/${id}/update`, {
+      method: 'POST',
       body: JSON.stringify(data),
     });
   }
