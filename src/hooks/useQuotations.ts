@@ -309,11 +309,19 @@ export function useQuotations() {
         discountAmount: Number(updates.discountAmount) || 0,
         vatRate: Number(updates.vatRate) || 15,
         vatAmount: Number(updates.vatAmount) || 0,
-        lineItems: normalizedLineItems,
       };
       
       console.log('Updating quotation with payload:', payload);
       const { quotation } = await api.updateQuotation(id, payload);
+
+      if (Array.isArray(updates.lineItems)) {
+        await api.clearQuotationLineItems(id);
+
+        for (const item of normalizedLineItems) {
+          await api.addQuotationLineItem(id, item);
+        }
+      }
+
       await fetchQuotes();
       return quotation;
     } catch (error) {

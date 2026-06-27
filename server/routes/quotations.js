@@ -487,6 +487,49 @@ const handleUpdateQuotation = async (req, res) => {
   }
 };
 
+router.delete('/:id/line-items', authenticateToken, requirePermission('quotations', 'update'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    await ensureQuotationLineItemColumns();
+    await run('DELETE FROM quotation_line_items WHERE quotation_id = ?', [id]);
+    res.json({ message: 'Quotation line items cleared successfully' });
+  } catch (error) {
+    console.error('Clear quotation line items error:', error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
+  }
+});
+
+router.post('/:id/line-items', authenticateToken, requirePermission('quotations', 'update'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    await ensureQuotationLineItemColumns();
+
+    const item = req.body || {};
+    const itemId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+
+    await run(
+      `INSERT INTO quotation_line_items (id, quotation_id, item_code, description, quantity, unit, custom_unit, unit_price, total_price) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        itemId,
+        id,
+        item.itemCode || item.item_code || item.code || item.sku || item.partNumber || '',
+        item.description || item.name || '',
+        toNumber(item.quantity, 0),
+        item.unit || 'piece',
+        item.customUnit || item.custom_unit || null,
+        toNumber(item.unitPrice ?? item.unit_price, 0),
+        toNumber(item.total ?? item.total_price, toNumber(item.quantity, 0) * toNumber(item.unitPrice ?? item.unit_price, 0))
+      ]
+    );
+
+    res.json({ message: 'Quotation line item added successfully', id: itemId });
+  } catch (error) {
+    console.error('Add quotation line item error:', error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
+  }
+});
+
 // Update quotation
 router.put('/:id', authenticateToken, requirePermission('quotations', 'update'), handleUpdateQuotation);
 router.post('/:id/update', authenticateToken, requirePermission('quotations', 'update'), handleUpdateQuotation);

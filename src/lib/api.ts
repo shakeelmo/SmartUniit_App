@@ -343,6 +343,19 @@ class ApiService {
     });
   }
 
+  async clearQuotationLineItems(id: string) {
+    return this.request<{ message: string }>(`/quotations/${id}/line-items`, {
+      method: 'DELETE',
+    });
+  }
+
+  async addQuotationLineItem(id: string, data: any) {
+    return this.request<{ message: string; id: string }>(`/quotations/${id}/line-items`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   async deleteQuotation(id: string) {
     return this.request<{ message: string }>(`/quotations/${id}`, {
       method: 'DELETE',
