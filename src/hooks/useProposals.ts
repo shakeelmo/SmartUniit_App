@@ -292,8 +292,41 @@ export function useProposals() {
 
   const updateProposal = async (id: string, updates: Partial<SimpleProposal>) => {
     try {
+      const existingProposal = proposals.find(proposal => proposal.id === id);
       const payload = sanitizeProposalPayload(updates);
-      const { proposal: updatedProposal } = await api.updateProposal(id, payload);
+      const summaryPayload: Record<string, any> = {};
+      for (const key of ['title', 'description', 'customerId', 'vendorId', 'value', 'status']) {
+        const changed = JSON.stringify(payload[key] ?? null) !== JSON.stringify(existingProposal?.[key] ?? null);
+        if (payload[key] !== undefined && changed) {
+          summaryPayload[key] = payload[key];
+        }
+      }
+
+      let updatedProposal: any = null;
+
+      if (Object.keys(summaryPayload).length > 0) {
+        const response = await api.updateProposal(id, summaryPayload);
+        updatedProposal = response.proposal;
+      }
+
+      const sectionKeys = Object.keys(payload).filter(
+        key => !['title', 'description', 'customerId', 'vendorId', 'value', 'status', 'id', 'createdAt', 'updatedAt', 'attachments', 'activityLog', 'createdBy'].includes(key)
+      );
+
+      for (const key of sectionKeys) {
+        const changed = JSON.stringify(payload[key] ?? null) !== JSON.stringify(existingProposal?.[key] ?? null);
+        if (!changed) {
+          continue;
+        }
+        const response = await api.updateProposalSection(id, key, payload[key]);
+        updatedProposal = response.proposal;
+      }
+
+      if (!updatedProposal) {
+        const response = await api.getProposal(id);
+        updatedProposal = response.proposal;
+      }
+
       const normalized = normalizeProposal({ ...updatedProposal, ...payload });
       setProposals(prev => prev.map(proposal =>
         proposal.id === id

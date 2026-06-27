@@ -307,9 +307,16 @@ class ApiService {
   }
 
   async updateProposal(id: string, data: any) {
-    return this.request<{ proposal: any }>(`/proposals/${id}`, {
-      method: 'PUT',
+    return this.request<{ proposal: any }>(`/proposals/${id}/update`, {
+      method: 'POST',
       body: JSON.stringify(data),
+    });
+  }
+
+  async updateProposalSection(id: string, section: string, value: any) {
+    return this.request<{ proposal: any }>(`/proposals/${id}/section/${encodeURIComponent(section)}`, {
+      method: 'POST',
+      body: JSON.stringify({ value }),
     });
   }
 

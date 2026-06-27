@@ -179,24 +179,48 @@ router.post('/', authenticateToken, requirePermission('proposals', 'create'), as
   }
 });
 
-router.put('/:id', authenticateToken, requirePermission('proposals', 'update'), async (req, res) => {
+const updateProposalRecord = async (id, payload) => {
+  const fullDataPayload = sanitizeFullData(payload);
+  const existingProposal = await get('SELECT * FROM proposals WHERE id = ?', [id]);
+  if (!existingProposal) return null;
+
+  let existingFullData = {};
+  try {
+    if (existingProposal.full_data) {
+      existingFullData = JSON.parse(existingProposal.full_data);
+    }
+  } catch (error) {
+    console.error('Failed to parse existing proposal full_data during update:', error);
+  }
+
+  const mergedFullData = {
+    ...existingFullData,
+    ...fullDataPayload
+  };
+
+  const title = payload.title ?? existingProposal.title ?? existingFullData.title ?? '';
+  const description = payload.description ?? existingProposal.description ?? existingFullData.description ?? '';
+  const customerId = payload.customerId ?? payload.customer_id ?? existingProposal.customer_id ?? existingFullData.customerId ?? null;
+  const vendorId = payload.vendorId ?? payload.vendor_id ?? existingProposal.vendor_id ?? existingFullData.vendorId ?? null;
+  const value = payload.value ?? existingProposal.value ?? existingFullData.value ?? 0;
+  const status = payload.status ?? existingProposal.status ?? existingFullData.status ?? 'draft';
+
+  await run(
+    `UPDATE proposals
+     SET title = ?, description = ?, customer_id = ?, vendor_id = ?, value = ?, status = ?, full_data = ?, updated_at = CURRENT_TIMESTAMP
+     WHERE id = ?`,
+    [title || '', description || '', customerId || null, vendorId || null, value || 0, status || 'draft', JSON.stringify(mergedFullData), id]
+  );
+
+  return get('SELECT * FROM proposals WHERE id = ?', [id]);
+};
+
+const handleUpdateProposal = async (req, res) => {
   try {
     const { id } = req.params;
     const payload = req.body || {};
-    const fullData = sanitizeFullData(payload);
-    const { title, description, customerId, vendorId, value, status } = payload;
-
-    const existingProposal = await get('SELECT id FROM proposals WHERE id = ?', [id]);
-    if (!existingProposal) return res.status(404).json({ error: 'Proposal not found' });
-
-    await run(
-      `UPDATE proposals
-       SET title = ?, description = ?, customer_id = ?, vendor_id = ?, value = ?, status = ?, full_data = ?, updated_at = CURRENT_TIMESTAMP
-       WHERE id = ?`,
-      [title || '', description || '', customerId || null, vendorId || null, value || 0, status || 'draft', JSON.stringify(fullData), id]
-    );
-
-    const updatedProposal = await get('SELECT * FROM proposals WHERE id = ?', [id]);
+    const updatedProposal = await updateProposalRecord(id, payload);
+    if (!updatedProposal) return res.status(404).json({ error: 'Proposal not found' });
 
     res.json({
       message: 'Proposal updated successfully',
@@ -204,6 +228,28 @@ router.put('/:id', authenticateToken, requirePermission('proposals', 'update'), 
     });
   } catch (error) {
     console.error('Update proposal error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+router.put('/:id', authenticateToken, requirePermission('proposals', 'update'), handleUpdateProposal);
+router.post('/:id/update', authenticateToken, requirePermission('proposals', 'update'), handleUpdateProposal);
+
+router.post('/:id/section/:section', authenticateToken, requirePermission('proposals', 'update'), async (req, res) => {
+  try {
+    const { id, section } = req.params;
+    const value = sanitizeFullData(req.body?.value, section);
+    const payload = { [section]: value };
+
+    const updatedProposal = await updateProposalRecord(id, payload);
+    if (!updatedProposal) return res.status(404).json({ error: 'Proposal not found' });
+
+    res.json({
+      message: 'Proposal section updated successfully',
+      proposal: parseFullData(updatedProposal)
+    });
+  } catch (error) {
+    console.error('Update proposal section error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
