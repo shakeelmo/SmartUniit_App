@@ -392,9 +392,9 @@ function drawHeader(
   const leftLabelX = 16;
   const leftValueX = 31;
   const rightLabelX = 110;
-  const rightValueX = 124;
+  const rightValueX = 133;
   const leftValueWidth = 68;
-  const rightValueWidth = 68;
+  const rightValueWidth = 58;
   const addressValueLines = pdf.splitTextToSize(String(customer.address || 'N/A'), leftValueWidth);
   const emailValueLines = pdf.splitTextToSize(String(customer.email || 'N/A'), rightValueWidth);
   const emailBlockBottom = 92 + Math.max(0, emailValueLines.length - 1) * 4.2;
