@@ -448,7 +448,7 @@ const handleUpdateQuotation = async (req, res) => {
     const hasLineItemsUpdate = req.body.lineItems && Array.isArray(req.body.lineItems);
 
     if (updateFields.length === 0 && !hasLineItemsUpdate) {
-      return res.status(400).json({ error: 'No valid fields to update' });
+      return res.json({ message: 'No changes applied' });
     }
 
     if (updateFields.length > 0) {
