@@ -392,13 +392,15 @@ function drawHeader(
   const leftLabelX = 16;
   const leftValueX = 31;
   const rightLabelX = 110;
-  const rightValueX = 126;
+  const rightValueX = 124;
   const leftValueWidth = 68;
-  const rightValueWidth = 66;
+  const rightValueWidth = 68;
   const addressValueLines = pdf.splitTextToSize(String(customer.address || 'N/A'), leftValueWidth);
   const emailValueLines = pdf.splitTextToSize(String(customer.email || 'N/A'), rightValueWidth);
+  const emailBlockBottom = 92 + Math.max(0, emailValueLines.length - 1) * 4.2;
+  const validUntilY = Math.max(97, emailBlockBottom + 5);
   const leftTextBottom = 97 + Math.max(0, addressValueLines.length - 1) * 4.2;
-  const rightTextBottom = Math.max(97, 92 + Math.max(0, emailValueLines.length - 1) * 4.2);
+  const rightTextBottom = validUntilY;
   const billToTextBottom = Math.max(leftTextBottom, rightTextBottom);
   const billToBoxHeight = Math.max(24, billToTextBottom - 74 + 6);
 
@@ -422,12 +424,14 @@ function drawHeader(
   pdf.text('Company:', leftLabelX, 92);
   pdf.text(String(customer.company || 'N/A'), leftValueX, 92);
   pdf.text('Email:', rightLabelX, 92);
-  pdf.text(emailValueLines, rightValueX, 92, { maxWidth: rightValueWidth, lineHeightFactor: 1.08 });
+  pdf.setFontSize(7.8);
+  pdf.text(emailValueLines, rightValueX, 92, { maxWidth: rightValueWidth, lineHeightFactor: 1.05 });
+  pdf.setFontSize(8.5);
 
   pdf.text('Address:', leftLabelX, 97);
   pdf.text(addressValueLines, leftValueX, 97, { maxWidth: leftValueWidth, lineHeightFactor: 1.08 });
-  pdf.text('Valid Until:', rightLabelX, 97);
-  pdf.text(String(validUntil), rightValueX, 97);
+  pdf.text('Valid Until:', rightLabelX, validUntilY);
+  pdf.text(String(validUntil), rightValueX, validUntilY);
 
   pdf.setDrawColor(219, 228, 240);
   const dividerY = 74 + billToBoxHeight + 8;
@@ -504,7 +508,7 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
         String(item.itemCode || item.code || item.sku || item.partNumber || '-'),
         String(
           item.itemDiscountAmount > 0
-            ? `${item.description || item.name || '-'}\nItem Discount (${item.itemDiscountType === 'percentage' ? `${item.itemDiscountValue}%` : formatCurrencyAmount(item.itemDiscountAmount)})`
+            ? `${item.description || item.name || '-'}\nSPECIAL DISCOUNT: ${item.itemDiscountType === 'percentage' ? `${item.itemDiscountValue}%` : formatCurrencyAmount(item.itemDiscountAmount)}`
             : (item.description || item.name || '-')
         ),
         String(item.quantity),
