@@ -445,23 +445,27 @@ const handleUpdateQuotation = async (req, res) => {
       updateValues.push(JSON.stringify(Array.isArray(req.body.lineItems) ? req.body.lineItems : []));
     }
 
-    if (updateFields.length === 0) {
+    const hasLineItemsUpdate = req.body.lineItems && Array.isArray(req.body.lineItems);
+
+    if (updateFields.length === 0 && !hasLineItemsUpdate) {
       return res.status(400).json({ error: 'No valid fields to update' });
     }
 
-    if (columnNames.has('updated_at')) {
-      updateFields.push('updated_at = CURRENT_TIMESTAMP');
+    if (updateFields.length > 0) {
+      if (columnNames.has('updated_at')) {
+        updateFields.push('updated_at = CURRENT_TIMESTAMP');
+      }
+
+      updateValues.push(id);
+
+      await run(
+        `UPDATE quotations SET ${updateFields.join(', ')} WHERE id = ?`,
+        updateValues
+      );
     }
 
-    updateValues.push(id);
-
-    await run(
-      `UPDATE quotations SET ${updateFields.join(', ')} WHERE id = ?`,
-      updateValues
-    );
-
     // Update line items if provided
-    if (req.body.lineItems && Array.isArray(req.body.lineItems)) {
+    if (hasLineItemsUpdate) {
       // Delete existing line items
       await run('DELETE FROM quotation_line_items WHERE quotation_id = ?', [id]);
       
