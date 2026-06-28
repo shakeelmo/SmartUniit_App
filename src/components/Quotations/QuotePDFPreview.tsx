@@ -157,6 +157,7 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
                 {quote.lineItems.map((item, index) => {
                   // Calculate total if not present
                   const itemTotal = item.total || (item.quantity * item.unitPrice) || 0;
+                  const itemDiscountAmount = Number(item.itemDiscountAmount || 0);
                   
                   return (
                     <tr key={item.id || index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
@@ -169,6 +170,11 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
                       <td className="border border-gray-300 px-4 py-3 text-center text-sm">
                         <div>
                           <p className="font-medium text-dark-900">{item.description || item.name}</p>
+                          {itemDiscountAmount > 0 && (
+                            <p className="text-green-600 text-xs mt-1">
+                              Item Discount ({item.itemDiscountType === 'percentage' ? `${item.itemDiscountValue}%` : itemDiscountAmount.toLocaleString()})
+                            </p>
+                          )}
                           {item.descriptionAr && <p className="text-dark-600 text-xs mt-1" dir="rtl">{item.descriptionAr}</p>}
                         </div>
                       </td>

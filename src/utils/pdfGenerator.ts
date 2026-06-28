@@ -457,12 +457,26 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
     .map((item: any) => {
       const quantity = Number(item.quantity || 0);
       const unitPrice = Number(item.unitPrice || item.unit_price || 0);
-      const total = Number(item.total || item.total_price || quantity * unitPrice || 0);
+      const itemDiscountType = item.itemDiscountType || item.item_discount_type || 'fixed';
+      const itemDiscountValue = Number(item.itemDiscountValue ?? item.item_discount_value) || 0;
+      const baseTotal = quantity * unitPrice;
+      const itemDiscountAmount = Number(item.itemDiscountAmount ?? item.item_discount_amount) || (
+        itemDiscountValue > 0
+          ? itemDiscountType === 'percentage'
+            ? Math.min(baseTotal * (itemDiscountValue / 100), baseTotal)
+            : Math.min(itemDiscountValue, baseTotal)
+          : 0
+      );
+      const total = Number(item.total || item.total_price || Math.max(baseTotal - itemDiscountAmount, 0));
       const description = String(item.description || item.name || '').trim();
       return {
         ...item,
         quantity,
         unitPrice,
+        itemDiscountType,
+        itemDiscountValue,
+        itemDiscountAmount,
+        baseTotal,
         total,
         description,
       };
@@ -488,7 +502,11 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
       ? lineItems.map((item: any, index: number) => ([
         String(index + 1),
         String(item.itemCode || item.code || item.sku || item.partNumber || '-'),
-        String(item.description || item.name || '-'),
+        String(
+          item.itemDiscountAmount > 0
+            ? `${item.description || item.name || '-'}\nItem Discount (${item.itemDiscountType === 'percentage' ? `${item.itemDiscountValue}%` : formatCurrencyAmount(item.itemDiscountAmount)})`
+            : (item.description || item.name || '-')
+        ),
         String(item.quantity),
         formatCurrencyAmount(item.unitPrice),
         formatCurrencyAmount(item.total),

@@ -66,6 +66,9 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
     descriptionAr: '',
     quantity: 1,
     unitPrice: 0,
+    itemDiscountType: 'fixed',
+    itemDiscountValue: 0,
+    itemDiscountAmount: 0,
     total: 0,
   }]);
 
@@ -95,7 +98,10 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
       const updatedLineItems = editQuote.lineItems.map(item => ({
         ...item,
         itemCode: item.itemCode || (item as any).item_code || (item as any).code || '',
-        total: (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)
+        itemDiscountType: item.itemDiscountType || (item as any).item_discount_type || 'fixed',
+        itemDiscountValue: Number(item.itemDiscountValue ?? (item as any).item_discount_value) || 0,
+        itemDiscountAmount: Number(item.itemDiscountAmount ?? (item as any).item_discount_amount) || 0,
+        total: Number(item.total) || 0
       }));
       console.log('Updated line items for editing:', updatedLineItems);
       setLineItems(updatedLineItems);
@@ -133,23 +139,35 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
         descriptionAr: '',
         quantity: 1,
         unitPrice: 0,
+        itemDiscountType: 'fixed',
+        itemDiscountValue: 0,
+        itemDiscountAmount: 0,
         total: 0,
       }]);
     }
   }, [editQuote, user?.id]);
 
+  const calculateLineItemTotal = (item: QuoteLineItem) => {
+    const quantity = Number(item.quantity) || 0;
+    const unitPrice = Number(item.unitPrice) || 0;
+    const baseTotal = quantity * unitPrice;
+    const itemDiscountValue = Number(item.itemDiscountValue) || 0;
+    const itemDiscountType = item.itemDiscountType || 'fixed';
+    const itemDiscountAmount = itemDiscountValue > 0
+      ? itemDiscountType === 'percentage'
+        ? Math.min(baseTotal * (itemDiscountValue / 100), baseTotal)
+        : Math.min(itemDiscountValue, baseTotal)
+      : 0;
+    const total = Math.max(baseTotal - itemDiscountAmount, 0);
+
+    return { baseTotal, itemDiscountAmount, total };
+  };
+
   const calculateTotals = () => {
     console.log('calculateTotals called with lineItems:', lineItems);
     
     const subtotal = lineItems.reduce((sum, item) => {
-      // Calculate total for each line item if it's not set
-      let itemTotal = item.total;
-      if (!itemTotal || itemTotal === 0) {
-        const quantity = Number(item.quantity) || 0;
-        const unitPrice = Number(item.unitPrice) || 0;
-        itemTotal = quantity * unitPrice;
-        console.log('Recalculated line item total:', { quantity, unitPrice, itemTotal });
-      }
+      const { total: itemTotal } = calculateLineItemTotal(item);
       console.log('Line item:', item, 'Total:', itemTotal);
       return sum + itemTotal;
     }, 0);
@@ -182,8 +200,15 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
     if (field === 'quantity' || field === 'unitPrice') {
       const quantity = Number(updatedItems[index].quantity) || 0;
       const unitPrice = Number(updatedItems[index].unitPrice) || 0;
-      const newTotal = quantity * unitPrice;
+      const { itemDiscountAmount, total: newTotal } = calculateLineItemTotal(updatedItems[index]);
       console.log('Calculating new total:', quantity, '*', unitPrice, '=', newTotal);
+      updatedItems[index].itemDiscountAmount = itemDiscountAmount;
+      updatedItems[index].total = newTotal;
+    }
+
+    if (field === 'itemDiscountType' || field === 'itemDiscountValue') {
+      const { itemDiscountAmount, total: newTotal } = calculateLineItemTotal(updatedItems[index]);
+      updatedItems[index].itemDiscountAmount = itemDiscountAmount;
       updatedItems[index].total = newTotal;
     }
     
@@ -194,7 +219,11 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
         if (service) {
           const quantity = Number(updatedItems[index].quantity) || 0;
           const unitPrice = Number(service.defaultPrice) || 0;
-          const newTotal = quantity * unitPrice;
+          const { itemDiscountAmount, total: newTotal } = calculateLineItemTotal({
+            ...updatedItems[index],
+            quantity,
+            unitPrice: service.defaultPrice,
+          });
           
           updatedItems[index] = {
             ...updatedItems[index],
@@ -204,6 +233,7 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
             description: service.description,
             descriptionAr: service.descriptionAr,
             unitPrice: service.defaultPrice,
+            itemDiscountAmount,
             total: newTotal,
           };
           console.log('Updated line item with service:', updatedItems[index]);
@@ -231,6 +261,9 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
       descriptionAr: '',
       quantity: 1,
       unitPrice: 0,
+      itemDiscountType: 'fixed',
+      itemDiscountValue: 0,
+      itemDiscountAmount: 0,
       total: 0,
     };
     setLineItems([...lineItems, newItem]);
@@ -259,7 +292,10 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
     const updatedLineItems = lineItems.map(item => ({
       ...item,
       itemCode: item.itemCode || '',
-      total: (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0)
+      itemDiscountType: item.itemDiscountType || 'fixed',
+      itemDiscountValue: Number(item.itemDiscountValue) || 0,
+      itemDiscountAmount: calculateLineItemTotal(item).itemDiscountAmount,
+      total: calculateLineItemTotal(item).total
     }));
 
     const quoteData: Omit<Quote, 'id' | 'createdAt' | 'updatedAt'> = {
@@ -329,6 +365,10 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
       lineItems: lineItems.map(item => ({
         ...item,
         itemCode: item.itemCode || '',
+        itemDiscountType: item.itemDiscountType || 'fixed',
+        itemDiscountValue: Number(item.itemDiscountValue) || 0,
+        itemDiscountAmount: calculateLineItemTotal(item).itemDiscountAmount,
+        total: calculateLineItemTotal(item).total,
       })),
       subtotal,
       discountType: formData.discountType,
@@ -590,26 +630,64 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
                       <label className="block text-sm font-medium text-dark-700 mb-1">
                         Unit Price (<RiyalSymbol className="w-3 h-3" />)
                       </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={item.unitPrice}
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={item.unitPrice}
                         onChange={(e) => handleLineItemChange(index, 'unitPrice', parseFloat(e.target.value) || 0)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-dark-700 mb-1">
-                        Total (<RiyalSymbol className="w-3 h-3" />)
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-dark-700 mb-1">
+                          Item Discount Type
+                        </label>
+                        <select
+                          value={item.itemDiscountType || 'fixed'}
+                          onChange={(e) => handleLineItemChange(index, 'itemDiscountType', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        >
+                          <option value="fixed">Fixed</option>
+                          <option value="percentage">Percentage (%)</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-dark-700 mb-1">
+                          Item Discount Value
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          max={item.itemDiscountType === 'percentage' ? '100' : undefined}
+                          value={item.itemDiscountValue || 0}
+                          onChange={(e) => handleLineItemChange(index, 'itemDiscountValue', parseFloat(e.target.value) || 0)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-dark-700 mb-1">
+                          Item Discount Amount
+                        </label>
+                        <input
+                          type="text"
+                          value={`${calculateLineItemTotal(item).itemDiscountAmount.toLocaleString()}`}
+                          readOnly
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-dark-700 mb-1">
+                          Total (<RiyalSymbol className="w-3 h-3" />)
                       </label>
                       <input
                         type="text"
                         value={`${item.total.toLocaleString()}`}
                         readOnly
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
-                      />
-                    </div>
+                        />
+                      </div>
                     <div className="flex items-end">
                       <button
                         type="button"

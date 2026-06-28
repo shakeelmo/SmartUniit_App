@@ -77,6 +77,9 @@ export function useQuotations() {
             quantity,
             unit: item.unit || 'piece',
             customUnit: item.custom_unit || item.customUnit || '',
+            itemDiscountType: item.item_discount_type || item.itemDiscountType || 'fixed',
+            itemDiscountValue: Number(item.item_discount_value ?? item.itemDiscountValue) || 0,
+            itemDiscountAmount: Number(item.item_discount_amount ?? item.itemDiscountAmount) || 0,
             unitPrice,
             total: itemTotal,
           };
@@ -278,6 +281,9 @@ export function useQuotations() {
             quantity: Number(item.quantity) || 0,
             unit: item.unit || 'piece',
             customUnit: item.customUnit || item.custom_unit || '',
+            itemDiscountType: item.itemDiscountType || item.item_discount_type || 'fixed',
+            itemDiscountValue: Number(item.itemDiscountValue ?? item.item_discount_value) || 0,
+            itemDiscountAmount: Number(item.itemDiscountAmount ?? item.item_discount_amount) || 0,
             unitPrice: Number(item.unitPrice ?? item.unit_price) || 0,
             total: Number(item.total ?? item.total_price) || 0,
           }))

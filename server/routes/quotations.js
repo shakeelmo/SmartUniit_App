@@ -54,6 +54,9 @@ const ensureQuotationLineItemColumns = async () => {
   await addColumnIfMissing('quotation_line_items', 'item_code', 'TEXT', 'VARCHAR(255) NULL');
   await addColumnIfMissing('quotation_line_items', 'unit', "TEXT DEFAULT 'piece'", "VARCHAR(50) DEFAULT 'piece'");
   await addColumnIfMissing('quotation_line_items', 'custom_unit', 'TEXT', 'VARCHAR(100) NULL');
+  await addColumnIfMissing('quotation_line_items', 'item_discount_type', "TEXT DEFAULT 'fixed'", "VARCHAR(50) DEFAULT 'fixed'");
+  await addColumnIfMissing('quotation_line_items', 'item_discount_value', 'REAL DEFAULT 0', 'DECIMAL(12,2) DEFAULT 0');
+  await addColumnIfMissing('quotation_line_items', 'item_discount_amount', 'REAL DEFAULT 0', 'DECIMAL(12,2) DEFAULT 0');
 };
 
 const ensureQuotationPointOfContactColumns = async () => {
@@ -298,8 +301,8 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
       for (const item of lineItems) {
         const itemId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
         await run(
-          `INSERT INTO quotation_line_items (id, quotation_id, item_code, description, quantity, unit, custom_unit, unit_price, total_price) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO quotation_line_items (id, quotation_id, item_code, description, quantity, unit, custom_unit, item_discount_type, item_discount_value, item_discount_amount, unit_price, total_price) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             itemId,
             quotationId,
@@ -308,6 +311,9 @@ router.post('/', authenticateToken, requirePermission('quotations', 'create'), a
             toNumber(item.quantity, 0),
             item.unit || 'piece',
             item.customUnit || null,
+            item.itemDiscountType || item.item_discount_type || 'fixed',
+            toNumber(item.itemDiscountValue ?? item.item_discount_value, 0),
+            toNumber(item.itemDiscountAmount ?? item.item_discount_amount, 0),
             toNumber(item.unitPrice, 0),
             toNumber(item.total, toNumber(item.quantity, 0) * toNumber(item.unitPrice, 0))
           ]
@@ -463,8 +469,8 @@ const handleUpdateQuotation = async (req, res) => {
       for (const item of req.body.lineItems) {
         const itemId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
         await run(
-          `INSERT INTO quotation_line_items (id, quotation_id, item_code, description, quantity, unit, custom_unit, unit_price, total_price) 
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO quotation_line_items (id, quotation_id, item_code, description, quantity, unit, custom_unit, item_discount_type, item_discount_value, item_discount_amount, unit_price, total_price) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             itemId,
             id,
@@ -473,6 +479,9 @@ const handleUpdateQuotation = async (req, res) => {
             toNumber(item.quantity, 0),
             item.unit || 'piece',
             item.customUnit || null,
+            item.itemDiscountType || item.item_discount_type || 'fixed',
+            toNumber(item.itemDiscountValue ?? item.item_discount_value, 0),
+            toNumber(item.itemDiscountAmount ?? item.item_discount_amount, 0),
             toNumber(item.unitPrice, 0),
             toNumber(item.total, toNumber(item.quantity, 0) * toNumber(item.unitPrice, 0))
           ]
@@ -508,8 +517,8 @@ router.post('/:id/line-items', authenticateToken, requirePermission('quotations'
     const itemId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
 
     await run(
-      `INSERT INTO quotation_line_items (id, quotation_id, item_code, description, quantity, unit, custom_unit, unit_price, total_price) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO quotation_line_items (id, quotation_id, item_code, description, quantity, unit, custom_unit, item_discount_type, item_discount_value, item_discount_amount, unit_price, total_price) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         itemId,
         id,
@@ -518,6 +527,9 @@ router.post('/:id/line-items', authenticateToken, requirePermission('quotations'
         toNumber(item.quantity, 0),
         item.unit || 'piece',
         item.customUnit || item.custom_unit || null,
+        item.itemDiscountType || item.item_discount_type || 'fixed',
+        toNumber(item.itemDiscountValue ?? item.item_discount_value, 0),
+        toNumber(item.itemDiscountAmount ?? item.item_discount_amount, 0),
         toNumber(item.unitPrice ?? item.unit_price, 0),
         toNumber(item.total ?? item.total_price, toNumber(item.quantity, 0) * toNumber(item.unitPrice ?? item.unit_price, 0))
       ]

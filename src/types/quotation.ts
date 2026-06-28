@@ -11,6 +11,9 @@ export interface QuoteLineItem {
   quantity: number;
   unit?: string;
   customUnit?: string;
+  itemDiscountType?: 'percentage' | 'fixed';
+  itemDiscountValue?: number;
+  itemDiscountAmount?: number;
   unitPrice: number;
   total: number;
 }
