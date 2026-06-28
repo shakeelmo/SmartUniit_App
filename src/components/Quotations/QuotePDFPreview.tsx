@@ -16,6 +16,15 @@ interface QuotePDFPreviewProps {
 
 const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, settings, onClose }) => {
   const [isGenerating, setIsGenerating] = useState(false);
+  const subtotal = quote.lineItems.reduce((sum, item) => {
+    const itemTotal = item.total || (item.quantity * item.unitPrice) || 0;
+    return sum + itemTotal;
+  }, 0);
+  const specialDiscount = Number(quote.discountAmount || 0);
+  const vatRate = Number(quote.vatRate || settings?.vatRate || 15);
+  const netBeforeVat = Math.max(subtotal - specialDiscount, 0);
+  const vatAmount = Number(quote.vatAmount ?? (netBeforeVat * vatRate / 100));
+  const total = Number(quote.total ?? (netBeforeVat + vatAmount));
 
   const handleDownload = async () => {
     setIsGenerating(true);
@@ -193,28 +202,33 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
               <div className="flex justify-between mb-2">
                 <span className="text-sm text-dark-600">Subtotal / المجموع الفرعي:</span>
                 <span className="text-sm font-medium flex items-center">
-                  <RiyalSymbol className="w-3 h-3 mr-1" /> {quote.lineItems.reduce((sum, item) => {
-                    const itemTotal = item.total || (item.quantity * item.unitPrice) || 0;
-                    return sum + itemTotal;
-                  }, 0).toLocaleString()}
+                  <RiyalSymbol className="w-3 h-3 mr-1" /> {subtotal.toLocaleString()}
+                </span>
+              </div>
+              {specialDiscount > 0 && (
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm text-green-600">Special Discount:</span>
+                  <span className="text-sm font-medium text-green-600 flex items-center">
+                    -<RiyalSymbol className="w-3 h-3 mr-1" /> {specialDiscount.toLocaleString()}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between mb-2">
+                <span className="text-sm text-dark-600">Net Before VAT:</span>
+                <span className="text-sm font-medium flex items-center">
+                  <RiyalSymbol className="w-3 h-3 mr-1" /> {netBeforeVat.toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between mb-2">
-                <span className="text-sm text-dark-600">VAT (15%):</span>
+                <span className="text-sm text-dark-600">VAT ({vatRate}%):</span>
                 <span className="text-sm font-medium flex items-center">
-                  <RiyalSymbol className="w-3 h-3 mr-1" /> {(quote.lineItems.reduce((sum, item) => {
-                    const itemTotal = item.total || (item.quantity * item.unitPrice) || 0;
-                    return sum + itemTotal;
-                  }, 0) * 0.15).toLocaleString()}
+                  <RiyalSymbol className="w-3 h-3 mr-1" /> {vatAmount.toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between items-center mt-4 pt-2 border-t border-gray-300">
                 <span className="text-lg font-bold text-dark-900">Total / المجموع الكلي:</span>
                 <span className="text-lg font-bold text-primary-600 flex items-center">
-                  <RiyalSymbol className="w-4 h-4 mr-1" /> {(quote.lineItems.reduce((sum, item) => {
-                    const itemTotal = item.total || (item.quantity * item.unitPrice) || 0;
-                    return sum + itemTotal;
-                  }, 0) * 1.15).toLocaleString()}
+                  <RiyalSymbol className="w-4 h-4 mr-1" /> {total.toLocaleString()}
                 </span>
               </div>
             </div>

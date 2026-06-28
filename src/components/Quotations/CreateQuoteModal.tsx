@@ -47,7 +47,7 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
             terms: 'Payment terms: 30 days from invoice date\nAll prices are in Saudi Riyals (SAR)\nVAT is included in all prices\nDelivery will be made within 7-14 business days',
     termsAr: 'شروط الدفع: 30 يوم من تاريخ الفاتورة\nجميع الأسعار بالريال السعودي\nضريبة القيمة المضافة مشمولة في جميع الأسعار\nسيتم التسليم خلال 7-14 يوم عمل',
     assignedTo: user?.id || '',
-    discountType: 'percentage' as 'percentage' | 'fixed',
+    discountType: 'fixed' as 'percentage' | 'fixed',
     discountValue: 0,
     pointOfContactTitle: 'Smart Universe : Primary Contact of this Project',
     pointOfContactName: '',
@@ -82,7 +82,7 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
         terms: editQuote.terms || '',
         termsAr: editQuote.termsAr || '',
         assignedTo: editQuote.assignedTo || user?.id || '',
-        discountType: editQuote.discountType || 'percentage',
+        discountType: 'fixed',
         discountValue: editQuote.discountValue || 0,
         pointOfContactTitle: editQuote.pointOfContact?.title || 'Smart Universe : Primary Contact of this Project',
         pointOfContactName: editQuote.pointOfContact?.name || '',
@@ -115,7 +115,7 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
         terms: 'Payment terms: 30 days from invoice date\nAll prices are in Saudi Riyals (SAR)\nVAT is included in all prices\nDelivery will be made within 7-14 business days',
         termsAr: 'شروط الدفع: 30 يوم من تاريخ الفاتورة\nجميع الأسعار بالريال السعودي\nضريبة القيمة المضافة مشمولة في جميع الأسعار\nسيتم التسليم خلال 7-14 يوم عمل',
         assignedTo: user?.id || '',
-        discountType: 'percentage',
+        discountType: 'fixed',
         discountValue: 0,
         pointOfContactTitle: 'Smart Universe : Primary Contact of this Project',
         pointOfContactName: '',
@@ -156,23 +156,20 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
     
     console.log('Calculated subtotal:', subtotal);
     
-    // Calculate discount
+    // Special discount is applied before VAT, so VAT is charged only on the discounted subtotal.
     let discountAmount = 0;
     if (formData.discountValue > 0) {
-      if (formData.discountType === 'percentage') {
-        discountAmount = subtotal * (formData.discountValue / 100);
-      } else {
-        discountAmount = formData.discountValue;
-      }
+      discountAmount = Math.min(formData.discountValue, subtotal);
     }
-    
+
     const vatRate = settings?.vatRate || 15; // Default to 15% if settings is null
-    const vatAmount = (subtotal - discountAmount) * (vatRate / 100);
-    const total = subtotal - discountAmount + vatAmount;
+    const discountedSubtotal = Math.max(subtotal - discountAmount, 0);
+    const vatAmount = discountedSubtotal * (vatRate / 100);
+    const total = discountedSubtotal + vatAmount;
     
     console.log('Final calculations:', { subtotal, discountAmount, vatAmount, total, vatRate });
     
-    return { subtotal, discountAmount, vatAmount, total, vatRate };
+    return { subtotal, discountAmount, vatAmount, total, vatRate, discountedSubtotal };
   };
 
   const handleLineItemChange = (index: number, field: keyof QuoteLineItem, value: any) => {
@@ -388,7 +385,7 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
     URL.revokeObjectURL(url);
   };
 
-  const { subtotal, vatAmount, total } = calculateTotals();
+  const { subtotal, discountAmount, vatAmount, total, discountedSubtotal } = calculateTotals();
 
   if (!isOpen) return null;
 
@@ -657,49 +654,49 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
             </div>
           </div>
 
-          {/* Discount Section */}
+          {/* Special Discount Section */}
           <div className="bg-gray-50 p-6 rounded-lg">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-dark-900">
-                Discount
+                Special Discount
               </h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-dark-700 mb-2">
-                  Discount Type
-                </label>
-                <select
-                  value={formData.discountType}
-                  onChange={(e) => setFormData(prev => ({ ...prev, discountType: e.target.value as 'percentage' | 'fixed' }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                >
-                  <option value="percentage">Percentage (%)</option>
-                  <option value="fixed">Fixed Amount (<RiyalSymbol className="w-3 h-3" />)</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-dark-700 mb-2">
-                  Discount Value
+                  Special Discount Amount
                 </label>
                 <input
                   type="number"
                   min="0"
-                  step={formData.discountType === 'percentage' ? '0.01' : '0.01'}
-                  max={formData.discountType === 'percentage' ? '100' : undefined}
+                  step="0.01"
                   value={formData.discountValue}
-                  onChange={(e) => setFormData(prev => ({ ...prev, discountValue: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) => setFormData(prev => ({ ...prev, discountType: 'fixed', discountValue: parseFloat(e.target.value) || 0 }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  placeholder={formData.discountType === 'percentage' ? '0.00' : '0.00'}
+                  placeholder="0.00"
                 />
+                <p className="mt-2 text-xs text-gray-500">
+                  This discount is applied before VAT. VAT is calculated on the discounted subtotal only.
+                </p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-dark-700 mb-2">
-                  Discount Amount
+                  Applied Special Discount
                 </label>
                 <input
                   type="text"
                   value={`${calculateTotals().discountAmount.toLocaleString()}`}
+                  readOnly
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-dark-700 mb-2">
+                  Net Amount Before VAT
+                </label>
+                <input
+                  type="text"
+                  value={`${calculateTotals().discountedSubtotal.toLocaleString()}`}
                   readOnly
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
                 />
@@ -723,15 +720,22 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
                   {formatCurrency(subtotal, 'SAR')}
                 </span>
               </div>
-              {calculateTotals().discountAmount > 0 && (
+              {discountAmount > 0 && (
                 <div className="flex justify-between text-green-600">
-                  <span>Discount ({formData.discountType === 'percentage' ? `${formData.discountValue}%` : 'Fixed'}):</span>
+                  <span>Special Discount:</span>
                   <span className="font-semibold flex items-center">
                     -<RiyalSymbol className="w-4 h-4 mr-1" />
-                    {formatCurrency(calculateTotals().discountAmount, 'SAR')}
+                    {formatCurrency(discountAmount, 'SAR')}
                   </span>
                 </div>
               )}
+              <div className="flex justify-between">
+                <span className="text-dark-600">Net Before VAT:</span>
+                <span className="font-semibold flex items-center">
+                  <RiyalSymbol className="w-4 h-4 mr-1" />
+                  {formatCurrency(discountedSubtotal, 'SAR')}
+                </span>
+              </div>
               <div className="flex justify-between">
                 <span className="text-dark-600">VAT ({settings?.vatRate || 15}%):</span>
                 <span className="font-semibold flex items-center">

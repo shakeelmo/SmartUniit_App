@@ -470,16 +470,13 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
     .filter((item: any) => (item.description || item.itemCode || item.code) && item.quantity > 0);
 
   const subtotal = lineItems.reduce((sum: number, item: any) => sum + item.total, 0);
-  const discountType = quote.discountType || 'percentage';
+  const discountType = quote.discountType || 'fixed';
   const discountValue = Number(quote.discountValue || 0);
-  const discountAmount = discountValue > 0
-    ? discountType === 'percentage'
-      ? subtotal * (discountValue / 100)
-      : discountValue
-    : 0;
+  const discountAmount = Math.min(Number(quote.discountAmount ?? discountValue ?? 0), subtotal);
   const vatRate = Number(quote.vatRate || settings?.vatRate || 15);
-  const vatAmount = (subtotal - discountAmount) * (vatRate / 100);
-  const total = subtotal - discountAmount + vatAmount;
+  const discountedSubtotal = Math.max(subtotal - discountAmount, 0);
+  const vatAmount = Number(quote.vatAmount ?? (discountedSubtotal * (vatRate / 100)));
+  const total = Number(quote.total ?? (discountedSubtotal + vatAmount));
   const bankingDetails = settings?.companyInfo?.bankingDetails || {};
   const pointOfContact = quote.pointOfContact || {};
   const termsLines = splitLines(quote.terms || 'Payment terms: 30 days from invoice date');
@@ -581,9 +578,12 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   drawCurrencyValue(pdf, formatCurrencyAmount(subtotal), 198, currentY, { align: 'right', iconDataUrl: riyalSymbolImage });
   if (discountAmount > 0) {
     currentY += 5;
-    pdf.text(`Discount${discountType === 'percentage' ? ` (${discountValue}%)` : ''}`, 118, currentY);
-    pdf.text(`- ${formatCurrencyAmount(discountAmount)}`, 198, currentY, { align: 'right' });
+    pdf.text('Special Discount', 118, currentY);
+    drawCurrencyValue(pdf, `- ${formatCurrencyAmount(discountAmount)}`, 198, currentY, { align: 'right', iconDataUrl: riyalSymbolImage });
   }
+  currentY += 5;
+  pdf.text('Net Before VAT', 118, currentY);
+  drawCurrencyValue(pdf, formatCurrencyAmount(discountedSubtotal), 198, currentY, { align: 'right', iconDataUrl: riyalSymbolImage });
   currentY += 5;
   pdf.text(`VAT (${vatRate}%)`, 118, currentY);
   drawCurrencyValue(pdf, formatCurrencyAmount(vatAmount), 198, currentY, { align: 'right', iconDataUrl: riyalSymbolImage });
