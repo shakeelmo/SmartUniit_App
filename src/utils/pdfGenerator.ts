@@ -558,6 +558,28 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
       drawFooter(pdf);
     },
     didDrawCell: (data) => {
+      if (data.section === 'body' && data.column.index === 2) {
+        const rawText = Array.isArray(data.cell.raw) ? data.cell.raw.join('\n') : String(data.cell.raw || '');
+        if (rawText.includes('\nSPECIAL DISCOUNT:')) {
+          const [descriptionLine, discountLine] = rawText.split('\nSPECIAL DISCOUNT:');
+          const textX = data.cell.x + data.cell.padding('left');
+          const textY = data.cell.y + data.cell.padding('top') + 2.4;
+
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(8.8);
+          pdf.setTextColor(31, 41, 55);
+          const wrappedDescription = pdf.splitTextToSize(descriptionLine.trim(), data.cell.width - data.cell.padding('left') - data.cell.padding('right'));
+          pdf.text(wrappedDescription, textX, textY, { baseline: 'top' });
+
+          const discountY = textY + (wrappedDescription.length * 4.2);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(8.4);
+          pdf.setTextColor(30, 64, 175);
+          pdf.text(`SPECIAL DISCOUNT:${discountLine}`, textX, discountY, { baseline: 'top' });
+          return;
+        }
+      }
+
       if (data.section !== 'body') return;
       if (data.column.index !== 4 && data.column.index !== 5) return;
       const text = Array.isArray(data.cell.text) ? data.cell.text.join(' ') : String(data.cell.text || '');
@@ -570,6 +592,12 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
       if (data.section === 'body' && data.column.index === 1) {
         data.cell.styles.fontSize = 8.1;
         data.cell.styles.overflow = 'linebreak';
+      }
+      if (data.section === 'body' && data.column.index === 2) {
+        const rawText = Array.isArray(data.cell.raw) ? data.cell.raw.join('\n') : String(data.cell.raw || '');
+        if (rawText.includes('\nSPECIAL DISCOUNT:')) {
+          data.cell.text = [''];
+        }
       }
     },
   });
