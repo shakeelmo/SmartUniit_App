@@ -20,6 +20,12 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
     const itemTotal = item.total || (item.quantity * item.unitPrice) || 0;
     return sum + itemTotal;
   }, 0);
+  const grossSubtotal = quote.lineItems.reduce((sum, item) => {
+    return sum + ((item.quantity * item.unitPrice) || 0);
+  }, 0);
+  const totalItemDiscount = quote.lineItems.reduce((sum, item) => {
+    return sum + Number(item.itemDiscountAmount || 0);
+  }, 0);
   const specialDiscount = Number(quote.discountAmount || 0);
   const vatRate = Number(quote.vatRate || settings?.vatRate || 15);
   const netBeforeVat = Math.max(subtotal - specialDiscount, 0);
@@ -148,6 +154,11 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
                   </th>
                   <th className="border border-gray-300 px-4 py-3 text-right text-sm font-semibold">
                     <span className="inline-flex items-center justify-end gap-1">
+                      Discount (<RiyalSymbol className="w-3 h-3" />)
+                    </span>
+                  </th>
+                  <th className="border border-gray-300 px-4 py-3 text-right text-sm font-semibold">
+                    <span className="inline-flex items-center justify-end gap-1">
                       Total / المجموع (<RiyalSymbol className="w-3 h-3" />)
                     </span>
                   </th>
@@ -170,11 +181,6 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
                       <td className="border border-gray-300 px-4 py-3 text-center text-sm">
                         <div>
                           <p className="font-medium text-dark-900">{item.description || item.name}</p>
-                          {itemDiscountAmount > 0 && (
-                            <p className="text-green-600 text-xs mt-1">
-                              Item Discount ({item.itemDiscountType === 'percentage' ? `${item.itemDiscountValue}%` : itemDiscountAmount.toLocaleString()})
-                            </p>
-                          )}
                           {item.descriptionAr && <p className="text-dark-600 text-xs mt-1" dir="rtl">{item.descriptionAr}</p>}
                         </div>
                       </td>
@@ -185,6 +191,12 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
                         <span className="inline-flex items-center justify-center gap-1">
                           <RiyalSymbol className="w-3 h-3" />
                           {item.unitPrice?.toLocaleString() || '0'}
+                        </span>
+                      </td>
+                      <td className="border border-gray-300 px-4 py-3 text-center text-sm font-medium">
+                        <span className="inline-flex items-center justify-center gap-1">
+                          <RiyalSymbol className="w-3 h-3" />
+                          {itemDiscountAmount.toLocaleString()}
                         </span>
                       </td>
                       <td className="border border-gray-300 px-4 py-3 text-center text-sm font-medium">
@@ -206,9 +218,15 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
           <div className="flex justify-end">
             <div className="w-80">
               <div className="flex justify-between mb-2">
-                <span className="text-sm text-dark-600">Subtotal / المجموع الفرعي:</span>
+                <span className="text-sm text-dark-600">Subtotal Before Discount:</span>
                 <span className="text-sm font-medium flex items-center">
-                  <RiyalSymbol className="w-3 h-3 mr-1" /> {subtotal.toLocaleString()}
+                  <RiyalSymbol className="w-3 h-3 mr-1" /> {grossSubtotal.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex justify-between mb-2">
+                <span className="text-sm text-dark-600">Total Item Discount:</span>
+                <span className="text-sm font-medium flex items-center">
+                  <RiyalSymbol className="w-3 h-3 mr-1" /> {totalItemDiscount.toLocaleString()}
                 </span>
               </div>
               {specialDiscount > 0 && (

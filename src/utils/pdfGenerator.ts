@@ -487,6 +487,8 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
     .filter((item: any) => (item.description || item.itemCode || item.code) && item.quantity > 0);
 
   const subtotal = lineItems.reduce((sum: number, item: any) => sum + item.total, 0);
+  const grossSubtotal = lineItems.reduce((sum: number, item: any) => sum + item.baseTotal, 0);
+  const totalItemDiscount = lineItems.reduce((sum: number, item: any) => sum + item.itemDiscountAmount, 0);
   const discountType = quote.discountType || 'fixed';
   const discountValue = Number(quote.discountValue || 0);
   const discountAmount = Math.min(Number(quote.discountAmount ?? discountValue ?? 0), subtotal);
@@ -505,21 +507,18 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
       ? lineItems.map((item: any, index: number) => ([
         String(index + 1),
         String(item.itemCode || item.code || item.sku || item.partNumber || '-'),
-        String(
-          item.itemDiscountAmount > 0
-            ? `${item.description || item.name || '-'}\nSPECIAL DISCOUNT: ${item.itemDiscountType === 'percentage' ? `${item.itemDiscountValue}%` : formatCurrencyAmount(item.itemDiscountAmount)}`
-            : (item.description || item.name || '-')
-        ),
+        String(item.description || item.name || '-'),
         String(item.quantity),
         formatCurrencyAmount(item.unitPrice),
+        formatCurrencyAmount(item.itemDiscountAmount || 0),
         formatCurrencyAmount(item.total),
       ]))
-    : [[ '', '', 'No items to display', '', '', '' ]];
+    : [[ '', '', 'No items to display', '', '', '', '' ]];
 
   autoTable(pdf, {
     startY: Math.max(FIRST_PAGE_TABLE_START_Y, firstPageDividerY + 3),
     margin: { left: 12, right: 12, top: CONTINUATION_TABLE_START_Y, bottom: 24 },
-    head: [['S#', 'Item', 'Description', 'Qty', 'Unit Price', 'Total']],
+    head: [['S#', 'Item', 'Description', 'Qty', 'Unit Price', 'Discount', 'Total']],
     body: bodyRows,
     theme: 'grid',
     showHead: 'everyPage',
@@ -544,11 +543,12 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
     },
     columnStyles: {
       0: { cellWidth: 10, halign: 'center' },
-      1: { cellWidth: 34, halign: 'left' },
-      2: { cellWidth: 68 },
-      3: { cellWidth: 15, halign: 'center' },
-      4: { cellWidth: 27, halign: 'right' },
-      5: { cellWidth: 32, halign: 'right' },
+      1: { cellWidth: 28, halign: 'left' },
+      2: { cellWidth: 58 },
+      3: { cellWidth: 13, halign: 'center' },
+      4: { cellWidth: 24, halign: 'right' },
+      5: { cellWidth: 24, halign: 'right' },
+      6: { cellWidth: 29, halign: 'right' },
     },
     didDrawPage: (data) => {
       if (data.pageNumber > 1) {
@@ -559,7 +559,7 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
     },
     didDrawCell: (data) => {
       if (data.section !== 'body') return;
-      if (data.column.index !== 4 && data.column.index !== 5) return;
+      if (data.column.index !== 4 && data.column.index !== 5 && data.column.index !== 6) return;
       const text = Array.isArray(data.cell.text) ? data.cell.text.join(' ') : String(data.cell.text || '');
       if (!text.trim()) return;
       const rightX = data.cell.x + data.cell.width - data.cell.padding('right');
@@ -570,6 +570,9 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
       if (data.section === 'body' && data.column.index === 1) {
         data.cell.styles.fontSize = 8.1;
         data.cell.styles.overflow = 'linebreak';
+      }
+      if (data.section === 'body' && (data.column.index === 4 || data.column.index === 5 || data.column.index === 6)) {
+        data.cell.styles.fontSize = 7.8;
       }
     },
   });
@@ -595,8 +598,11 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   pdf.setTextColor(55, 65, 81);
   pdf.setFontSize(9);
   currentY += 5;
-  pdf.text('Subtotal', 118, currentY);
-  drawCurrencyValue(pdf, formatCurrencyAmount(subtotal), 198, currentY, { align: 'right', iconDataUrl: riyalSymbolImage });
+  pdf.text('Subtotal Before Discount', 118, currentY);
+  drawCurrencyValue(pdf, formatCurrencyAmount(grossSubtotal), 198, currentY, { align: 'right', iconDataUrl: riyalSymbolImage });
+  currentY += 5;
+  pdf.text('Total Item Discount', 118, currentY);
+  drawCurrencyValue(pdf, formatCurrencyAmount(totalItemDiscount), 198, currentY, { align: 'right', iconDataUrl: riyalSymbolImage });
   if (discountAmount > 0) {
     currentY += 5;
     pdf.setFillColor(239, 246, 255);
