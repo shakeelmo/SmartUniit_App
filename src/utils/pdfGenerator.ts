@@ -391,14 +391,14 @@ function drawHeader(
 
   const leftLabelX = 16;
   const leftValueX = 31;
-  const rightLabelX = 110;
-  const rightValueX = 133;
+  const rightLabelX = 106;
+  const rightValueX = 124;
   const leftValueWidth = 68;
-  const rightValueWidth = 58;
+  const rightValueWidth = 70;
   const addressValueLines = pdf.splitTextToSize(String(customer.address || 'N/A'), leftValueWidth);
-  const emailValueLines = pdf.splitTextToSize(String(customer.email || 'N/A'), rightValueWidth);
-  const emailBlockBottom = 92 + Math.max(0, emailValueLines.length - 1) * 4.2;
-  const validUntilY = Math.max(97, emailBlockBottom + 5);
+  const emailValue = String(customer.email || 'N/A');
+  const emailFontSize = pdf.getTextWidth(emailValue) > rightValueWidth ? 6.7 : 7.8;
+  const validUntilY = 102;
   const leftTextBottom = 97 + Math.max(0, addressValueLines.length - 1) * 4.2;
   const rightTextBottom = validUntilY;
   const billToTextBottom = Math.max(leftTextBottom, rightTextBottom);
@@ -424,8 +424,8 @@ function drawHeader(
   pdf.text('Company:', leftLabelX, 92);
   pdf.text(String(customer.company || 'N/A'), leftValueX, 92);
   pdf.text('Email:', rightLabelX, 92);
-  pdf.setFontSize(7.8);
-  pdf.text(emailValueLines, rightValueX, 92, { maxWidth: rightValueWidth, lineHeightFactor: 1.05 });
+  pdf.setFontSize(emailFontSize);
+  pdf.text(emailValue, rightValueX, 92);
   pdf.setFontSize(8.5);
 
   pdf.text('Address:', leftLabelX, 97);
@@ -600,8 +600,13 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   drawCurrencyValue(pdf, formatCurrencyAmount(subtotal), 198, currentY, { align: 'right', iconDataUrl: riyalSymbolImage });
   if (discountAmount > 0) {
     currentY += 5;
+    pdf.setFillColor(239, 246, 255);
+    pdf.roundedRect(116, currentY - 3.8, 84, 6.5, 1.5, 1.5, 'F');
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(30, 64, 175);
     pdf.text('Special Discount', 118, currentY);
     drawCurrencyValue(pdf, `- ${formatCurrencyAmount(discountAmount)}`, 198, currentY, { align: 'right', iconDataUrl: riyalSymbolImage });
+    pdf.setTextColor(55, 65, 81);
   }
   currentY += 5;
   pdf.text('Net Before VAT', 118, currentY);
