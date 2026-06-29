@@ -397,7 +397,6 @@ function drawHeader(
   const rightValueWidth = 70;
   const addressValueLines = pdf.splitTextToSize(String(customer.address || 'N/A'), leftValueWidth);
   const emailValue = String(customer.email || 'N/A');
-  const emailFontSize = pdf.getTextWidth(emailValue) > rightValueWidth ? 6.7 : 7.8;
   const validUntilY = 102;
   const leftTextBottom = 97 + Math.max(0, addressValueLines.length - 1) * 4.2;
   const rightTextBottom = validUntilY;
@@ -424,7 +423,7 @@ function drawHeader(
   pdf.text('Company:', leftLabelX, 92);
   pdf.text(String(customer.company || 'N/A'), leftValueX, 92);
   pdf.text('Email:', rightLabelX, 92);
-  pdf.setFontSize(emailFontSize);
+  pdf.setFontSize(8.5);
   pdf.text(emailValue, rightValueX, 92);
   pdf.setFontSize(8.5);
 
