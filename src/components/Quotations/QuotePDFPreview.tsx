@@ -26,6 +26,7 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
   const totalItemDiscount = quote.lineItems.reduce((sum, item) => {
     return sum + Number(item.itemDiscountAmount || 0);
   }, 0);
+  const hasItemDiscounts = totalItemDiscount > 0.009;
   const specialDiscount = Number(quote.discountAmount || 0);
   const vatRate = Number(quote.vatRate || settings?.vatRate || 15);
   const netBeforeVat = Math.max(subtotal - specialDiscount, 0);
@@ -152,11 +153,13 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
                       Unit Price / سعر الوحدة (<RiyalSymbol className="w-3 h-3" />)
                     </span>
                   </th>
-                  <th className="border border-gray-300 px-4 py-3 text-right text-sm font-semibold">
-                    <span className="inline-flex items-center justify-end gap-1">
-                      Discount (<RiyalSymbol className="w-3 h-3" />)
-                    </span>
-                  </th>
+                  {hasItemDiscounts && (
+                    <th className="border border-gray-300 px-4 py-3 text-right text-sm font-semibold">
+                      <span className="inline-flex items-center justify-end gap-1">
+                        Discount (<RiyalSymbol className="w-3 h-3" />)
+                      </span>
+                    </th>
+                  )}
                   <th className="border border-gray-300 px-4 py-3 text-right text-sm font-semibold">
                     <span className="inline-flex items-center justify-end gap-1">
                       Total / المجموع (<RiyalSymbol className="w-3 h-3" />)
@@ -193,12 +196,14 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
                           {item.unitPrice?.toLocaleString() || '0'}
                         </span>
                       </td>
-                      <td className="border border-gray-300 px-4 py-3 text-center text-sm font-medium">
-                        <span className="inline-flex items-center justify-center gap-1">
-                          <RiyalSymbol className="w-3 h-3" />
-                          {itemDiscountAmount.toLocaleString()}
-                        </span>
-                      </td>
+                      {hasItemDiscounts && (
+                        <td className="border border-gray-300 px-4 py-3 text-center text-sm font-medium">
+                          <span className="inline-flex items-center justify-center gap-1">
+                            <RiyalSymbol className="w-3 h-3" />
+                            {itemDiscountAmount.toLocaleString()}
+                          </span>
+                        </td>
+                      )}
                       <td className="border border-gray-300 px-4 py-3 text-center text-sm font-medium">
                         <span className="inline-flex items-center justify-center gap-1">
                           <RiyalSymbol className="w-3 h-3" />
@@ -223,12 +228,14 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
                   <RiyalSymbol className="w-3 h-3 mr-1" /> {grossSubtotal.toLocaleString()}
                 </span>
               </div>
-              <div className="flex justify-between mb-2">
-                <span className="text-sm text-dark-600">Total Item Discount:</span>
-                <span className="text-sm font-medium flex items-center">
-                  <RiyalSymbol className="w-3 h-3 mr-1" /> {totalItemDiscount.toLocaleString()}
-                </span>
-              </div>
+              {hasItemDiscounts && (
+                <div className="flex justify-between mb-2">
+                  <span className="text-sm text-dark-600">Total Item Discount:</span>
+                  <span className="text-sm font-medium flex items-center">
+                    <RiyalSymbol className="w-3 h-3 mr-1" /> {totalItemDiscount.toLocaleString()}
+                  </span>
+                </div>
+              )}
               {specialDiscount > 0 && (
                 <div className="flex justify-between mb-2">
                   <span className="text-sm text-green-600">Special Discount:</span>
