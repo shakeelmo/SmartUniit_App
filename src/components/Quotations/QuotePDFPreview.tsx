@@ -223,7 +223,7 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
           <div className="flex justify-end">
             <div className="w-80">
               <div className="flex justify-between mb-2">
-                <span className="text-sm text-dark-600">Subtotal Before Discount:</span>
+                <span className="text-sm text-dark-600">{hasItemDiscounts || specialDiscount > 0 ? 'Subtotal Before Discount:' : 'Subtotal:'}</span>
                 <span className="text-sm font-medium flex items-center">
                   <RiyalSymbol className="w-3 h-3 mr-1" /> {grossSubtotal.toLocaleString()}
                 </span>

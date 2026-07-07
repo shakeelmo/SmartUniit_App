@@ -407,7 +407,7 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
         phone: '011-4917295',
         email: 'info@smartuniit.com',
         crNumber: '1010123456',
-        vatNumber: '300155266800003',
+        vatNumber: '314076518400003',
         bankingDetails: {
           bankName: 'Saudi National Bank',
           iban: 'SA3610000041000000080109',
@@ -1000,7 +1000,7 @@ Timeline: 4-6 weeks from project approval"
               <p><strong>Bank:</strong> Saudi National Bank</p>
               <p><strong>IBAN:</strong> SA3610000041000000080109</p>
               <p><strong>Account:</strong> 41000000080109</p>
-              <p><strong>VAT:</strong> 300155266800003</p>
+              <p><strong>VAT:</strong> 314076518400003</p>
             </div>
           </div>
 

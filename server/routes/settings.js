@@ -17,7 +17,7 @@ router.get('/company', authenticateToken, async (req, res) => {
       phone: '011-4917295',
       email: 'info@smartuniit.com',
       crNumber: '1010123456',
-      vatNumber: '300155266800003',
+      vatNumber: '314076518400003',
       logo: '/smaruniit_logo.png',
       vatRate: 15,
       bankingDetails: {
@@ -51,7 +51,7 @@ router.put('/company', authenticateToken, requireRole(['admin', 'superadmin']), 
         phone: phone || '011-4917295',
         email: email || 'info@smartuniit.com',
         crNumber: crNumber || '1010123456',
-        vatNumber: vatNumber || '300155266800003',
+        vatNumber: vatNumber || '314076518400003',
         logo: '/smaruniit_logo.png',
         vatRate: vatRate || 15,
         bankingDetails: bankingDetails || {

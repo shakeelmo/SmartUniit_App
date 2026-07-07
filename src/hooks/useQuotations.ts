@@ -185,7 +185,7 @@ export function useQuotations() {
           phone: '011-4917295',
           email: 'info@smartuniit.com',
           crNumber: '1010123456',
-          vatNumber: '300155266800003',
+          vatNumber: '314076518400003',
           bankingDetails: {
             bankName: 'Saudi National Bank',
             iban: 'SA3610000041000000080109',

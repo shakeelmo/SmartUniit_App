@@ -629,7 +629,7 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   pdf.setTextColor(55, 65, 81);
   pdf.setFontSize(9);
   currentY += 5;
-  pdf.text('Subtotal Before Discount', 118, currentY);
+  pdf.text(hasItemDiscounts || discountAmount > 0 ? 'Subtotal Before Discount' : 'Subtotal', 118, currentY);
   drawCurrencyValue(pdf, formatCurrencyAmount(grossSubtotal), 198, currentY, { align: 'right', iconDataUrl: riyalSymbolImage });
   currentY += 5;
   if (hasItemDiscounts) {
