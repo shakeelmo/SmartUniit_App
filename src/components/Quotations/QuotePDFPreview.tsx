@@ -28,6 +28,8 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
   }, 0);
   const hasItemDiscounts = totalItemDiscount > 0.009;
   const specialDiscount = Number(quote.discountAmount || 0);
+  const hasSpecialDiscount = specialDiscount > 0.009;
+  const hasAnyDiscounts = hasItemDiscounts || hasSpecialDiscount;
   const vatRate = Number(quote.vatRate || settings?.vatRate || 15);
   const netBeforeVat = Math.max(subtotal - specialDiscount, 0);
   const vatAmount = Number(quote.vatAmount ?? (netBeforeVat * vatRate / 100));
@@ -223,9 +225,9 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
           <div className="flex justify-end">
             <div className="w-80">
               <div className="flex justify-between mb-2">
-                <span className="text-sm text-dark-600">{hasItemDiscounts || specialDiscount > 0 ? 'Subtotal Before Discount:' : 'Subtotal:'}</span>
+                <span className="text-sm text-dark-600">{hasAnyDiscounts ? 'Subtotal Before Discount:' : 'Subtotal:'}</span>
                 <span className="text-sm font-medium flex items-center">
-                  <RiyalSymbol className="w-3 h-3 mr-1" /> {grossSubtotal.toLocaleString()}
+                  <RiyalSymbol className="w-3 h-3 mr-1" /> {(hasAnyDiscounts ? grossSubtotal : subtotal).toLocaleString()}
                 </span>
               </div>
               {hasItemDiscounts && (
@@ -236,7 +238,7 @@ const QuotePDFPreview: React.FC<QuotePDFPreviewProps> = ({ quote, customer, sett
                   </span>
                 </div>
               )}
-              {specialDiscount > 0 && (
+              {hasSpecialDiscount && (
                 <div className="flex justify-between mb-2">
                   <span className="text-sm text-green-600">Special Discount:</span>
                   <span className="text-sm font-medium text-green-600 flex items-center">

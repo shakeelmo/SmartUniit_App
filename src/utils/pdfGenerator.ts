@@ -493,6 +493,8 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   const discountType = quote.discountType || 'fixed';
   const discountValue = Number(quote.discountValue || 0);
   const discountAmount = Math.min(Number(quote.discountAmount ?? discountValue ?? 0), subtotal);
+  const hasSpecialDiscount = discountAmount > 0.009;
+  const hasAnyDiscounts = hasItemDiscounts || hasSpecialDiscount;
   const vatRate = Number(quote.vatRate || settings?.vatRate || 15);
   const discountedSubtotal = Math.max(subtotal - discountAmount, 0);
   const vatAmount = Number(quote.vatAmount ?? (discountedSubtotal * (vatRate / 100)));
@@ -629,15 +631,15 @@ export async function generateQuotationPDF(quote: any, settings: any = {}) {
   pdf.setTextColor(55, 65, 81);
   pdf.setFontSize(9);
   currentY += 5;
-  pdf.text(hasItemDiscounts || discountAmount > 0 ? 'Subtotal Before Discount' : 'Subtotal', 118, currentY);
-  drawCurrencyValue(pdf, formatCurrencyAmount(grossSubtotal), 198, currentY, { align: 'right', iconDataUrl: riyalSymbolImage });
+  pdf.text(hasAnyDiscounts ? 'Subtotal Before Discount' : 'Subtotal', 118, currentY);
+  drawCurrencyValue(pdf, formatCurrencyAmount(hasAnyDiscounts ? grossSubtotal : subtotal), 198, currentY, { align: 'right', iconDataUrl: riyalSymbolImage });
   currentY += 5;
   if (hasItemDiscounts) {
     currentY += 5;
     pdf.text('Total Item Discount', 118, currentY);
     drawCurrencyValue(pdf, formatCurrencyAmount(totalItemDiscount), 198, currentY, { align: 'right', iconDataUrl: riyalSymbolImage });
   }
-  if (discountAmount > 0) {
+  if (hasSpecialDiscount) {
     currentY += 5;
     pdf.setFillColor(239, 246, 255);
     pdf.roundedRect(116, currentY - 3.8, 84, 6.5, 1.5, 1.5, 'F');
