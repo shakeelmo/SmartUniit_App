@@ -6,7 +6,7 @@ import { SMART_UNIVERSE_LOGO_BASE64 } from '../../utils/logoBase64';
 export function LoginForm() {
   const demoPassword = typeof window !== 'undefined' && window.location.hostname === 'test.smartuniit.com'
     ? 'TestSmart@2026#Portal!'
-    : 'admin123';
+    : 'TestSmart@2026#Portal!';
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
