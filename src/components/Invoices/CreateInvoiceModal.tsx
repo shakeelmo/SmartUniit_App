@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, DollarSign, Calendar, User, Building, FileText, Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { formatCurrencyWithSymbol } from '../../utils/format';
 
 interface InvoiceLineItem {
   id: string;
@@ -18,6 +19,39 @@ interface CreateInvoiceModalProps {
   editInvoice?: any | null;
 }
 
+const DEFAULT_INVOICE_CURRENCY = 'SAR';
+
+function normalizeDateInput(value: unknown): string {
+  if (!value) return '';
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().split('T')[0];
+  }
+
+  const parsed = new Date(String(value));
+  if (Number.isNaN(parsed.getTime())) return '';
+  return parsed.toISOString().split('T')[0];
+}
+
+function normalizeLineItems(items: any[] | undefined): InvoiceLineItem[] {
+  if (!Array.isArray(items) || items.length === 0) {
+    return [{
+      id: '1',
+      description: '',
+      quantity: 1,
+      unitPrice: 0,
+      total: 0,
+    }];
+  }
+
+  return items.map((item, index) => ({
+    id: String(item?.id ?? index + 1),
+    description: String(item?.description ?? ''),
+    quantity: Number(item?.quantity ?? 1) || 1,
+    unitPrice: Number(item?.unitPrice ?? item?.unit_price ?? 0) || 0,
+    total: Number(item?.total ?? 0) || 0,
+  }));
+}
+
 export function CreateInvoiceModal({ isOpen, onClose, onSubmit, customers, editInvoice }: CreateInvoiceModalProps) {
   const { user } = useAuth();
   const [formData, setFormData] = useState({
@@ -26,8 +60,9 @@ export function CreateInvoiceModal({ isOpen, onClose, onSubmit, customers, editI
     quotationId: '',
     invoiceNumber: '',
     amount: '',
-    currency: 'USD',
+    currency: DEFAULT_INVOICE_CURRENCY,
     status: 'draft' as 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled',
+    paymentStatus: 'unpaid' as 'unpaid' | 'partially_paid' | 'paid' | 'refunded',
     dueDate: '',
     notes: '',
   });
@@ -47,17 +82,18 @@ export function CreateInvoiceModal({ isOpen, onClose, onSubmit, customers, editI
   useEffect(() => {
     if (editInvoice) {
       setFormData({
-        customerId: editInvoice.customerId,
+        customerId: editInvoice.customerId || '',
         projectId: editInvoice.projectId || '',
         quotationId: editInvoice.quotationId || '',
-        invoiceNumber: editInvoice.invoiceNumber,
-        amount: editInvoice.amount.toString(),
-        currency: editInvoice.currency,
-        status: editInvoice.status,
-        dueDate: editInvoice.dueDate.toISOString().split('T')[0],
+        invoiceNumber: editInvoice.invoiceNumber || '',
+        amount: String(editInvoice.amount ?? ''),
+        currency: editInvoice.currency || DEFAULT_INVOICE_CURRENCY,
+        status: editInvoice.status || 'draft',
+        paymentStatus: editInvoice.paymentStatus || 'unpaid',
+        dueDate: normalizeDateInput(editInvoice.dueDate),
         notes: editInvoice.notes || '',
       });
-      setLineItems(editInvoice.lineItems || []);
+      setLineItems(normalizeLineItems(editInvoice.lineItems));
     } else {
       // Generate invoice number for new invoices
       const year = new Date().getFullYear();
@@ -69,8 +105,9 @@ export function CreateInvoiceModal({ isOpen, onClose, onSubmit, customers, editI
         quotationId: '',
         invoiceNumber,
         amount: '',
-        currency: 'USD',
+        currency: DEFAULT_INVOICE_CURRENCY,
         status: 'draft',
+        paymentStatus: 'unpaid',
         dueDate: '',
         notes: '',
       });
@@ -268,7 +305,7 @@ export function CreateInvoiceModal({ isOpen, onClose, onSubmit, customers, editI
 
             <div>
               <label htmlFor="status" className="block text-sm font-medium text-dark-700 mb-2">
-                Status
+                Invoice Status
               </label>
               <select
                 id="status"
@@ -282,6 +319,24 @@ export function CreateInvoiceModal({ isOpen, onClose, onSubmit, customers, editI
                 <option value="paid">Paid</option>
                 <option value="overdue">Overdue</option>
                 <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="paymentStatus" className="block text-sm font-medium text-dark-700 mb-2">
+                Payment Status
+              </label>
+              <select
+                id="paymentStatus"
+                name="paymentStatus"
+                value={formData.paymentStatus}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              >
+                <option value="unpaid">Unpaid</option>
+                <option value="partially_paid">Partially Paid</option>
+                <option value="paid">Paid</option>
+                <option value="refunded">Refunded</option>
               </select>
             </div>
           </div>
@@ -330,7 +385,7 @@ export function CreateInvoiceModal({ isOpen, onClose, onSubmit, customers, editI
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-dark-700 mb-1">
-                        Unit Price ($)
+                        {`Unit Price (${DEFAULT_INVOICE_CURRENCY})`}
                       </label>
                       <input
                         type="number"
@@ -344,11 +399,11 @@ export function CreateInvoiceModal({ isOpen, onClose, onSubmit, customers, editI
                     <div className="flex items-end space-x-2">
                       <div className="flex-1">
                         <label className="block text-sm font-medium text-dark-700 mb-1">
-                          Total ($)
+                          {`Total (${DEFAULT_INVOICE_CURRENCY})`}
                         </label>
                         <input
                           type="text"
-                          value={`$${item.total.toLocaleString()}`}
+                          value={formatCurrencyWithSymbol(item.total, DEFAULT_INVOICE_CURRENCY)}
                           readOnly
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100"
                         />
@@ -373,7 +428,7 @@ export function CreateInvoiceModal({ isOpen, onClose, onSubmit, customers, editI
                 <div className="w-64">
                   <div className="flex justify-between text-lg font-bold">
                     <span>Total Amount:</span>
-                    <span className="text-primary-600">${calculateSubtotal().toLocaleString()}</span>
+                    <span className="text-primary-600">{formatCurrencyWithSymbol(calculateSubtotal(), DEFAULT_INVOICE_CURRENCY)}</span>
                   </div>
                 </div>
               </div>
@@ -385,7 +440,7 @@ export function CreateInvoiceModal({ isOpen, onClose, onSubmit, customers, editI
             <div>
               <label htmlFor="amount" className="block text-sm font-medium text-dark-700 mb-2">
                 <DollarSign className="w-4 h-4 inline mr-1" />
-                Amount ($)
+                {`Amount (${DEFAULT_INVOICE_CURRENCY})`}
               </label>
               <input
                 type="number"

@@ -399,6 +399,36 @@ class ApiService {
     });
   }
 
+  // Purchase Order endpoints
+  async getPurchaseOrders(params?: any) {
+    const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return this.request<{ purchaseOrders: any[]; pagination: any }>(`/purchase-orders${queryString}`);
+  }
+
+  async getPurchaseOrder(id: string) {
+    return this.request<{ purchaseOrder: any }>(`/purchase-orders/${id}`);
+  }
+
+  async createPurchaseOrder(data: any) {
+    return this.request<{ purchaseOrder: any }>('/purchase-orders', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updatePurchaseOrder(id: string, data: any) {
+    return this.request<{ purchaseOrder: any }>(`/purchase-orders/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deletePurchaseOrder(id: string) {
+    return this.request<{ message: string }>(`/purchase-orders/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Budget endpoints
   async getBudgets(params?: any) {
     const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';

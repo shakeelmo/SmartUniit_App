@@ -406,7 +406,7 @@ export function CreateQuoteModal({ isOpen, onClose, onSubmit, editQuote }: Creat
         addressAr: 'مكتب رقم 3، حي الديرة، ص.ب 12633، الرياض 11461، المملكة العربية السعودية',
         phone: '011-4917295',
         email: 'info@smartuniit.com',
-        crNumber: '1010123456',
+        crNumber: '1010973808',
         vatNumber: '314076518400003',
         bankingDetails: {
           bankName: 'Saudi National Bank',

@@ -1,0 +1,2 @@
+ALTER TABLE purchase_orders
+  MODIFY COLUMN discount_value DECIMAL(15,4) NOT NULL DEFAULT 0;

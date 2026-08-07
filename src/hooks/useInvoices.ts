@@ -1,6 +1,16 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 
+const toValidDate = (value: unknown) => {
+  const date = new Date(value as string | number | Date);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const toDateInputValue = (value: unknown) => {
+  const date = toValidDate(value);
+  return date ? date.toISOString().split('T')[0] : null;
+};
+
 export function useInvoices() {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -21,24 +31,25 @@ export function useInvoices() {
         customerId: invoice.customer_id,
         projectId: invoice.project_id,
         quotationId: invoice.quotation_id,
-        invoiceNumber: invoice.invoice_number,
-        amount: invoice.amount,
-        currency: invoice.currency,
-        status: invoice.status,
-        dueDate: new Date(invoice.due_date),
-        paidDate: invoice.paid_date ? new Date(invoice.paid_date) : null,
+        invoiceNumber: invoice.invoice_number || '',
+        amount: Number(invoice.amount || 0),
+        currency: invoice.currency || 'SAR',
+        status: invoice.status || 'draft',
+        paymentStatus: invoice.payment_status || 'unpaid',
+        dueDate: toValidDate(invoice.due_date),
+        paidDate: invoice.paid_date ? toValidDate(invoice.paid_date) : null,
         lineItems: invoice.lineItems?.map((item: any) => ({
           id: item.id,
-          description: item.description,
-          quantity: item.quantity,
-          unitPrice: item.unit_price,
-          total: item.total,
+          description: item.description || '',
+          quantity: Number(item.quantity || 0),
+          unitPrice: Number(item.unit_price || 0),
+          total: Number(item.total || 0),
         })) || [],
-        notes: invoice.notes,
-        createdAt: new Date(invoice.created_at),
-        updatedAt: new Date(invoice.updated_at),
+        notes: invoice.notes || '',
+        createdAt: toValidDate(invoice.created_at),
+        updatedAt: toValidDate(invoice.updated_at),
         createdBy: invoice.created_by,
-        customerName: invoice.customer_name,
+        customerName: invoice.customer_name || '',
         projectTitle: invoice.project_title,
         createdByName: invoice.created_by_name,
       }));
@@ -63,7 +74,10 @@ export function useInvoices() {
         invoice_number: invoice.invoiceNumber,
         amount: invoice.amount,
         currency: invoice.currency,
-        due_date: invoice.dueDate.toISOString().split('T')[0],
+        status: invoice.status,
+        payment_status: invoice.paymentStatus,
+        due_date: toDateInputValue(invoice.dueDate),
+        notes: invoice.notes || '',
         lineItems: invoice.lineItems?.map((item: any) => ({
           description: item.description,
           quantity: item.quantity,
@@ -97,9 +111,18 @@ export function useInvoices() {
       if (updates.amount !== undefined) updateData.amount = updates.amount;
       if (updates.currency) updateData.currency = updates.currency;
       if (updates.status) updateData.status = updates.status;
-      if (updates.dueDate) updateData.due_date = updates.dueDate.toISOString().split('T')[0];
-      if (updates.paidDate) updateData.paid_date = updates.paidDate.toISOString().split('T')[0];
-      if (updates.notes) updateData.notes = updates.notes;
+      if (updates.paymentStatus) updateData.payment_status = updates.paymentStatus;
+      if (updates.dueDate) updateData.due_date = toDateInputValue(updates.dueDate);
+      if (updates.paidDate) updateData.paid_date = toDateInputValue(updates.paidDate);
+      if (updates.notes !== undefined) updateData.notes = updates.notes;
+      if (Array.isArray(updates.lineItems)) {
+        updateData.lineItems = updates.lineItems.map((item: any) => ({
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          total: item.total,
+        }));
+      }
 
       await api.updateInvoice(id, updateData);
       

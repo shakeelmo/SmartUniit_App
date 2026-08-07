@@ -33,6 +33,7 @@ const navigation = [
   { name: 'Projects', href: '/projects', icon: FolderOpen, permission: PERMISSIONS.PROJECTS_READ },
   { name: 'Tasks', href: '/tasks', icon: CheckSquare, permission: PERMISSIONS.TASKS_READ },
   { name: 'Quotations', href: '/quotations', icon: FileText, permission: PERMISSIONS.QUOTATIONS_READ },
+  { name: 'Purchase Orders', href: '/purchase-orders', icon: ClipboardList, permission: PERMISSIONS.PURCHASE_ORDERS_READ },
   { name: 'Invoices', href: '/invoices', icon: Receipt, permission: PERMISSIONS.INVOICES_READ },
   { name: 'Delivery Notes', href: '/delivery-notes', icon: Truck, permission: PERMISSIONS.DELIVERY_NOTES_READ },
   { name: 'Expenses', href: '/expenses', icon: CreditCard, permission: 'role:superadmin' },

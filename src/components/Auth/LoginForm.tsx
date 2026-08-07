@@ -4,6 +4,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { SMART_UNIVERSE_LOGO_BASE64 } from '../../utils/logoBase64';
 
 export function LoginForm() {
+  const demoPassword = typeof window !== 'undefined' && window.location.hostname === 'test.smartuniit.com'
+    ? 'TestSmart@2026#Portal!'
+    : 'admin123';
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -73,7 +76,7 @@ export function LoginForm() {
 
   const handleDemoLogin = (demoEmail: string) => {
     setEmail(demoEmail);
-    setPassword('admin123');
+    setPassword(demoPassword);
     setError('');
     setShowSetupInstructions(false);
     setIsSignUp(false);
@@ -332,14 +335,14 @@ export function LoginForm() {
               <div className="space-y-2">
                 <button
                   type="button"
-                  onClick={() => handleDemoLogin('admin@example.com')}
+                  onClick={() => handleDemoLogin('admin@smartuniit.com')}
                   className="w-full text-left px-3 py-2 text-xs bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors"
                 >
                   <div className="font-medium text-dark-700">Admin</div>
-                  <div className="text-dark-500">admin@example.com</div>
+                  <div className="text-dark-500">admin@smartuniit.com</div>
                 </button>
                 <div className="text-xs text-dark-500 mt-2 px-3">
-                  <span className="font-medium">Password:</span> admin123
+                  <span className="font-medium">Password:</span> {demoPassword}
                 </div>
               </div>
             </div>

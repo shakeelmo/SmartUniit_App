@@ -3,6 +3,20 @@ const { run, get, all } = require('../db');
 const { authenticateToken, requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
+const INVOICE_STATUSES = new Set(['draft', 'sent', 'paid', 'overdue', 'cancelled']);
+const PAYMENT_STATUSES = new Set(['unpaid', 'partially_paid', 'paid', 'refunded']);
+
+const normalizeInvoiceStatus = (status) => (
+  INVOICE_STATUSES.has(String(status || '').toLowerCase())
+    ? String(status).toLowerCase()
+    : 'draft'
+);
+
+const normalizePaymentStatus = (status) => (
+  PAYMENT_STATUSES.has(String(status || '').toLowerCase())
+    ? String(status).toLowerCase()
+    : 'unpaid'
+);
 
 // Get all invoices
 router.get('/', authenticateToken, requirePermission('invoices', 'read'), async (req, res) => {
@@ -98,7 +112,7 @@ router.get('/:id', authenticateToken, requirePermission('invoices', 'read'), asy
 // Create new invoice
 router.post('/', authenticateToken, requirePermission('invoices', 'create'), async (req, res) => {
   try {
-    const { customer_id, project_id, quotation_id, invoice_number, amount, currency, due_date, lineItems } = req.body;
+    const { customer_id, project_id, quotation_id, invoice_number, amount, currency, status, payment_status, due_date, notes, lineItems } = req.body;
     
     if (!customer_id || !invoice_number || !amount) {
       return res.status(400).json({ error: 'Customer ID, invoice number, and amount are required' });
@@ -107,9 +121,9 @@ router.post('/', authenticateToken, requirePermission('invoices', 'create'), asy
     const invoiceId = Date.now().toString();
     
     await run(
-      `INSERT INTO invoices (id, customer_id, quotation_id, invoice_number, amount, currency, due_date, created_by) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [invoiceId, customer_id, quotation_id, invoice_number, amount, currency || 'SAR', due_date, req.user.id]
+      `INSERT INTO invoices (id, customer_id, project_id, quotation_id, invoice_number, amount, currency, status, payment_status, due_date, notes, created_by) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [invoiceId, customer_id, project_id || null, quotation_id || null, invoice_number, amount, currency || 'SAR', normalizeInvoiceStatus(status), normalizePaymentStatus(payment_status), due_date, notes || '', req.user.id]
     );
     
     // Insert line items if provided
@@ -139,20 +153,72 @@ router.post('/', authenticateToken, requirePermission('invoices', 'create'), asy
 router.put('/:id', authenticateToken, requirePermission('invoices', 'update'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { amount, currency, due_date, status, paid_date } = req.body;
+    const {
+      customer_id,
+      project_id,
+      quotation_id,
+      invoice_number,
+      amount,
+      currency,
+      due_date,
+      status,
+      payment_status,
+      paid_date,
+      notes,
+      lineItems,
+    } = req.body;
     
     // Check if invoice exists
-    const existingInvoice = await get('SELECT id FROM invoices WHERE id = ?', [id]);
+    const existingInvoice = await get(
+      `SELECT id, customer_id, project_id, quotation_id, invoice_number, amount, currency,
+              due_date, status, payment_status, paid_date, notes
+       FROM invoices WHERE id = ?`,
+      [id]
+    );
     if (!existingInvoice) {
       return res.status(404).json({ error: 'Invoice not found' });
     }
+
+    const nextStatus = status === undefined
+      ? existingInvoice.status
+      : normalizeInvoiceStatus(status);
+    const nextPaymentStatus = payment_status === undefined
+      ? existingInvoice.payment_status
+      : normalizePaymentStatus(payment_status);
     
     await run(
       `UPDATE invoices 
-       SET amount = ?, currency = ?, due_date = ?, status = ?, paid_date = ?, updated_at = CURRENT_TIMESTAMP 
+       SET customer_id = ?, project_id = ?, quotation_id = ?, invoice_number = ?, amount = ?,
+           currency = ?, due_date = ?, status = ?, payment_status = ?, paid_date = ?, notes = ?,
+           updated_at = CURRENT_TIMESTAMP 
        WHERE id = ?`,
-      [amount, currency, due_date, status, paid_date, id]
+      [
+        customer_id ?? existingInvoice.customer_id,
+        project_id ?? existingInvoice.project_id ?? null,
+        quotation_id ?? existingInvoice.quotation_id ?? null,
+        invoice_number ?? existingInvoice.invoice_number,
+        amount ?? existingInvoice.amount,
+        currency ?? existingInvoice.currency ?? 'SAR',
+        due_date ?? existingInvoice.due_date,
+        nextStatus,
+        nextPaymentStatus,
+        paid_date ?? existingInvoice.paid_date ?? null,
+        notes ?? existingInvoice.notes ?? '',
+        id,
+      ]
     );
+
+    if (Array.isArray(lineItems)) {
+      await run('DELETE FROM invoice_line_items WHERE invoice_id = ?', [id]);
+      for (let index = 0; index < lineItems.length; index += 1) {
+        const item = lineItems[index];
+        await run(
+          `INSERT INTO invoice_line_items (id, invoice_id, description, quantity, unit_price, total)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [`${Date.now()}-${index}`, id, item.description, item.quantity, item.unitPrice, item.total]
+        );
+      }
+    }
     
     const updatedInvoice = await get('SELECT * FROM invoices WHERE id = ?', [id]);
     

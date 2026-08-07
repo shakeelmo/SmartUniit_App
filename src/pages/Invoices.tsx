@@ -4,9 +4,35 @@ import { CreateInvoiceModal } from '../components/Invoices/CreateInvoiceModal';
 import { useInvoices } from '../hooks/useInvoices';
 import { useCustomers } from '../hooks/useCustomers';
 import { useAuth } from '../contexts/AuthContext';
-import { pdfExports } from '../utils/pdfExports';
+import { api } from '../lib/api';
+import { generateInvoicePDF } from '../utils/invoicePdf';
 import toast from 'react-hot-toast';
-import { formatCurrency, formatCurrencyWithSymbol } from '../utils/format';
+import { formatCurrencyWithSymbol } from '../utils/format';
+
+const toLowerSafe = (value: unknown) => String(value ?? '').toLowerCase();
+
+const mapInvoiceDetails = (invoice: any) => ({
+  id: invoice.id,
+  customerId: invoice.customer_id,
+  projectId: invoice.project_id,
+  quotationId: invoice.quotation_id,
+  invoiceNumber: invoice.invoice_number || '',
+  amount: Number(invoice.amount || 0),
+  currency: invoice.currency || 'SAR',
+  status: invoice.status || 'draft',
+  paymentStatus: invoice.payment_status || 'unpaid',
+  dueDate: invoice.due_date ? new Date(invoice.due_date) : null,
+  paidDate: invoice.paid_date ? new Date(invoice.paid_date) : null,
+  notes: invoice.notes || '',
+  createdAt: invoice.created_at ? new Date(invoice.created_at) : new Date(),
+  lineItems: (invoice.lineItems || []).map((item: any) => ({
+    id: item.id,
+    description: item.description || '',
+    quantity: Number(item.quantity || 0),
+    unitPrice: Number(item.unit_price || 0),
+    total: Number(item.total || 0),
+  })),
+});
 
 export function Invoices() {
   const { user, hasPermission } = useAuth();
@@ -22,9 +48,10 @@ export function Invoices() {
 
   const filteredInvoices = invoices.filter(invoice => {
     const customer = customers.find(c => c.id === invoice.customerId);
-    const matchesSearch = invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         customer?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         customer?.company?.toLowerCase().includes(searchTerm.toLowerCase());
+    const loweredSearch = toLowerSafe(searchTerm);
+    const matchesSearch = toLowerSafe(invoice.invoiceNumber).includes(loweredSearch) ||
+                         toLowerSafe(customer?.name).includes(loweredSearch) ||
+                         toLowerSafe(customer?.company).includes(loweredSearch);
     const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -36,11 +63,17 @@ export function Invoices() {
     overdue: 'bg-red-100 text-red-800',
     cancelled: 'bg-gray-100 text-gray-800',
   };
+  const paymentStatusColors = {
+    unpaid: 'bg-red-100 text-red-800',
+    partially_paid: 'bg-yellow-100 text-yellow-800',
+    paid: 'bg-green-100 text-green-800',
+    refunded: 'bg-purple-100 text-purple-800',
+  };
 
-  const totalAmount = invoices.reduce((sum, inv) => sum + inv.amount, 0);
-  const paidAmount = invoices.filter(inv => inv.status === 'paid').reduce((sum, inv) => sum + inv.amount, 0);
-  const pendingAmount = invoices.filter(inv => inv.status === 'sent').reduce((sum, inv) => sum + inv.amount, 0);
-  const overdueAmount = invoices.filter(inv => inv.status === 'overdue').reduce((sum, inv) => sum + inv.amount, 0);
+  const totalAmount = invoices.reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
+  const paidAmount = invoices.filter(inv => inv.paymentStatus === 'paid').reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
+  const pendingAmount = invoices.filter(inv => inv.status === 'sent').reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
+  const overdueAmount = invoices.filter(inv => inv.status === 'overdue').reduce((sum, inv) => sum + Number(inv.amount || 0), 0);
 
   const handleCreateInvoice = async (invoiceData: any) => {
     try {
@@ -58,9 +91,15 @@ export function Invoices() {
     }
   };
 
-  const handleEditInvoice = (invoice: any) => {
-    setEditingInvoice(invoice);
-    setIsCreateModalOpen(true);
+  const handleEditInvoice = async (invoice: any) => {
+    try {
+      const response = await api.getInvoice(invoice.id);
+      setEditingInvoice(mapInvoiceDetails(response.invoice));
+      setIsCreateModalOpen(true);
+    } catch (error) {
+      console.error('Error loading invoice details:', error);
+      toast.error('Failed to load invoice details');
+    }
   };
 
   const handleDeleteInvoice = async (invoiceId: string) => {
@@ -78,15 +117,26 @@ export function Invoices() {
   const handleExportPDF = async (invoice: any) => {
     try {
       setIsExporting(invoice.id);
-      const customer = customers.find(c => c.id === invoice.customerId) || { 
+      const response = await api.getInvoice(invoice.id);
+      const fullInvoice = response.invoice ? mapInvoiceDetails(response.invoice) : invoice;
+
+      const customer = customers.find(c => c.id === fullInvoice.customerId) || { 
         name: 'Unknown Customer', 
         email: 'customer@example.com', 
         phone: '+966 550188288',
         address: 'Customer Address'
       };
-      
-      await pdfExports.exportInvoicePDF(invoice, customer, invoice.lineItems || []);
-      toast.success('PDF exported successfully');
+
+      const blob = await generateInvoicePDF(fullInvoice, customer);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `invoice-${fullInvoice.invoiceNumber}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success('Invoice PDF download started');
     } catch (error) {
       console.error('Error exporting PDF:', error);
       toast.error('Error generating PDF. Please try again.');
@@ -142,7 +192,7 @@ export function Invoices() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-dark-600">Total Amount</p>
-              <p className="text-2xl font-bold text-dark-900">${totalAmount.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-dark-900">{formatCurrencyWithSymbol(totalAmount, 'SAR')}</p>
             </div>
             <div className="p-3 bg-primary-100 rounded-lg">
               <DollarSign className="w-6 h-6 text-primary-600" />
@@ -154,7 +204,7 @@ export function Invoices() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-dark-600">Paid</p>
-              <p className="text-2xl font-bold text-green-600">${paidAmount.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-green-600">{formatCurrencyWithSymbol(paidAmount, 'SAR')}</p>
             </div>
             <div className="p-3 bg-green-100 rounded-lg">
               <Receipt className="w-6 h-6 text-green-600" />
@@ -166,7 +216,7 @@ export function Invoices() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-dark-600">Pending</p>
-              <p className="text-2xl font-bold text-yellow-600">${pendingAmount.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-yellow-600">{formatCurrencyWithSymbol(pendingAmount, 'SAR')}</p>
             </div>
             <div className="p-3 bg-yellow-100 rounded-lg">
               <Receipt className="w-6 h-6 text-yellow-600" />
@@ -178,7 +228,7 @@ export function Invoices() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-dark-600">Overdue</p>
-              <p className="text-2xl font-bold text-red-600">${overdueAmount.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-red-600">{formatCurrencyWithSymbol(overdueAmount, 'SAR')}</p>
             </div>
             <div className="p-3 bg-red-100 rounded-lg">
               <AlertCircle className="w-6 h-6 text-red-600" />
@@ -265,15 +315,18 @@ export function Invoices() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-dark-900">
-                        {invoice.currency === 'SAR' || !invoice.currency
-                          ? formatCurrencyWithSymbol(invoice.amount, invoice.currency || 'SAR')
-                          : formatCurrency(invoice.amount, invoice.currency || 'SAR')}
+                        {formatCurrencyWithSymbol(invoice.amount, invoice.currency || 'SAR')}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[invoice.status as keyof typeof statusColors]}`}>
-                        {invoice.status}
-                      </span>
+                      <div className="flex flex-col items-start gap-1">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[invoice.status as keyof typeof statusColors]}`}>
+                          {invoice.status}
+                        </span>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${paymentStatusColors[invoice.paymentStatus as keyof typeof paymentStatusColors] || paymentStatusColors.unpaid}`}>
+                          Payment: {String(invoice.paymentStatus || 'unpaid').replace('_', ' ')}
+                        </span>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-dark-900">

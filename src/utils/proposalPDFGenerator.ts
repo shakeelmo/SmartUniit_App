@@ -48,7 +48,7 @@ export class ProposalPDFGenerator {
   private tocPage = 2;
   private companyLogoImage?: string;
   private bankingDetails = { bank: 'Saudi National Bank', iban: 'SA3610000041000000080109', accountNumber: '41000000080109' };
-  private companyFooter = 'Smart Universe for Communications and Information Technology | Riyadh, Saudi Arabia | Phone: +966 11 4917295 | Email: info@smartuniit.com';
+  private companyFooter = 'Smart Universe for Communications and Information Technology | CR: 1010973808 | Riyadh, Saudi Arabia | Phone: +966 11 4917295 | Email: info@smartuniit.com';
   private riyalSymbolImage?: string;
 
   public static getInstance(): ProposalPDFGenerator {

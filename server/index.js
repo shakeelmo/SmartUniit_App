@@ -1,6 +1,8 @@
+const dotenv = require('dotenv');
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+dotenv.config({ path: path.join(__dirname, '../.env') });
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const customerRoutes = require('./routes/customers');
@@ -10,6 +12,7 @@ const taskRoutes = require('./routes/tasks');
 const proposalRoutes = require('./routes/proposals');
 const quotationRoutes = require('./routes/quotations');
 const invoiceRoutes = require('./routes/invoices');
+const purchaseOrderRoutes = require('./routes/purchaseOrders');
 const budgetRoutes = require('./routes/budgets');
 const reportRoutes = require('./routes/reports');
 const settingsRoutes = require('./routes/settings');
@@ -38,12 +41,21 @@ const allowedOrigins = [
   'http://127.0.0.1:3000',
   'http://127.0.0.1:3001',
   'http://192.168.1.14:5173',
-  'http://192.168.1.14:3001'
+  'http://192.168.1.14:3001',
+  'http://work.smartuniit.com',
+  'https://work.smartuniit.com',
+  'https://www.work.smartuniit.com',
+  'http://www.work.smartuniit.com',
+  'http://test.smartuniit.com',
+  'https://test.smartuniit.com',
+  'https://www.test.smartuniit.com',
+  'http://www.test.smartuniit.com'
 ];
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    const normalizedOrigin = origin ? origin.split(',')[0].trim() : origin;
+    if (!normalizedOrigin || allowedOrigins.includes(normalizedOrigin)) {
       return callback(null, true);
     }
     return callback(new Error(`CORS blocked for origin: ${origin}`));
@@ -54,8 +66,21 @@ app.use(cors({
 }));
 
 // Middleware
-app.use(express.json());
+app.use(express.json({ limit: "100mb" }));
+app.use(express.urlencoded({ extended: true, limit: "100mb" }));
 app.use(express.static(path.join(__dirname, '../public')));
+
+// Body parser error handling
+app.use((err, req, res, next) => {
+  if (err && (err.type === 'entity.too.large' || err.status === 413)) {
+    return res.status(413).json({
+      error: 'Payload too large',
+      message: 'Proposal payload exceeds limit. Please reduce embedded logo/image size and retry.'
+    });
+  }
+  return next(err);
+});
+
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -67,6 +92,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/proposals', proposalRoutes);
 app.use('/api/quotations', quotationRoutes);
 app.use('/api/invoices', invoiceRoutes);
+app.use('/api/purchase-orders', purchaseOrderRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/settings', settingsRoutes);

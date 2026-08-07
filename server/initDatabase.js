@@ -191,6 +191,53 @@ const initDatabase = async () => {
     `);
 
     await runQuery(`
+      CREATE TABLE IF NOT EXISTS purchase_orders (
+        id TEXT PRIMARY KEY,
+        po_number TEXT UNIQUE,
+        direction TEXT DEFAULT 'issued',
+        vendor_id TEXT,
+        customer_id TEXT,
+        status TEXT DEFAULT 'draft',
+        po_date TEXT,
+        reference_number TEXT,
+        quotation_reference TEXT,
+        currency TEXT DEFAULT 'SAR',
+        subtotal REAL DEFAULT 0,
+        vat_rate REAL DEFAULT 15,
+        vat_amount REAL DEFAULT 0,
+        total_amount REAL DEFAULT 0,
+        notes TEXT,
+        delivery_address TEXT,
+        payment_terms TEXT,
+        company_contact_name TEXT,
+        company_contact_phone TEXT,
+        company_contact_email TEXT,
+        created_by TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (vendor_id) REFERENCES vendors(id),
+        FOREIGN KEY (customer_id) REFERENCES customers(id),
+        FOREIGN KEY (created_by) REFERENCES users(id)
+      )
+    `);
+
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS purchase_order_line_items (
+        id TEXT PRIMARY KEY,
+        purchase_order_id TEXT NOT NULL,
+        item_code TEXT,
+        description TEXT NOT NULL,
+        quantity REAL NOT NULL DEFAULT 1,
+        unit TEXT DEFAULT 'pcs',
+        unit_price REAL NOT NULL DEFAULT 0,
+        total_price REAL NOT NULL DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders(id) ON DELETE CASCADE
+      )
+    `);
+
+    await runQuery(`
       CREATE TABLE IF NOT EXISTS delivery_notes (
         id TEXT PRIMARY KEY,
         note_number TEXT UNIQUE,

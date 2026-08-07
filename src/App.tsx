@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { LoginForm } from './components/Auth/LoginForm';
@@ -12,6 +12,7 @@ import { Projects } from './pages/Projects';
 import { Tasks } from './pages/Tasks';
 import { Quotations } from './pages/Quotations';
 import { Invoices } from './pages/Invoices';
+import { PurchaseOrders } from './pages/PurchaseOrders';
 import DeliveryNotes from './pages/DeliveryNotes';
 import { Expenses } from './pages/Expenses';
 import { CaseStudies } from './pages/CaseStudies';
@@ -76,6 +77,11 @@ function AppRoutes() {
       <Route path="/quotations" element={
         <ProtectedRoute>
           <Quotations />
+        </ProtectedRoute>
+      } />
+      <Route path="/purchase-orders" element={
+        <ProtectedRoute>
+          <PurchaseOrders />
         </ProtectedRoute>
       } />
       <Route path="/invoices" element={
