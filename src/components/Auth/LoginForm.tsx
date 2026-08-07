@@ -341,9 +341,6 @@ export function LoginForm() {
                   <div className="font-medium text-dark-700">Admin</div>
                   <div className="text-dark-500">admin@smartuniit.com</div>
                 </button>
-                <div className="text-xs text-dark-500 mt-2 px-3">
-                  <span className="font-medium">Password:</span> {demoPassword}
-                </div>
               </div>
             </div>
           )}
