@@ -43,7 +43,7 @@ export function useVendors() {
   const fetchVendors = async () => {
     try {
       setIsLoading(true);
-      const response = await api.getVendors();
+      const response = await api.getVendors({ limit: 1000 });
       const transformedVendors = (response.vendors || []).map(transformVendorData);
       setVendors(transformedVendors);
     } catch (error) {

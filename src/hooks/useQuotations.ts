@@ -142,7 +142,7 @@ export function useQuotations() {
 
   const fetchCustomers = async () => {
     try {
-      const { customers } = await api.getCustomers();
+      const { customers } = await api.getCustomers({ limit: 1000 });
       setCustomers(customers);
     } catch (error) {
       console.error('Error fetching customers:', error);

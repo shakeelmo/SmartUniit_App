@@ -257,7 +257,7 @@ export function useProposals() {
 
   const fetchCustomers = async () => {
     try {
-      const { customers } = await api.getCustomers();
+      const { customers } = await api.getCustomers({ limit: 1000 });
       setCustomers(customers);
     } catch (error) {
       console.error('Error fetching customers:', error);
@@ -268,7 +268,7 @@ export function useProposals() {
 
   const fetchVendors = async () => {
     try {
-      const { vendors } = await api.getVendors();
+      const { vendors } = await api.getVendors({ limit: 1000 });
       setVendors(vendors);
     } catch (error) {
       console.error('Error fetching vendors:', error);
