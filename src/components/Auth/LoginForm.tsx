@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Lock, Mail, AlertCircle, Info, ExternalLink, User, Building, Phone } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, AlertCircle, User, Building, Phone } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { SMART_UNIVERSE_LOGO_BASE64 } from '../../utils/logoBase64';
 
 export function LoginForm() {
-  const demoPassword = typeof window !== 'undefined' && window.location.hostname === 'test.smartuniit.com'
-    ? 'TestSmart@2026#Portal!'
-    : 'TestSmart@2026#Portal!';
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,13 +14,11 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
-  const [showSetupInstructions, setShowSetupInstructions] = useState(false);
   const { login, register, isLoading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setShowSetupInstructions(false);
     
     if (isSignUp) {
       // Validation for sign-up
@@ -58,34 +53,15 @@ export function LoginForm() {
       } catch (err: any) {
         const errorMessage = err.message || 'Invalid email or password';
         
-        if (errorMessage === 'DEMO_ACCOUNT_NOT_FOUND') {
-          setError('Demo account not found in your Supabase project.');
-          setShowSetupInstructions(true);
-        } else {
           setError(errorMessage);
-          
-          // Show setup instructions if it's likely a demo account that doesn't exist
-          if (errorMessage.includes('Invalid') && 
-              (email.includes('@smartuniit.com') || email.includes('admin@') || email.includes('manager@') || email.includes('tech@'))) {
-            setShowSetupInstructions(true);
-          }
-        }
       }
     }
   };
 
-  const handleDemoLogin = (demoEmail: string) => {
-    setEmail(demoEmail);
-    setPassword(demoPassword);
-    setError('');
-    setShowSetupInstructions(false);
-    setIsSignUp(false);
-  };
 
   const toggleMode = () => {
     setIsSignUp(!isSignUp);
     setError('');
-    setShowSetupInstructions(false);
     // Clear form fields when switching modes
     setEmail('');
     setPassword('');
@@ -255,55 +231,6 @@ export function LoginForm() {
               </div>
             )}
 
-            {showSetupInstructions && !isSignUp && (
-              <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg text-sm">
-                <div className="flex items-start gap-2">
-                  <Info className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-medium mb-2">Demo Account Setup Required</p>
-                    <p className="mb-3">Choose one of these options to continue:</p>
-                    
-                    <div className="space-y-4">
-                      <div className="p-3 bg-green-50 border border-green-200 rounded">
-                        <p className="font-medium text-green-800 mb-2">Option 1: Use Mock Authentication (Recommended for Demo)</p>
-                        <ol className="list-decimal list-inside space-y-1 text-xs text-green-700 ml-2">
-                          <li>Open your project's <code className="bg-green-100 px-1 rounded">.env</code> file</li>
-                          <li>Comment out or remove these lines:</li>
-                          <li className="ml-4 font-mono text-xs bg-green-100 p-1 rounded">
-                            # VITE_SUPABASE_URL=...<br/>
-                            # VITE_SUPABASE_ANON_KEY=...
-                          </li>
-                          <li>Refresh this page and try logging in again</li>
-                        </ol>
-                      </div>
-                      
-                      <div className="p-3 bg-blue-50 border border-blue-200 rounded">
-                        <p className="font-medium text-blue-800 mb-2">Option 2: Create Demo Users in Supabase</p>
-                        <ol className="list-decimal list-inside space-y-1 text-xs text-blue-700 ml-2">
-                          <li>
-                            <a 
-                              href="https://supabase.com/dashboard" 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 underline"
-                            >
-                              Open Supabase Dashboard <ExternalLink className="w-3 h-3" />
-                            </a>
-                          </li>
-                          <li>Navigate to Authentication → Users</li>
-                          <li>Click "Add User" and create these accounts:</li>
-                          <li className="ml-4">• admin@smartuniit.com (password: admin123)</li>
-                          <li className="ml-4">• manager@smartuniit.com (password: password123)</li>
-                          <li className="ml-4">• tech@smartuniit.com (password: password123)</li>
-                          <li>Disable "Email Confirmation" in Auth settings</li>
-                          <li>Add corresponding records to the 'users' table with appropriate roles</li>
-                        </ol>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
 
             <button
               type="submit"
@@ -328,22 +255,6 @@ export function LoginForm() {
             </button>
           </div>
 
-          {/* Quick-fill Account - Only show for login */}
-          {!isSignUp && (
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-dark-600 mb-3 font-medium">Quick Account:</p>
-              <div className="space-y-2">
-                <button
-                  type="button"
-                  onClick={() => handleDemoLogin('admin@smartuniit.com')}
-                  className="w-full text-left px-3 py-2 text-xs bg-white border border-gray-200 rounded hover:bg-gray-50 transition-colors"
-                >
-                  <div className="font-medium text-dark-700">Admin</div>
-                  <div className="text-dark-500">admin@smartuniit.com</div>
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
