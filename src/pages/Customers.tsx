@@ -39,8 +39,8 @@ export function Customers() {
         await addCustomer(customerData);
         toast.success('Customer created successfully');
       }
-    } catch (error) {
-      toast.error(editingCustomer ? 'Failed to update customer' : 'Failed to create customer');
+    } catch (error: any) {
+      toast.error(error?.message || (editingCustomer ? 'Failed to update customer' : 'Failed to create customer'));
       console.error('Error managing customer:', error);
     }
   };

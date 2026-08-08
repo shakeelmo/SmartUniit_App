@@ -13,7 +13,8 @@ export function useCustomers() {
   const fetchCustomers = async () => {
     try {
       setIsLoading(true);
-      const { customers } = await api.getCustomers();
+      // Fetch all customers (the API defaults to 10 per page, which hid older records)
+      const { customers } = await api.getCustomers({ limit: 1000 });
       setCustomers(customers.map((c: any) => ({
         id: c.id,
         name: c.name,
