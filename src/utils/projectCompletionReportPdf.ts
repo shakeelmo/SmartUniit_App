@@ -232,6 +232,8 @@ export async function generateProjectCompletionReportPdf(report: ProjectCompleti
   const conclusion = raw.conclusion || '';
   const photos = raw.photos || [];
   const signatures = raw.signatures || [];
+  const reportType = raw.reportType || raw.report_type || 'specific';
+  const reportSections = raw.sections || [];
 
   // ================= PAGE 1: TITLE =================
   addLogo(pdf, SMART_UNIVERSE_LOGO_BASE64, MARGIN, 24, 56, 22);
@@ -315,16 +317,19 @@ export async function generateProjectCompletionReportPdf(report: ProjectCompleti
   ]);
 
   sectionTitle(ctx, 'Table of Contents');
-  const toc = [
-    '1. Introduction',
-    '2. Project Overview',
-    '3. Project Scope',
-    '4. Execution Details',
-    '5. Testing and Verification',
-    '6. Project Photos',
-    '7. Conclusion',
-    '8. Sign-off',
-  ];
+  const toc =
+    reportType === 'generic'
+      ? reportSections.filter((s: any) => s && s.title).map((s: any) => cleanText(s.title))
+      : [
+          '1. Introduction',
+          '2. Project Overview',
+          '3. Project Scope',
+          '4. Execution Details',
+          '5. Testing and Verification',
+          '6. Project Photos',
+          '7. Conclusion',
+          '8. Sign-off',
+        ];
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(10.5);
   pdf.setTextColor(...BODY);
@@ -337,65 +342,83 @@ export async function generateProjectCompletionReportPdf(report: ProjectCompleti
     ctx.y += 8;
   }
 
-  // ================= 1. INTRODUCTION =================
+  // ================= BODY SECTIONS =================
   pdf.addPage();
   ctx.page = 3;
   drawChrome(ctx);
-  sectionTitle(ctx, '1. Introduction');
-  paragraph(ctx, introduction);
 
-  // ================= 2. PROJECT OVERVIEW =================
-  sectionTitle(ctx, '2. Project Overview');
-  detailsTable(ctx, [
-    ['Project Name', title],
-    ['Client', clientName],
-    ['Client Company', clientCompany],
-    ['Date of Completion', formatDate(completionDate)],
-    ['Project Location', projectLocation],
-    ['Contractor', contractorName],
-    ['Project Manager', projectManager],
-  ]);
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(10);
-  pdf.setTextColor(...DARK);
-  pdf.text('Scope of Work', MARGIN, ctx.y);
-  ctx.y += 5.5;
-  paragraph(ctx, scopeOfWork);
-
-  // ================= 3. PROJECT SCOPE =================
-  sectionTitle(ctx, '3. Project Scope');
-  paragraph(ctx, scopeContent);
-
-  // ================= 4. EXECUTION DETAILS =================
-  sectionTitle(ctx, '4. Execution Details');
-  const executionSections: { key: string; label: string }[] = [
-    { key: 'civilWork', label: 'a. Civil Work' },
-    { key: 'cableConduit', label: 'b. Cable & Conduit Installation' },
-    { key: 'networkHardware', label: 'c. Network Hardware' },
-    { key: 'layingPulling', label: 'd. Laying & Pulling Activities' },
-    { key: 'splicingTermination', label: 'e. Splicing & Termination' },
-  ];
-  for (const section of executionSections) {
-    const items: string[] = executionDetails?.[section.key] || [];
-    ensure(ctx, 10);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(10.5);
-    pdf.setTextColor(...DARK);
-    pdf.text(section.label, MARGIN, ctx.y);
-    ctx.y += 5.5;
-    if (items.length) {
-      bulletList(ctx, items);
-    } else {
-      ctx.y += 1;
+  if (reportType === 'generic') {
+    const bodySections = reportSections.filter((s: any) => s && (s.title || s.content));
+    if (bodySections.length === 0) {
+      paragraph(ctx, 'No sections defined for this report.', { italic: true, color: MUTED });
     }
+    for (const sec of bodySections) {
+      const secTitle = cleanText(sec.title) || 'Section';
+      sectionTitle(ctx, secTitle);
+      if (sec.type === 'bullets') {
+        bulletList(ctx, String(sec.content || '').split('\n'));
+      } else {
+        paragraph(ctx, sec.content);
+      }
+    }
+  } else {
+    // ================= 1. INTRODUCTION =================
+    sectionTitle(ctx, '1. Introduction');
+    paragraph(ctx, introduction);
+
+    // ================= 2. PROJECT OVERVIEW =================
+    sectionTitle(ctx, '2. Project Overview');
+    detailsTable(ctx, [
+      ['Project Name', title],
+      ['Client', clientName],
+      ['Client Company', clientCompany],
+      ['Date of Completion', formatDate(completionDate)],
+      ['Project Location', projectLocation],
+      ['Contractor', contractorName],
+      ['Project Manager', projectManager],
+    ]);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(10);
+    pdf.setTextColor(...DARK);
+    pdf.text('Scope of Work', MARGIN, ctx.y);
+    ctx.y += 5.5;
+    paragraph(ctx, scopeOfWork);
+
+    // ================= 3. PROJECT SCOPE =================
+    sectionTitle(ctx, '3. Project Scope');
+    paragraph(ctx, scopeContent);
+
+    // ================= 4. EXECUTION DETAILS =================
+    sectionTitle(ctx, '4. Execution Details');
+    const executionSections: { key: string; label: string }[] = [
+      { key: 'civilWork', label: 'a. Civil Work' },
+      { key: 'cableConduit', label: 'b. Cable & Conduit Installation' },
+      { key: 'networkHardware', label: 'c. Network Hardware' },
+      { key: 'layingPulling', label: 'd. Laying & Pulling Activities' },
+      { key: 'splicingTermination', label: 'e. Splicing & Termination' },
+    ];
+    for (const section of executionSections) {
+      const items: string[] = executionDetails?.[section.key] || [];
+      ensure(ctx, 10);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(10.5);
+      pdf.setTextColor(...DARK);
+      pdf.text(section.label, MARGIN, ctx.y);
+      ctx.y += 5.5;
+      if (items.length) {
+        bulletList(ctx, items);
+      } else {
+        ctx.y += 1;
+      }
+    }
+
+    // ================= 5. TESTING AND VERIFICATION =================
+    sectionTitle(ctx, '5. Testing and Verification');
+    paragraph(ctx, testingDetails);
   }
 
-  // ================= 5. TESTING AND VERIFICATION =================
-  sectionTitle(ctx, '5. Testing and Verification');
-  paragraph(ctx, testingDetails);
-
   // ================= 6. PROJECT PHOTOS =================
-  sectionTitle(ctx, '6. Project Photos');
+  sectionTitle(ctx, reportType === 'generic' ? 'Project Photos' : '6. Project Photos');
   if (photos.length) {
     ctx.y += 3;
     const cols = 3;
@@ -454,12 +477,14 @@ export async function generateProjectCompletionReportPdf(report: ProjectCompleti
     paragraph(ctx, 'No project photos uploaded.', { italic: true, color: MUTED });
   }
 
-  // ================= 7. CONCLUSION =================
-  sectionTitle(ctx, '7. Conclusion');
-  paragraph(ctx, conclusion);
+  // ================= 7. CONCLUSION (specific template only) =================
+  if (reportType !== 'generic') {
+    sectionTitle(ctx, '7. Conclusion');
+    paragraph(ctx, conclusion);
+  }
 
   // ================= 8. SIGN-OFF =================
-  sectionTitle(ctx, '8. Sign-off');
+  sectionTitle(ctx, reportType === 'generic' ? 'Sign-off' : '8. Sign-off');
   paragraph(
     ctx,
     'We, SmartUniit, confirm that the project has been completed as per the agreed-upon specifications. Please find the details of the project completion, testing reports, and documentation attached for your approval.'

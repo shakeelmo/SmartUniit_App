@@ -128,6 +128,7 @@ export function ProjectCompletionReports() {
                 <th className="px-4 py-3">Client</th>
                 <th className="px-4 py-3">Completion Date</th>
                 <th className="px-4 py-3">Version</th>
+                <th className="px-4 py-3">Template</th>
                 <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-right">Actions</th>
               </tr>
@@ -140,6 +141,17 @@ export function ProjectCompletionReports() {
                   <td className="px-4 py-3 text-dark-600">{report.clientName || '-'}</td>
                   <td className="px-4 py-3 text-dark-600">{formatDate(report.completionDate)}</td>
                   <td className="px-4 py-3 text-dark-600">{report.version || '-'}</td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        report.reportType === 'generic'
+                          ? 'bg-purple-100 text-purple-700'
+                          : 'bg-blue-100 text-blue-700'
+                      }`}
+                    >
+                      {report.reportType === 'generic' ? 'Generic' : 'Specific'}
+                    </span>
+                  </td>
                   <td className="px-4 py-3">
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${

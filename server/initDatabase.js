@@ -280,6 +280,8 @@ const initDatabase = async () => {
         conclusion TEXT,
         photos TEXT,
         signatures TEXT,
+        report_type TEXT DEFAULT 'specific',
+        sections TEXT,
         status TEXT DEFAULT 'draft',
         created_by TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

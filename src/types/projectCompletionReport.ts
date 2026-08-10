@@ -11,6 +11,13 @@ export interface ReportSignature {
   date: string;
 }
 
+export interface ReportSection {
+  id: string;
+  title: string;
+  type: 'paragraph' | 'bullets';
+  content: string;
+}
+
 export interface ProjectCompletionReport {
   id: string;
   reportNumber: string;
@@ -39,6 +46,8 @@ export interface ProjectCompletionReport {
   conclusion: string;
   photos: ReportPhoto[];
   signatures: ReportSignature[];
+  reportType: 'specific' | 'generic';
+  sections: ReportSection[];
   status: 'draft' | 'completed';
   createdBy?: string;
   createdAt?: string;

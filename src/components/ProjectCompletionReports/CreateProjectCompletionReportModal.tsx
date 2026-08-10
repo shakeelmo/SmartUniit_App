@@ -14,6 +14,12 @@ import {
   FileText,
   ImagePlus,
   ClipboardList,
+  LayoutTemplate,
+  ListPlus,
+  Plus,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { SignaturePad } from './SignaturePad';
@@ -41,6 +47,7 @@ const EXECUTION_SECTIONS = [
 ];
 
 const emptyForm = {
+  reportType: 'specific',
   title: '',
   subtitle: '',
   clientName: '',
@@ -88,6 +95,7 @@ export function CreateProjectCompletionReportModal({
   const [executionDetails, setExecutionDetails] = useState<Record<string, string>>({});
   const [photos, setPhotos] = useState<{ name?: string; dataUrl: string }[]>([]);
   const [signatures, setSignatures] = useState(DEFAULT_SIGNATURES.map((s) => ({ ...s })));
+  const [sections, setSections] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -95,6 +103,7 @@ export function CreateProjectCompletionReportModal({
     if (!isOpen) return;
     if (editReport) {
       setFormData({
+        reportType: editReport.reportType || 'specific',
         title: editReport.title || '',
         subtitle: editReport.subtitle || '',
         clientName: editReport.clientName || '',
@@ -126,6 +135,7 @@ export function CreateProjectCompletionReportModal({
         }, {} as Record<string, string>)
       );
       setPhotos(editReport.photos || []);
+      setSections(editReport.sections || []);
       const sigs = [...DEFAULT_SIGNATURES];
       (editReport.signatures || []).forEach((sig, idx) => {
         if (sigs[idx]) sigs[idx] = { ...sigs[idx], ...sig };
@@ -135,6 +145,7 @@ export function CreateProjectCompletionReportModal({
       setFormData({ ...emptyForm });
       setExecutionDetails({});
       setPhotos([]);
+      setSections([]);
       setSignatures(DEFAULT_SIGNATURES.map((s) => ({ ...s })));
     }
     api.getCustomers({ limit: 1000 }).then((res: any) => setCustomers(res.customers || [])).catch(() => {});
@@ -175,7 +186,38 @@ export function CreateProjectCompletionReportModal({
     setSignatures((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
   };
 
+  const addSection = () => {
+    setSections((prev) => [
+      ...prev,
+      {
+        id: `sec-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+        title: `Section ${prev.length + 1}`,
+        type: 'paragraph',
+        content: '',
+      },
+    ]);
+  };
+
+  const removeSection = (id: string) => {
+    setSections((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  const updateSection = (id: string, field: string, value: string) => {
+    setSections((prev) => prev.map((s) => (s.id === id ? { ...s, [field]: value } : s)));
+  };
+
+  const moveSection = (index: number, direction: -1 | 1) => {
+    setSections((prev) => {
+      const next = [...prev];
+      const target = index + direction;
+      if (target < 0 || target >= next.length) return prev;
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  };
+
   const buildPayload = (status: string) => ({
+    reportType: formData.reportType || 'specific',
     title: formData.title,
     subtitle: formData.subtitle,
     clientName: formData.clientName,
@@ -209,6 +251,7 @@ export function CreateProjectCompletionReportModal({
     conclusion: formData.conclusion,
     photos,
     signatures,
+    sections: formData.reportType === 'generic' ? sections : [],
     status,
   });
 
@@ -266,6 +309,46 @@ export function CreateProjectCompletionReportModal({
         </div>
 
         <div className="p-6 space-y-6">
+          {/* Report Template */}
+          {sectionCard('Report Template', <LayoutTemplate className="w-4 h-4 text-primary-600" />, (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label
+                className={`border rounded-xl p-4 cursor-pointer transition-colors ${
+                  formData.reportType === 'specific'
+                    ? 'border-primary-600 bg-primary-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="reportType"
+                  className="hidden"
+                  checked={formData.reportType === 'specific'}
+                  onChange={() => setField('reportType', 'specific')}
+                />
+                <p className="text-sm font-semibold text-dark-900">Specific Template</p>
+                <p className="text-xs text-dark-600 mt-1">Fixed sections for projects like fiber optic / network installation (Introduction, Scope, Execution Details, Testing, Conclusion).</p>
+              </label>
+              <label
+                className={`border rounded-xl p-4 cursor-pointer transition-colors ${
+                  formData.reportType === 'generic'
+                    ? 'border-primary-600 bg-primary-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="reportType"
+                  className="hidden"
+                  checked={formData.reportType === 'generic'}
+                  onChange={() => setField('reportType', 'generic')}
+                />
+                <p className="text-sm font-semibold text-dark-900">Generic Template</p>
+                <p className="text-xs text-dark-600 mt-1">Build your own sections for any type of project — add, reorder, and remove sections as needed.</p>
+              </label>
+            </div>
+          ))}
+
           {/* Customer Information */}
           {sectionCard('Customer Information', <Building2 className="w-4 h-4 text-primary-600" />, (
             <>
@@ -338,8 +421,8 @@ export function CreateProjectCompletionReportModal({
             </div>
           ))}
 
-          {/* Report Sections */}
-          {sectionCard('Report Sections', <FileText className="w-4 h-4 text-primary-600" />, (
+          {/* Report Sections (specific template) */}
+          {formData.reportType === 'specific' && sectionCard('Report Sections', <FileText className="w-4 h-4 text-primary-600" />, (
             <div className="space-y-4">
               <div>
                 <label className={labelClass}>1. Introduction</label>
@@ -400,6 +483,93 @@ export function CreateProjectCompletionReportModal({
                   placeholder="Final conclusion and project status..."
                 />
               </div>
+            </div>
+          ))}
+
+          {/* Report Sections (generic template) */}
+          {formData.reportType === 'generic' && sectionCard('Report Sections', <ListPlus className="w-4 h-4 text-primary-600" />, (
+            <div className="space-y-4">
+              {sections.length === 0 && (
+                <p className="text-sm text-gray-500">No sections yet. Add your first section to start building the report.</p>
+              )}
+              {sections.map((sec, index) => (
+                <div key={sec.id} className="border border-gray-200 rounded-lg p-4 space-y-3 bg-white">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-gray-500">Section {index + 1}</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => moveSection(index, -1)}
+                        disabled={index === 0}
+                        className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg disabled:opacity-30"
+                      >
+                        <ArrowUp className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveSection(index, 1)}
+                        disabled={index === sections.length - 1}
+                        className="p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg disabled:opacity-30"
+                      >
+                        <ArrowDown className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeSection(sec.id)}
+                        className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="md:col-span-2">
+                      <label className={labelClass}>Section Title</label>
+                      <input
+                        value={sec.title}
+                        onChange={(e) => updateSection(sec.id, 'title', e.target.value)}
+                        className={inputClass}
+                        placeholder="e.g. 1. Introduction"
+                      />
+                    </div>
+                    <div>
+                      <label className={labelClass}>Content Type</label>
+                      <select
+                        value={sec.type}
+                        onChange={(e) => updateSection(sec.id, 'type', e.target.value)}
+                        className={inputClass}
+                      >
+                        <option value="paragraph">Paragraph</option>
+                        <option value="bullets">Bullet Points</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className={labelClass}>
+                      {sec.type === 'bullets' ? 'Content (one item per line)' : 'Content'}
+                    </label>
+                    <textarea
+                      value={sec.content}
+                      onChange={(e) => updateSection(sec.id, 'content', e.target.value)}
+                      className={inputClass}
+                      rows={4}
+                      placeholder={
+                        sec.type === 'bullets'
+                          ? 'Item one\nItem two\nItem three'
+                          : 'Write the section content here...'
+                      }
+                    />
+                  </div>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addSection}
+                className="inline-flex items-center justify-center gap-2 w-full px-3 py-2.5 border border-dashed border-gray-300 rounded-lg text-sm text-primary-600 hover:bg-primary-50 transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+                Add Section
+              </button>
             </div>
           ))}
 

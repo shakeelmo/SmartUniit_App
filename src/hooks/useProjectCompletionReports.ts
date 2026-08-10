@@ -30,6 +30,8 @@ const mapReport = (r: any): ProjectCompletionReport => ({
   conclusion: r.conclusion || '',
   photos: r.photos || [],
   signatures: r.signatures || [],
+  reportType: r.report_type || r.reportType || 'specific',
+  sections: r.sections || [],
   status: r.status || 'draft',
   createdBy: r.created_by,
   createdAt: r.created_at,

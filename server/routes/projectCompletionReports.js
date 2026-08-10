@@ -43,6 +43,7 @@ const serializeReport = (row) => {
     executionDetails: parseJson(row.execution_details, {}),
     photos: parseJson(row.photos, []),
     signatures: parseJson(row.signatures, []),
+    sections: parseJson(row.sections, []),
   };
 };
 
@@ -135,6 +136,8 @@ router.post('/', authenticateToken, requirePermission('project_completion_report
       conclusion,
       photos,
       signatures,
+      reportType,
+      sections,
       status,
     } = req.body;
 
@@ -150,8 +153,8 @@ router.post('/', authenticateToken, requirePermission('project_completion_report
         submission_date, completion_date, version,
         project_location, project_manager, scope_of_work,
         introduction, scope_content, execution_details, testing_details, conclusion,
-        photos, signatures, status, created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        photos, signatures, report_type, sections, status, created_by
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id, reportNumber, title || null, subtitle || null,
         clientName || null, clientCompany || null, clientFormerName || null, clientLogo || null,
@@ -165,6 +168,8 @@ router.post('/', authenticateToken, requirePermission('project_completion_report
         conclusion || null,
         photos ? JSON.stringify(photos) : '[]',
         signatures ? JSON.stringify(signatures) : '[]',
+        reportType || 'specific',
+        sections ? JSON.stringify(sections) : '[]',
         status || 'draft',
         req.user.id,
       ]
@@ -213,6 +218,8 @@ router.put('/:id', authenticateToken, requirePermission('project_completion_repo
       conclusion,
       photos,
       signatures,
+      reportType,
+      sections,
       status,
     } = req.body;
 
@@ -225,7 +232,7 @@ router.put('/:id', authenticateToken, requirePermission('project_completion_repo
         submission_date = ?, completion_date = ?, version = ?,
         project_location = ?, project_manager = ?, scope_of_work = ?,
         introduction = ?, scope_content = ?, execution_details = ?, testing_details = ?, conclusion = ?,
-        photos = ?, signatures = ?, status = ?,
+        photos = ?, signatures = ?, report_type = ?, sections = ?, status = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?`,
       [
@@ -244,6 +251,8 @@ router.put('/:id', authenticateToken, requirePermission('project_completion_repo
         conclusion ?? existing.conclusion,
         photos !== undefined ? JSON.stringify(photos) : existing.photos,
         signatures !== undefined ? JSON.stringify(signatures) : existing.signatures,
+        reportType ?? existing.report_type,
+        sections !== undefined ? JSON.stringify(sections) : existing.sections,
         status ?? existing.status,
         id,
       ]
