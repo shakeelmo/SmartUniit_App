@@ -8,6 +8,7 @@ const mapReport = (r: any): ProjectCompletionReport => ({
   title: r.title || '',
   subtitle: r.subtitle || '',
   clientName: r.client_name || r.clientName || '',
+  clientCompany: r.client_company || r.clientCompany || '',
   clientFormerName: r.client_former_name || r.clientFormerName || '',
   clientLogo: r.client_logo || r.clientLogo || null,
   clientRepName: r.client_rep_name || r.clientRepName || '',

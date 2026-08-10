@@ -17,6 +17,7 @@ export interface ProjectCompletionReport {
   title: string;
   subtitle: string;
   clientName: string;
+  clientCompany: string;
   clientFormerName: string;
   clientLogo: string | null;
   clientRepName: string;

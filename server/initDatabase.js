@@ -258,6 +258,7 @@ const initDatabase = async () => {
         title TEXT,
         subtitle TEXT,
         client_name TEXT,
+        client_company TEXT,
         client_former_name TEXT,
         client_logo TEXT,
         client_rep_name TEXT,

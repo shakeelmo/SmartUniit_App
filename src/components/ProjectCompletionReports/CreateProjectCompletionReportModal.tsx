@@ -44,6 +44,7 @@ const emptyForm = {
   title: '',
   subtitle: '',
   clientName: '',
+  clientCompany: '',
   clientFormerName: '',
   clientLogo: '',
   clientRepName: '',
@@ -97,6 +98,7 @@ export function CreateProjectCompletionReportModal({
         title: editReport.title || '',
         subtitle: editReport.subtitle || '',
         clientName: editReport.clientName || '',
+        clientCompany: editReport.clientCompany || '',
         clientFormerName: editReport.clientFormerName || '',
         clientLogo: editReport.clientLogo || '',
         clientRepName: editReport.clientRepName || '',
@@ -149,10 +151,10 @@ export function CreateProjectCompletionReportModal({
     const customer = customers.find((c) => c.id === customerId);
     if (!customer) return;
     setField('clientName', customer.name || '');
+    setField('clientCompany', customer.company || '');
     setField('clientRepEmail', customer.email || '');
     setField('clientRepPhone', customer.phone || '');
     setField('clientRepName', customer.contact_person || '');
-    if (customer.company) setField('clientCompany', customer.company);
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -166,7 +168,7 @@ export function CreateProjectCompletionReportModal({
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
     const loaded = await Promise.all(files.map(async (f) => ({ name: f.name, dataUrl: await readFileAsDataUrl(f) })));
-    setPhotos((prev) => [...prev, ...loaded].slice(0, 10));
+    setPhotos((prev) => [...prev, ...loaded].slice(0, 30));
   };
 
   const updateSignature = (index: number, field: string, value: string) => {
@@ -177,6 +179,7 @@ export function CreateProjectCompletionReportModal({
     title: formData.title,
     subtitle: formData.subtitle,
     clientName: formData.clientName,
+    clientCompany: formData.clientCompany,
     clientFormerName: formData.clientFormerName,
     clientLogo: formData.clientLogo || null,
     clientRepName: formData.clientRepName,
@@ -279,6 +282,7 @@ export function CreateProjectCompletionReportModal({
                   </select>
                 </div>
                 {field('Customer Name', 'clientName', 'text', true)}
+                {field('Client Company', 'clientCompany')}
                 {field('Formerly Known As (optional)', 'clientFormerName')}
                 {field('Representative Name', 'clientRepName')}
                 {field('Representative Designation', 'clientRepDesignation')}

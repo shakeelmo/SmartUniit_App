@@ -3,6 +3,13 @@ import { format } from 'date-fns';
 import { SMART_UNIVERSE_LOGO_BASE64 } from './logoBase64';
 import { ProjectCompletionReport } from '../types/projectCompletionReport';
 
+const PAGE_W = 210;
+const PAGE_H = 297;
+const MARGIN = 16;
+const CONTENT_W = PAGE_W - MARGIN * 2;
+const TOP = 26;
+const BOTTOM = PAGE_H - 20;
+
 const COMPANY = {
   displayName: 'Smart Universe',
   legalName: 'Smart Universe Communication and Information Technology',
@@ -11,182 +18,263 @@ const COMPANY = {
   email: 'info@smartuniit.com',
 };
 
-const PAGE_WIDTH = 210; // A4 mm
-const PAGE_HEIGHT = 297;
-const MARGIN = 16;
-const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
+const PRIMARY = [30, 64, 175] as const;
+const DARK = [23, 37, 84] as const;
+const BODY = [51, 65, 85] as const;
+const MUTED = [100, 116, 139] as const;
+const LINE = [203, 213, 225] as const;
 
-const formatDate = (value?: string) => {
+interface Ctx {
+  pdf: jsPDF;
+  page: number;
+  y: number;
+}
+
+const cleanText = (value: any): string => {
+  if (!value) return '';
+  if (value === 'NULL' || value === 'null') return '';
+  return String(value).replace(/\r\n/g, '\n').trim();
+};
+
+const formatDate = (value?: string): string => {
   if (!value) return '';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return format(date, 'dd/MM/yyyy');
 };
 
-const cleanText = (value: any): string => {
-  if (!value) return '';
-  return String(value).replace(/\r\n/g, '\n').trim();
-};
-
-function addPageChrome(pdf: jsPDF, pageNumber: number, totalPages: number) {
-  // Header
+function drawChrome(ctx: Ctx) {
+  const { pdf } = ctx;
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(9);
-  pdf.setTextColor(20, 40, 80);
-  pdf.text('SmartUniit - Project Completion Report', MARGIN, 10);
-  pdf.setDrawColor(30, 64, 175);
-  pdf.setLineWidth(0.5);
-  pdf.line(MARGIN, 12.5, PAGE_WIDTH - MARGIN, 12.5);
-
-  // Footer
-  pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(8);
-  pdf.setTextColor(120, 120, 120);
-  pdf.text(
-    `Page ${pageNumber} (${totalPages})`,
-    PAGE_WIDTH - MARGIN,
-    PAGE_HEIGHT - 8,
-    { align: 'right' }
-  );
-  pdf.text('Smart Universe Communication and Information Technology', MARGIN, PAGE_HEIGHT - 8);
+  pdf.setTextColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
+  pdf.text('SmartUniit - Project Completion Report', MARGIN, 11);
+  pdf.setDrawColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
+  pdf.setLineWidth(0.6);
+  pdf.line(MARGIN, 14, PAGE_W - MARGIN, 14);
+  ctx.y = TOP;
 }
 
-function addSectionTitle(pdf: jsPDF, title: string, y: number): number {
+function ensure(ctx: Ctx, needed: number) {
+  if (ctx.y + needed > BOTTOM) {
+    ctx.pdf.addPage();
+    ctx.page += 1;
+    drawChrome(ctx);
+  }
+}
+
+function sectionTitle(ctx: Ctx, title: string) {
+  ensure(ctx, 16);
+  const { pdf, y } = ctx;
+  pdf.setFillColor(PRIMARY[0], PRIMARY[1], PRIMARY[2]);
+  pdf.rect(MARGIN, y - 5, 3.2, 7, 'F');
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(13);
-  pdf.setTextColor(30, 64, 175);
-  pdf.text(title, MARGIN, y);
-  pdf.setDrawColor(30, 64, 175);
-  pdf.setLineWidth(0.4);
-  pdf.line(MARGIN, y + 1.5, MARGIN + 45, y + 1.5);
-  return y + 7;
+  pdf.setTextColor(DARK[0], DARK[1], DARK[2]);
+  pdf.text(title, MARGIN + 6, y);
+  ctx.y = y + 8;
 }
 
-function addParagraph(pdf: jsPDF, text: string, y: number, maxWidth = CONTENT_WIDTH): number {
-  if (!text) return y;
-  pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(10);
-  pdf.setTextColor(40, 40, 40);
-  const lines = pdf.splitTextToSize(text, maxWidth);
+function paragraph(ctx: Ctx, text: string, opts: { size?: number; color?: readonly number[]; italic?: boolean } = {}) {
+  const clean = cleanText(text);
+  if (!clean) return;
+  const { pdf } = ctx;
+  const size = opts.size || 10;
+  const lineH = size * 0.56;
+  pdf.setFont('helvetica', opts.italic ? 'italic' : 'normal');
+  pdf.setFontSize(size);
+  pdf.setTextColor(...(opts.color || BODY));
+  const lines = pdf.splitTextToSize(clean, CONTENT_W);
   for (const line of lines) {
-    if (y > PAGE_HEIGHT - 20) {
-      return y;
-    }
-    pdf.text(line, MARGIN, y);
-    y += 5;
+    ensure(ctx, lineH);
+    pdf.text(line, MARGIN, ctx.y);
+    ctx.y += lineH;
   }
-  return y + 2;
+  ctx.y += 2.5;
 }
 
-function addBulletList(pdf: jsPDF, items: string[], y: number): number {
-  for (const item of items) {
-    const clean = cleanText(item);
-    if (!clean) continue;
-    const lines = pdf.splitTextToSize(clean, CONTENT_WIDTH - 6);
-    if (y > PAGE_HEIGHT - 20) break;
+function bulletList(ctx: Ctx, items: string[]) {
+  const { pdf } = ctx;
+  const lineH = 5.2;
+  for (const raw of items) {
+    const item = cleanText(raw);
+    if (!item) continue;
+    const lines = pdf.splitTextToSize(item, CONTENT_W - 7);
+    ensure(ctx, lineH * lines.length + 1);
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(10);
-    pdf.setTextColor(40, 40, 40);
-    pdf.text('•', MARGIN, y);
-    pdf.text(lines[0], MARGIN + 4, y);
-    y += 5;
+    pdf.setTextColor(...BODY);
+    pdf.text('•', MARGIN, ctx.y);
+    pdf.text(lines[0], MARGIN + 4.5, ctx.y);
+    ctx.y += lineH;
     for (let i = 1; i < lines.length; i++) {
-      if (y > PAGE_HEIGHT - 20) break;
-      pdf.text(lines[i], MARGIN + 4, y);
-      y += 5;
+      pdf.text(lines[i], MARGIN + 4.5, ctx.y);
+      ctx.y += lineH;
     }
-    y += 1;
+    ctx.y += 0.8;
   }
-  return y + 3;
+  ctx.y += 2;
 }
 
-function addInfoRow(pdf: jsPDF, label: string, value: string, y: number, bold = false): number {
+function detailRow(ctx: Ctx, label: string, value: string, width = CONTENT_W) {
+  const { pdf } = ctx;
+  const labelW = 46;
+  const valueW = width - labelW;
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(10);
-  pdf.setTextColor(50, 50, 50);
-  pdf.text(label, MARGIN, y);
-  pdf.setFont('helvetica', bold ? 'bold' : 'normal');
-  pdf.setTextColor(20, 20, 20);
-  const valueLines = pdf.splitTextToSize(value || '-', CONTENT_WIDTH - 50);
-  pdf.text(valueLines[0] || '-', MARGIN + 48, y);
-  y += 5.5;
+  pdf.setFontSize(9.5);
+  pdf.setTextColor(...MUTED);
+  pdf.text(label, MARGIN, ctx.y);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(9.5);
+  pdf.setTextColor(...DARK);
+  const valueLines = pdf.splitTextToSize(cleanText(value) || '-', valueW);
+  ensure(ctx, 5.4 * valueLines.length);
+  pdf.text(valueLines[0], MARGIN + labelW, ctx.y);
+  ctx.y += 5.4;
   for (let i = 1; i < valueLines.length; i++) {
-    pdf.text(valueLines[i], MARGIN + 48, y);
-    y += 5.5;
+    ensure(ctx, 5.4);
+    pdf.text(valueLines[i], MARGIN + labelW, ctx.y);
+    ctx.y += 5.4;
   }
-  return y;
+}
+
+function detailsTable(ctx: Ctx, rows: [string, string][]) {
+  const { pdf } = ctx;
+  const rowH = 7.2;
+  const labelW = 52;
+  ensure(ctx, rows.length * rowH + 2);
+  pdf.setDrawColor(...LINE);
+  pdf.setLineWidth(0.3);
+  rows.forEach(([label, value], index) => {
+    const y = ctx.y + index * rowH;
+    pdf.rect(MARGIN, y, CONTENT_W, rowH);
+    pdf.setFillColor(index % 2 === 0 ? 248 : 255, index % 2 === 0 ? 250 : 255, index % 2 === 0 ? 255 : 255);
+    pdf.rect(MARGIN, y, CONTENT_W, rowH, 'FD');
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(9.5);
+    pdf.setTextColor(...MUTED);
+    pdf.text(label, MARGIN + 4, y + 4.8);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(...DARK);
+    const valueLines = pdf.splitTextToSize(cleanText(value) || '-', CONTENT_W - labelW - 8);
+    pdf.text(valueLines[0], MARGIN + labelW, y + 4.8);
+    for (let i = 1; i < valueLines.length; i++) {
+      ensure(ctx, rowH);
+      pdf.text(valueLines[i], MARGIN + labelW, y + 4.8 + i * 5);
+    }
+  });
+  ctx.y += rows.length * rowH + 4;
+}
+
+function addLogo(pdf: jsPDF, dataUrl: string | null | undefined, x: number, y: number, w: number, h: number) {
+  if (!dataUrl) return;
+  try {
+    const format = dataUrl.includes('image/jpeg') || dataUrl.includes('image/jpg') ? 'JPEG' : 'PNG';
+    pdf.addImage(dataUrl, format, x, y, w, h);
+  } catch {
+    // Logo is optional; skip if it cannot be embedded
+  }
 }
 
 export async function generateProjectCompletionReportPdf(report: ProjectCompletionReport) {
   const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
-  const totalPagesPlaceholder = '{total_pages_count_string}';
+  const ctx: Ctx = { pdf, page: 1, y: TOP };
 
-  // ---------- Page 1: Title page ----------
-  pdf.setFillColor(248, 250, 255);
-  pdf.rect(0, 0, PAGE_WIDTH, PAGE_HEIGHT, 'F');
+  // Normalize camelCase (frontend) and snake_case (raw API) field names
+  const raw = report as any;
+  const title = raw.title || '';
+  const subtitle = raw.subtitle || '';
+  const clientName = raw.clientName || raw.client_name || '';
+  const clientCompany = raw.clientCompany || raw.client_company || '';
+  const clientFormerName = raw.clientFormerName || raw.client_former_name || '';
+  const clientLogo = raw.clientLogo || raw.client_logo || null;
+  const contractorName = raw.contractorName || raw.contractor_name || COMPANY.legalName;
+  const reportNumber = raw.reportNumber || raw.report_number || '';
+  const submissionDate = raw.submissionDate || raw.submission_date || '';
+  const completionDate = raw.completionDate || raw.completion_date || '';
+  const version = raw.version || '';
+  const projectLocation = raw.projectLocation || raw.project_location || '';
+  const projectManager = raw.projectManager || raw.project_manager || '';
+  const scopeOfWork = raw.scopeOfWork || raw.scope_of_work || '';
+  const introduction = raw.introduction || '';
+  const scopeContent = raw.scopeContent || raw.scope_content || '';
+  const executionDetails = raw.executionDetails || {};
+  const testingDetails = raw.testingDetails || raw.testing_details || '';
+  const conclusion = raw.conclusion || '';
+  const photos = raw.photos || [];
+  const signatures = raw.signatures || [];
 
-  try {
-    pdf.addImage(SMART_UNIVERSE_LOGO_BASE64, 'PNG', 78, 28, 54, 22);
-  } catch {
-    // Logo optional
+  // ================= PAGE 1: TITLE =================
+  addLogo(pdf, SMART_UNIVERSE_LOGO_BASE64, MARGIN, 24, 56, 22);
+  if (clientLogo) {
+    addLogo(pdf, clientLogo, PAGE_W - MARGIN - 56, 24, 56, 22);
   }
 
+  pdf.setDrawColor(...LINE);
+  pdf.setLineWidth(0.4);
+  pdf.line(MARGIN, 54, PAGE_W - MARGIN, 54);
+
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(22);
-  pdf.setTextColor(30, 64, 175);
-  pdf.text('PROJECT COMPLETION REPORT', PAGE_WIDTH / 2, 68, { align: 'center' });
+  pdf.setFontSize(11);
+  pdf.setTextColor(...PRIMARY);
+  pdf.text('SMART UNIVERSE COMMUNICATION AND INFORMATION TECHNOLOGY', PAGE_W / 2, 70, { align: 'center' });
+
+  pdf.setFontSize(24);
+  pdf.setTextColor(...DARK);
+  pdf.text('PROJECT COMPLETION REPORT', PAGE_W / 2, 84, { align: 'center' });
+
+  pdf.setDrawColor(...PRIMARY);
+  pdf.setLineWidth(0.8);
+  pdf.line(PAGE_W / 2 - 45, 89, PAGE_W / 2 + 45, 89);
 
   pdf.setFontSize(16);
-  pdf.setTextColor(20, 20, 20);
-  pdf.text(cleanText(report.title) || 'Project Completion Report', PAGE_WIDTH / 2, 82, { align: 'center' });
+  pdf.setTextColor(20, 30, 60);
+  pdf.text(cleanText(title) || 'Project Completion Report', PAGE_W / 2, 102, { align: 'center' });
 
-  if (report.subtitle) {
+  if (subtitle) {
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(11);
-    pdf.setTextColor(80, 80, 80);
-    const subLines = pdf.splitTextToSize(cleanText(report.subtitle), CONTENT_WIDTH - 30);
-    let subY = 90;
+    pdf.setTextColor(...BODY);
+    const subLines = pdf.splitTextToSize(cleanText(subtitle), CONTENT_W - 40);
+    let subY = 112;
     for (const line of subLines) {
-      pdf.text(line, PAGE_WIDTH / 2, subY, { align: 'center' });
+      pdf.text(line, PAGE_W / 2, subY, { align: 'center' });
       subY += 5.5;
     }
   }
 
-  pdf.setDrawColor(180, 190, 210);
-  pdf.setLineWidth(0.3);
-  pdf.line(MARGIN, 112, PAGE_WIDTH - MARGIN, 112);
+  pdf.setFontSize(10);
+  pdf.setTextColor(...MUTED);
+  pdf.text(`Report No: ${reportNumber}`, PAGE_W / 2, 140, { align: 'center' });
 
-  let y = 124;
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(12);
-  pdf.setTextColor(30, 64, 175);
-  pdf.text('Report Details', MARGIN, y);
-  y += 8;
-  y = addInfoRow(pdf, 'Client:', report.clientName, y, true);
-  if (report.clientFormerName) y = addInfoRow(pdf, 'Formerly Known As:', report.clientFormerName, y);
-  y = addInfoRow(pdf, 'Contractor:', report.contractorName || COMPANY.legalName, y);
-  y = addInfoRow(pdf, 'Project Location:', report.projectLocation, y);
-  y = addInfoRow(pdf, 'Date of Completion:', formatDate(report.completionDate), y);
-  y = addInfoRow(pdf, 'Submission Date:', formatDate(report.submissionDate), y);
-  y = addInfoRow(pdf, 'Version:', report.version, y);
-  y = addInfoRow(pdf, 'Project Manager:', report.projectManager, y);
-  y = addInfoRow(pdf, 'Report No:', report.reportNumber, y);
+  const titleRows: [string, string][] = [
+    ['Client Company', clientCompany],
+    ['Client Name', clientName],
+    ['Formerly Known As', clientFormerName],
+    ['Contractor', contractorName],
+    ['Project Location', projectLocation],
+    ['Project Manager', projectManager],
+    ['Date of Completion', formatDate(completionDate)],
+    ['Submission Date', formatDate(submissionDate)],
+    ['Version', version],
+  ];
+  ctx.y = 152;
+  detailsTable(ctx, titleRows);
 
-  addPageChrome(pdf, 1, totalPagesPlaceholder);
+  // ================= PAGE 2: DOC INFO + TOC =================
   pdf.addPage();
+  ctx.page = 2;
+  drawChrome(ctx);
+  sectionTitle(ctx, 'Document Information');
+  detailsTable(ctx, [
+    ['Submission Date', formatDate(submissionDate)],
+    ['Version', version],
+    ['Client', clientName],
+    ['Contractor', contractorName],
+    ['Report No', reportNumber],
+  ]);
 
-  // ---------- Page 2: Submission info + TOC ----------
-  let pageNumber = 2;
-  addPageChrome(pdf, pageNumber, totalPagesPlaceholder);
-  y = 24;
-  y = addSectionTitle(pdf, 'Document Information', y);
-  y = addInfoRow(pdf, 'Submission Date:', formatDate(report.submissionDate), y);
-  y = addInfoRow(pdf, 'Version:', report.version, y);
-  y = addInfoRow(pdf, 'Client:', report.clientName, y);
-  y = addInfoRow(pdf, 'Contractor:', report.contractorName || COMPANY.legalName, y);
-  y += 8;
-
-  y = addSectionTitle(pdf, 'Table of Contents', y);
+  sectionTitle(ctx, 'Table of Contents');
   const toc = [
     '1. Introduction',
     '2. Project Overview',
@@ -199,58 +287,47 @@ export async function generateProjectCompletionReportPdf(report: ProjectCompleti
   ];
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(10.5);
-  pdf.setTextColor(40, 40, 40);
+  pdf.setTextColor(...BODY);
   for (const item of toc) {
-    pdf.text(item, MARGIN + 2, y);
-    y += 6.5;
+    pdf.setFont('helvetica', 'normal');
+    pdf.text(item, MARGIN + 2, ctx.y);
+    pdf.setDrawColor(...LINE);
+    pdf.setLineWidth(0.2);
+    pdf.line(MARGIN + 2, ctx.y + 1.2, PAGE_W - MARGIN - 20, ctx.y + 1.2);
+    ctx.y += 8;
   }
 
+  // ================= 1. INTRODUCTION =================
   pdf.addPage();
-  pageNumber += 1;
-  addPageChrome(pdf, pageNumber, totalPagesPlaceholder);
+  ctx.page = 3;
+  drawChrome(ctx);
+  sectionTitle(ctx, '1. Introduction');
+  paragraph(ctx, introduction);
 
-  // ---------- 1. Introduction ----------
-  y = 24;
-  y = addSectionTitle(pdf, '1. Introduction', y);
-  y = addParagraph(pdf, report.introduction, y);
-
-  // ---------- 2. Project Overview ----------
-  y += 4;
-  y = addSectionTitle(pdf, '2. Project Overview', y);
-  y = addInfoRow(pdf, 'Project Name:', report.title, y, true);
-  y = addInfoRow(pdf, 'Client:', report.clientName, y);
-  y = addInfoRow(pdf, 'Date of Completion:', formatDate(report.completionDate), y);
-  y = addInfoRow(pdf, 'Project Location:', report.projectLocation, y);
-  y = addInfoRow(pdf, 'Contractor:', report.contractorName || COMPANY.legalName, y);
-  y = addInfoRow(pdf, 'Project Manager:', report.projectManager, y);
-  y += 2;
+  // ================= 2. PROJECT OVERVIEW =================
+  sectionTitle(ctx, '2. Project Overview');
+  detailsTable(ctx, [
+    ['Project Name', title],
+    ['Client', clientName],
+    ['Client Company', clientCompany],
+    ['Date of Completion', formatDate(completionDate)],
+    ['Project Location', projectLocation],
+    ['Contractor', contractorName],
+    ['Project Manager', projectManager],
+  ]);
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(10);
-  pdf.setTextColor(40, 40, 40);
-  pdf.text('Scope of Work:', MARGIN, y);
-  y += 5.5;
-  y = addParagraph(pdf, report.scopeOfWork, y);
+  pdf.setTextColor(...DARK);
+  pdf.text('Scope of Work', MARGIN, ctx.y);
+  ctx.y += 5.5;
+  paragraph(ctx, scopeOfWork);
 
-  // ---------- 3. Project Scope ----------
-  y += 4;
-  if (y > PAGE_HEIGHT - 40) {
-    pdf.addPage();
-    pageNumber += 1;
-    addPageChrome(pdf, pageNumber, totalPagesPlaceholder);
-    y = 24;
-  }
-  y = addSectionTitle(pdf, '3. Project Scope', y);
-  y = addParagraph(pdf, report.scopeContent, y);
+  // ================= 3. PROJECT SCOPE =================
+  sectionTitle(ctx, '3. Project Scope');
+  paragraph(ctx, scopeContent);
 
-  // ---------- 4. Execution Details ----------
-  y += 4;
-  if (y > PAGE_HEIGHT - 40) {
-    pdf.addPage();
-    pageNumber += 1;
-    addPageChrome(pdf, pageNumber, totalPagesPlaceholder);
-    y = 24;
-  }
-  y = addSectionTitle(pdf, '4. Execution Details', y);
+  // ================= 4. EXECUTION DETAILS =================
+  sectionTitle(ctx, '4. Execution Details');
   const executionSections: { key: string; label: string }[] = [
     { key: 'civilWork', label: 'a. Civil Work' },
     { key: 'cableConduit', label: 'b. Cable & Conduit Installation' },
@@ -259,162 +336,132 @@ export async function generateProjectCompletionReportPdf(report: ProjectCompleti
     { key: 'splicingTermination', label: 'e. Splicing & Termination' },
   ];
   for (const section of executionSections) {
-    const items: string[] = report.executionDetails?.[section.key] || [];
-    if (y > PAGE_HEIGHT - 30) {
-      pdf.addPage();
-      pageNumber += 1;
-      addPageChrome(pdf, pageNumber, totalPagesPlaceholder);
-      y = 24;
-    }
+    const items: string[] = executionDetails?.[section.key] || [];
+    ensure(ctx, 10);
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(10.5);
-    pdf.setTextColor(30, 40, 60);
-    pdf.text(section.label, MARGIN, y);
-    y += 5.5;
+    pdf.setTextColor(...DARK);
+    pdf.text(section.label, MARGIN, ctx.y);
+    ctx.y += 5.5;
     if (items.length) {
-      y = addBulletList(pdf, items, y);
+      bulletList(ctx, items);
     } else {
-      y += 2;
+      ctx.y += 1;
     }
   }
 
-  // ---------- 5. Testing and Verification ----------
-  if (y > PAGE_HEIGHT - 40) {
-    pdf.addPage();
-    pageNumber += 1;
-    addPageChrome(pdf, pageNumber, totalPagesPlaceholder);
-    y = 24;
-  }
-  y = addSectionTitle(pdf, '5. Testing and Verification', y);
-  y = addParagraph(pdf, report.testingDetails, y);
+  // ================= 5. TESTING AND VERIFICATION =================
+  sectionTitle(ctx, '5. Testing and Verification');
+  paragraph(ctx, testingDetails);
 
-  // ---------- 6. Project Photos ----------
-  if (y > PAGE_HEIGHT - 30) {
-    pdf.addPage();
-    pageNumber += 1;
-    addPageChrome(pdf, pageNumber, totalPagesPlaceholder);
-    y = 24;
-  }
-  y = addSectionTitle(pdf, '6. Project Photos', y);
-  const photos = report.photos || [];
+  // ================= 6. PROJECT PHOTOS =================
+  sectionTitle(ctx, '6. Project Photos');
   if (photos.length) {
-    y += 2;
-    const photoWidth = 86;
-    const photoHeight = 92;
-    let row = 0;
+    const cellW = (CONTENT_W - 6) / 2;
+    const cellH = 96;
+    const captionH = photos.some((p) => p.name) ? 10 : 2;
+    const rowH = cellH + captionH;
+    let rowIndex = 0;
     for (const photo of photos) {
       if (!photo.dataUrl) continue;
-      const x = MARGIN + row * (photoWidth + 6);
+      if (rowIndex === 0) ensure(ctx, rowH + 2);
+      const x = MARGIN + rowIndex * (cellW + 6);
+      const format = photo.dataUrl.includes('image/jpeg') || photo.dataUrl.includes('image/jpg') ? 'JPEG' : 'PNG';
       try {
-        if (y > PAGE_HEIGHT - photoHeight - 18) {
-          pdf.addPage();
-          pageNumber += 1;
-          addPageChrome(pdf, pageNumber, totalPagesPlaceholder);
-          y = 24;
-          row = 0;
-        }
-        pdf.addImage(photo.dataUrl, 'PNG', x, y, photoWidth, photoHeight);
+        pdf.setDrawColor(...LINE);
+        pdf.setLineWidth(0.3);
+        pdf.rect(x, ctx.y, cellW, cellH, 'S');
+        pdf.addImage(photo.dataUrl, format, x + 1.5, ctx.y + 1.5, cellW - 3, cellH - 3);
         if (photo.name) {
           pdf.setFont('helvetica', 'italic');
           pdf.setFontSize(7.5);
-          pdf.setTextColor(100, 100, 100);
-          pdf.text(photo.name, x, y + photoHeight + 3.5, { maxWidth: photoWidth, align: 'center' });
-        }
-        row += 1;
-        if (row === 2) {
-          y += photoHeight + (photos.some((p) => p.name) ? 10 : 6);
-          row = 0;
+          pdf.setTextColor(...MUTED);
+          pdf.text(photo.name, x, ctx.y + cellH + 3.5, { maxWidth: cellW, align: 'center' });
         }
       } catch {
-        // Skip images that cannot be embedded
+        // Skip photos that cannot be embedded
+      }
+      rowIndex += 1;
+      if (rowIndex === 2) {
+        ctx.y += rowH;
+        rowIndex = 0;
       }
     }
+    if (rowIndex === 1) ctx.y += rowH;
+    ctx.y += 3;
   } else {
-    pdf.setFont('helvetica', 'italic');
-    pdf.setFontSize(10);
-    pdf.setTextColor(120, 120, 120);
-    pdf.text('No project photos uploaded.', MARGIN, y);
-    y += 6;
+    paragraph(ctx, 'No project photos uploaded.', { italic: true, color: MUTED });
   }
 
-  // ---------- 7. Conclusion ----------
-  y += 4;
-  if (y > PAGE_HEIGHT - 40) {
-    pdf.addPage();
-    pageNumber += 1;
-    addPageChrome(pdf, pageNumber, totalPagesPlaceholder);
-    y = 24;
-  }
-  y = addSectionTitle(pdf, '7. Conclusion', y);
-  y = addParagraph(pdf, report.conclusion, y);
+  // ================= 7. CONCLUSION =================
+  sectionTitle(ctx, '7. Conclusion');
+  paragraph(ctx, conclusion);
 
-  // ---------- 8. Sign-off ----------
-  y += 6;
-  if (y > PAGE_HEIGHT - 70) {
-    pdf.addPage();
-    pageNumber += 1;
-    addPageChrome(pdf, pageNumber, totalPagesPlaceholder);
-    y = 24;
-  }
-  y = addSectionTitle(pdf, '8. Sign-off', y);
-  y = addParagraph(
-    pdf,
-    'We, SmartUniit, confirm that the project has been completed as per the agreed-upon specifications. Please find the details of the project completion, testing reports, and documentation attached for your approval.',
-    y
+  // ================= 8. SIGN-OFF =================
+  sectionTitle(ctx, '8. Sign-off');
+  paragraph(
+    ctx,
+    'We, SmartUniit, confirm that the project has been completed as per the agreed-upon specifications. Please find the details of the project completion, testing reports, and documentation attached for your approval.'
   );
-  y += 3;
 
-  const signatures = report.signatures || [];
-  if (signatures.length) {
-    for (const sig of signatures) {
-      if (y > PAGE_HEIGHT - 58) {
-        pdf.addPage();
-        pageNumber += 1;
-        addPageChrome(pdf, pageNumber, totalPagesPlaceholder);
-        y = 24;
-      }
-      pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(10);
-      pdf.setTextColor(20, 20, 20);
-      pdf.text(sig.label || 'Representative', MARGIN, y);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(`Name: ${sig.name || '-'}`, MARGIN, y + 5);
-      if (sig.designation) {
-        pdf.text(`Designation: ${sig.designation}`, MARGIN, y + 10);
-      }
-      pdf.text(`Date: ${formatDate(sig.date)}`, MARGIN + 95, y + 5);
-      pdf.setDrawColor(120, 120, 120);
-      pdf.setLineWidth(0.3);
-      pdf.line(MARGIN, y + 27, MARGIN + 80, y + 27);
-      pdf.setFontSize(8.5);
-      pdf.setTextColor(120, 120, 120);
-      pdf.text('Signature', MARGIN, y + 30.5);
-      if (sig.signature) {
-        try {
-          pdf.addImage(sig.signature, 'PNG', MARGIN + 4, y + 12, 52, 16);
-        } catch {
-          // Signature image optional
-        }
-      }
-      y += 38;
-    }
-  } else {
-    pdf.setFont('helvetica', 'italic');
+  const effectiveSignatures =
+    signatures.length > 0
+      ? signatures
+      : [
+          { label: 'Client Representative 1', name: '', designation: '', signature: '', date: '' },
+          { label: 'Client Representative 2', name: '', designation: '', signature: '', date: '' },
+          { label: 'SmartUniit Representative', name: '', designation: '', signature: '', date: '' },
+        ];
+
+  for (const sig of effectiveSignatures) {
+    const blockH = sig.signature ? 40 : 34;
+    ensure(ctx, blockH + 4);
+    pdf.setDrawColor(...LINE);
+    pdf.setLineWidth(0.3);
+    pdf.rect(MARGIN, ctx.y, CONTENT_W, blockH);
+    pdf.setFillColor(250, 251, 255);
+    pdf.rect(MARGIN, ctx.y, CONTENT_W, blockH, 'FD');
+
+    pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(10);
-    pdf.setTextColor(120, 120, 120);
-    pdf.text('No signatures captured.', MARGIN, y);
-    y += 6;
+    pdf.setTextColor(...DARK);
+    pdf.text(sig.label || 'Representative', MARGIN + 5, ctx.y + 6);
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(9.5);
+    pdf.setTextColor(...BODY);
+    pdf.text(`Name: ${cleanText(sig.name) || '____________________'}`, MARGIN + 5, ctx.y + 13);
+    if (sig.designation) {
+      pdf.text(`Designation: ${cleanText(sig.designation)}`, MARGIN + 5, ctx.y + 19);
+    }
+    pdf.text(`Date: ${formatDate(sig.date)}`, MARGIN + 5, ctx.y + (sig.designation ? 25 : 19));
+
+    if (sig.signature) {
+      addLogo(pdf, sig.signature, MARGIN + 85, ctx.y + 8, 60, 18);
+    }
+    pdf.setDrawColor(...DARK);
+    pdf.setLineWidth(0.35);
+    pdf.line(MARGIN + 85, ctx.y + blockH - 7, MARGIN + CONTENT_W - 8, ctx.y + blockH - 7);
+    pdf.setFont('helvetica', 'italic');
+    pdf.setFontSize(8);
+    pdf.setTextColor(...MUTED);
+    pdf.text('Signature', MARGIN + 85, ctx.y + blockH - 3.5);
+
+    ctx.y += blockH + 5;
   }
 
-  // Stamp page numbers (replace placeholder with actual totals)
+  // ================= FOOTER (all pages) =================
   const totalPages = pdf.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     pdf.setPage(i);
-    const header = `Page ${i} (${totalPages})`;
     pdf.setFont('helvetica', 'normal');
     pdf.setFontSize(8);
-    pdf.setTextColor(120, 120, 120);
-    pdf.text(header, PAGE_WIDTH - MARGIN, PAGE_HEIGHT - 8, { align: 'right' });
+    pdf.setTextColor(...MUTED);
+    pdf.text(COMPANY.legalName, MARGIN, PAGE_H - 9);
+    pdf.text(`Page ${i} of ${totalPages}`, PAGE_W - MARGIN, PAGE_H - 9, { align: 'right' });
+    pdf.setDrawColor(...LINE);
+    pdf.setLineWidth(0.2);
+    pdf.line(MARGIN, PAGE_H - 12, PAGE_W - MARGIN, PAGE_H - 12);
   }
 
   return pdf;

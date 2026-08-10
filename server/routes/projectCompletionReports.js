@@ -113,6 +113,7 @@ router.post('/', authenticateToken, requirePermission('project_completion_report
       title,
       subtitle,
       clientName,
+      clientCompany,
       clientFormerName,
       clientLogo,
       clientRepName,
@@ -143,7 +144,7 @@ router.post('/', authenticateToken, requirePermission('project_completion_report
     await run(
       `INSERT INTO ${REPORT_TABLE} (
         id, report_number, title, subtitle,
-        client_name, client_former_name, client_logo,
+        client_name, client_company, client_former_name, client_logo,
         client_rep_name, client_rep_designation, client_rep_phone, client_rep_email,
         contractor_name, contractor_logo,
         submission_date, completion_date, version,
@@ -153,7 +154,7 @@ router.post('/', authenticateToken, requirePermission('project_completion_report
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id, reportNumber, title || null, subtitle || null,
-        clientName || null, clientFormerName || null, clientLogo || null,
+        clientName || null, clientCompany || null, clientFormerName || null, clientLogo || null,
         clientRepName || null, clientRepDesignation || null, clientRepPhone || null, clientRepEmail || null,
         contractorName || null, contractorLogo || null,
         submissionDate || null, completionDate || null, version || null,
@@ -190,6 +191,7 @@ router.put('/:id', authenticateToken, requirePermission('project_completion_repo
       title,
       subtitle,
       clientName,
+      clientCompany,
       clientFormerName,
       clientLogo,
       clientRepName,
@@ -217,7 +219,7 @@ router.put('/:id', authenticateToken, requirePermission('project_completion_repo
     await run(
       `UPDATE ${REPORT_TABLE} SET
         title = ?, subtitle = ?,
-        client_name = ?, client_former_name = ?, client_logo = ?,
+        client_name = ?, client_company = ?, client_former_name = ?, client_logo = ?,
         client_rep_name = ?, client_rep_designation = ?, client_rep_phone = ?, client_rep_email = ?,
         contractor_name = ?, contractor_logo = ?,
         submission_date = ?, completion_date = ?, version = ?,
@@ -228,7 +230,8 @@ router.put('/:id', authenticateToken, requirePermission('project_completion_repo
       WHERE id = ?`,
       [
         title ?? existing.title, subtitle ?? existing.subtitle,
-        clientName ?? existing.client_name, clientFormerName ?? existing.client_former_name, clientLogo ?? existing.client_logo,
+        clientName ?? existing.client_name, clientCompany ?? existing.client_company,
+        clientFormerName ?? existing.client_former_name, clientLogo ?? existing.client_logo,
         clientRepName ?? existing.client_rep_name, clientRepDesignation ?? existing.client_rep_designation,
         clientRepPhone ?? existing.client_rep_phone, clientRepEmail ?? existing.client_rep_email,
         contractorName ?? existing.contractor_name, contractorLogo ?? existing.contractor_logo,
