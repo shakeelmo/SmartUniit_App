@@ -53,6 +53,7 @@ export function useDeliveryNotes() {
         recipient_name: note.recipientName,
         signature: note.signature,
         notes: note.notes,
+        status: note.status || 'draft',
         items: note.items?.map((item: any) => ({
           description: item.description,
           quantity: item.quantity,
@@ -83,6 +84,7 @@ export function useDeliveryNotes() {
       if (updates.recipientName) updateData.recipient_name = updates.recipientName;
       if (updates.signature) updateData.signature = updates.signature;
       if (updates.notes) updateData.notes = updates.notes;
+      if (updates.status) updateData.status = updates.status;
       if (updates.items) updateData.items = updates.items.map((item: any) => ({
         description: item.description,
         quantity: item.quantity,

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Search, Eye, Edit, Trash2, Download } from 'lucide-react';
+import { Plus, Search, Eye, Edit, Trash2, Download, CheckCircle2 } from 'lucide-react';
 import { useDeliveryNotes } from '../hooks/useDeliveryNotes';
 import { useAuth } from '../contexts/AuthContext';
 import { formatDate } from '../utils/dateUtils';
@@ -10,7 +10,7 @@ import ViewDeliveryNoteModal from '../components/DeliveryNotes/ViewDeliveryNoteM
 import EditDeliveryNoteModal from '../components/DeliveryNotes/EditDeliveryNoteModal';
 
 export default function DeliveryNotes() {
-  const { deliveryNotes, isLoading, error, deleteDeliveryNote } = useDeliveryNotes();
+  const { deliveryNotes, isLoading, error, deleteDeliveryNote, updateDeliveryNote } = useDeliveryNotes();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -53,6 +53,15 @@ export default function DeliveryNotes() {
     } catch (error) {
       console.error('Error generating delivery note PDF:', error);
       alert('Failed to generate PDF. Please try again.');
+    }
+  };
+
+  const handleMarkDelivered = async (note: any) => {
+    try {
+      await updateDeliveryNote(note.id, { status: 'delivered' });
+    } catch (error) {
+      console.error('Error marking delivery note as delivered:', error);
+      alert('Failed to update status');
     }
   };
 
@@ -136,6 +145,9 @@ export default function DeliveryNotes() {
                     Delivery Date
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Created By
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -170,6 +182,17 @@ export default function DeliveryNotes() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          note.status === 'delivered'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-amber-100 text-amber-700'
+                        }`}
+                      >
+                        {note.status === 'delivered' ? 'Delivered' : 'Draft'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
                         {note.createdByName || 'Unknown'}
                       </div>
@@ -181,6 +204,15 @@ export default function DeliveryNotes() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end gap-2">
+                        {note.status !== 'delivered' && (
+                          <button
+                            onClick={() => handleMarkDelivered(note)}
+                            className="text-green-600 hover:text-green-900 p-1"
+                            title="Mark as Delivered"
+                          >
+                            <CheckCircle2 size={16} />
+                          </button>
+                        )}
                         <button
                           onClick={() => handleDownloadPdf(note)}
                           className="text-purple-600 hover:text-purple-900 p-1"

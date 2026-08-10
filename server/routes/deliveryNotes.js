@@ -108,11 +108,18 @@ router.put('/:id', authenticateToken, requirePermission('delivery_notes', 'updat
   try {
     const { id } = req.params;
     const { delivery_date, recipient_name, signature, notes, status, items } = req.body;
-    const existing = await get('SELECT id FROM delivery_notes WHERE id = ?', [id]);
+    const existing = await get('SELECT * FROM delivery_notes WHERE id = ?', [id]);
     if (!existing) return res.status(404).json({ error: 'Delivery note not found' });
     await run(
       `UPDATE delivery_notes SET delivery_date = ?, recipient_name = ?, signature = ?, notes = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-      [delivery_date, recipient_name || null, signature || null, notes || null, status || 'draft', id]
+      [
+        delivery_date ?? existing.delivery_date,
+        recipient_name ?? existing.recipient_name,
+        signature ?? existing.signature,
+        notes ?? existing.notes,
+        status ?? existing.status,
+        id,
+      ]
     );
     if (items && Array.isArray(items)) {
       await run('DELETE FROM delivery_note_items WHERE delivery_note_id = ?', [id]);

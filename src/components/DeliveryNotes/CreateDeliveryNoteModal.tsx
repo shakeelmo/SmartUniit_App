@@ -21,6 +21,7 @@ export default function CreateDeliveryNoteModal({ isOpen, onClose }: CreateDeliv
     deliveryDate: new Date().toISOString().split('T')[0],
     recipientName: '',
     notes: '',
+    status: 'draft',
     items: [{ description: '', quantity: 1, unit: 'pcs', remarks: '' }],
   });
   const [signature, setSignature] = useState<string>('');
@@ -47,6 +48,7 @@ export default function CreateDeliveryNoteModal({ isOpen, onClose }: CreateDeliv
         deliveryDate: new Date().toISOString().split('T')[0],
         recipientName: '',
         notes: '',
+        status: 'draft',
         items: [{ description: '', quantity: 1, unit: 'pcs', remarks: '' }],
       });
       setSignature('');
@@ -165,6 +167,20 @@ export default function CreateDeliveryNoteModal({ isOpen, onClose }: CreateDeliv
                 placeholder="Who received the items?"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Status
+              </label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                <option value="draft">Draft</option>
+                <option value="delivered">Delivered</option>
+              </select>
             </div>
           </div>
 
