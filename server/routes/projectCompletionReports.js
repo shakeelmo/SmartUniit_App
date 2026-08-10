@@ -151,7 +151,7 @@ router.post('/', authenticateToken, requirePermission('project_completion_report
         project_location, project_manager, scope_of_work,
         introduction, scope_content, execution_details, testing_details, conclusion,
         photos, signatures, status, created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         id, reportNumber, title || null, subtitle || null,
         clientName || null, clientCompany || null, clientFormerName || null, clientLogo || null,

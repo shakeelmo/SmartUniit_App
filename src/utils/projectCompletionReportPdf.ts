@@ -55,6 +55,23 @@ function drawChrome(ctx: Ctx) {
   ctx.y = TOP;
 }
 
+const drawFooter = (pdf: jsPDF, pageNumber: number, totalPages: number) => {
+  pdf.setDrawColor(220, 226, 237);
+  pdf.setLineWidth(0.3);
+  pdf.line(MARGIN, PAGE_H - 14, PAGE_W - MARGIN, PAGE_H - 14);
+
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(8);
+  pdf.setTextColor(107, 114, 128);
+  pdf.text(
+    `${COMPANY.legalName} | Tel: ${COMPANY.phone} | ${COMPANY.email}`,
+    PAGE_W / 2,
+    PAGE_H - 8,
+    { align: 'center' }
+  );
+  pdf.text(`Page ${pageNumber} of ${totalPages}`, PAGE_W - MARGIN, PAGE_H - 8, { align: 'right' });
+};
+
 function ensure(ctx: Ctx, needed: number) {
   if (ctx.y + needed > BOTTOM) {
     ctx.pdf.addPage();
@@ -251,6 +268,10 @@ export async function generateProjectCompletionReportPdf(report: ProjectCompleti
     ['Client Company', clientCompany],
     ['Client Name', clientName],
     ['Formerly Known As', clientFormerName],
+    ['Client Representative', raw.clientRepName || raw.client_rep_name || ''],
+    ['Representative Designation', raw.clientRepDesignation || raw.client_rep_designation || ''],
+    ['Representative Phone', raw.clientRepPhone || raw.client_rep_phone || ''],
+    ['Representative Email', raw.clientRepEmail || raw.client_rep_email || ''],
     ['Contractor', contractorName],
     ['Project Location', projectLocation],
     ['Project Manager', projectManager],
@@ -272,6 +293,13 @@ export async function generateProjectCompletionReportPdf(report: ProjectCompleti
     ['Client', clientName],
     ['Contractor', contractorName],
     ['Report No', reportNumber],
+  ]);
+  sectionTitle(ctx, 'Contractor Details');
+  detailsTable(ctx, [
+    ['Company', COMPANY.legalName],
+    ['Address', COMPANY.address],
+    ['Phone', COMPANY.phone],
+    ['Email', COMPANY.email],
   ]);
 
   sectionTitle(ctx, 'Table of Contents');
@@ -454,14 +482,7 @@ export async function generateProjectCompletionReportPdf(report: ProjectCompleti
   const totalPages = pdf.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     pdf.setPage(i);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(8);
-    pdf.setTextColor(...MUTED);
-    pdf.text(COMPANY.legalName, MARGIN, PAGE_H - 9);
-    pdf.text(`Page ${i} of ${totalPages}`, PAGE_W - MARGIN, PAGE_H - 9, { align: 'right' });
-    pdf.setDrawColor(...LINE);
-    pdf.setLineWidth(0.2);
-    pdf.line(MARGIN, PAGE_H - 12, PAGE_W - MARGIN, PAGE_H - 12);
+    drawFooter(pdf, i, totalPages);
   }
 
   return pdf;
