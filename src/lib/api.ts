@@ -429,6 +429,36 @@ class ApiService {
     });
   }
 
+  // Project Completion Report endpoints
+  async getProjectCompletionReports(params?: any) {
+    const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';
+    return this.request<{ reports: any[]; pagination: any }>(`/project-completion-reports${queryString}`);
+  }
+
+  async getProjectCompletionReport(id: string) {
+    return this.request<{ report: any }>(`/project-completion-reports/${id}`);
+  }
+
+  async createProjectCompletionReport(data: any) {
+    return this.request<{ report: any }>('/project-completion-reports', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateProjectCompletionReport(id: string, data: any) {
+    return this.request<{ report: any }>(`/project-completion-reports/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteProjectCompletionReport(id: string) {
+    return this.request<{ message: string }>(`/project-completion-reports/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Budget endpoints
   async getBudgets(params?: any) {
     const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';

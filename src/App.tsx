@@ -13,6 +13,7 @@ import { Tasks } from './pages/Tasks';
 import { Quotations } from './pages/Quotations';
 import { Invoices } from './pages/Invoices';
 import { PurchaseOrders } from './pages/PurchaseOrders';
+import { ProjectCompletionReports } from './pages/ProjectCompletionReports';
 import DeliveryNotes from './pages/DeliveryNotes';
 import { Expenses } from './pages/Expenses';
 import { CaseStudies } from './pages/CaseStudies';
@@ -82,6 +83,11 @@ function AppRoutes() {
       <Route path="/purchase-orders" element={
         <ProtectedRoute>
           <PurchaseOrders />
+        </ProtectedRoute>
+      } />
+      <Route path="/project-completion-reports" element={
+        <ProtectedRoute>
+          <ProjectCompletionReports />
         </ProtectedRoute>
       } />
       <Route path="/invoices" element={

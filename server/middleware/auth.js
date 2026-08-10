@@ -112,6 +112,7 @@ const checkPermission = (role, resource, action) => {
       quotations: ['create', 'read', 'update', 'delete'],
       invoices: ['create', 'read', 'update', 'delete'],
       purchase_orders: ['create', 'read', 'update', 'delete'],
+      project_completion_reports: ['create', 'read', 'update', 'delete'],
       budgets: ['create', 'read', 'update', 'delete'],
       delivery_notes: ['create', 'read', 'update', 'delete'],
       expenses: ['create', 'read', 'update', 'delete']
@@ -126,6 +127,7 @@ const checkPermission = (role, resource, action) => {
       quotations: ['create', 'read', 'update', 'delete'],
       invoices: ['create', 'read', 'update', 'delete'],
       purchase_orders: ['create', 'read', 'update', 'delete'],
+      project_completion_reports: ['create', 'read', 'update', 'delete'],
       budgets: ['create', 'read', 'update', 'delete'],
       delivery_notes: ['create', 'read', 'update', 'delete'],
       expenses: ['create', 'read', 'update', 'delete']
@@ -140,6 +142,7 @@ const checkPermission = (role, resource, action) => {
       quotations: ['create', 'read', 'update', 'delete'],
       invoices: ['create', 'read', 'update'],
       purchase_orders: ['create', 'read', 'update'],
+      project_completion_reports: ['create', 'read', 'update'],
       budgets: ['create', 'read', 'update']
     },
     technician: {
@@ -151,6 +154,7 @@ const checkPermission = (role, resource, action) => {
       quotations: ['read'],
       invoices: ['read'],
       purchase_orders: ['read'],
+      project_completion_reports: ['read'],
       budgets: ['read'],
       delivery_notes: ['create', 'read', 'update']
     },
@@ -163,6 +167,7 @@ const checkPermission = (role, resource, action) => {
       quotations: ['read'],
       invoices: ['read'],
       purchase_orders: ['read'],
+      project_completion_reports: ['read'],
       budgets: ['read'],
       delivery_notes: ['create', 'read', 'update']
     },
@@ -172,14 +177,16 @@ const checkPermission = (role, resource, action) => {
       proposals: ['read'],
       quotations: ['read'],
       invoices: ['read'],
-      purchase_orders: ['read']
+      purchase_orders: ['read'],
+      project_completion_reports: ['read']
     },
     vendor: {
       projects: ['read'],
       tasks: ['read'],
       proposals: ['read'],
       quotations: ['read'],
-      purchase_orders: ['read']
+      purchase_orders: ['read'],
+      project_completion_reports: ['read']
     }
   };
 

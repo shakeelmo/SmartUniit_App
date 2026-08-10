@@ -251,6 +251,41 @@ const initDatabase = async () => {
       )
     `);
 
+    await runQuery(`
+      CREATE TABLE IF NOT EXISTS project_completion_reports (
+        id TEXT PRIMARY KEY,
+        report_number TEXT UNIQUE,
+        title TEXT,
+        subtitle TEXT,
+        client_name TEXT,
+        client_former_name TEXT,
+        client_logo TEXT,
+        client_rep_name TEXT,
+        client_rep_designation TEXT,
+        client_rep_phone TEXT,
+        client_rep_email TEXT,
+        contractor_name TEXT,
+        contractor_logo TEXT,
+        submission_date TEXT,
+        completion_date TEXT,
+        version TEXT,
+        project_location TEXT,
+        project_manager TEXT,
+        scope_of_work TEXT,
+        introduction TEXT,
+        scope_content TEXT,
+        execution_details TEXT,
+        testing_details TEXT,
+        conclusion TEXT,
+        photos TEXT,
+        signatures TEXT,
+        status TEXT DEFAULT 'draft',
+        created_by TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
     // Create expense_categories table
     await runQuery(`
       CREATE TABLE IF NOT EXISTS expense_categories (
