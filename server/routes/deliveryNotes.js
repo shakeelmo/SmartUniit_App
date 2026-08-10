@@ -4,14 +4,35 @@ const { authenticateToken, requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
 
+const generateNoteNumber = async () => {
+  const year = new Date().getFullYear();
+  const rows = await all(
+    'SELECT note_number FROM delivery_notes WHERE note_number LIKE ?',
+    [`DN-${year}-%`]
+  );
+
+  let maxSequence = 0;
+  for (const row of rows) {
+    const value = row.note_number || '';
+    const match = value.match(new RegExp(`^DN-${year}-(\\d+)$`));
+    if (!match) continue;
+    const sequence = Number(match[1]);
+    if (Number.isFinite(sequence) && sequence > maxSequence) {
+      maxSequence = sequence;
+    }
+  }
+
+  return `DN-${year}-${String(maxSequence + 1).padStart(4, '0')}`;
+};
+
 // Get all delivery notes
 router.get('/', authenticateToken, requirePermission('delivery_notes', 'read'), async (req, res) => {
   try {
     const notes = await all(
       `SELECT dn.*, c.name as customer_name, u.name as created_by_name
        FROM delivery_notes dn
-       LEFT JOIN customers c ON dn.customer_id = c.id
-       LEFT JOIN users u ON dn.created_by = u.id
+       LEFT JOIN customers c ON BINARY dn.customer_id = BINARY c.id
+       LEFT JOIN users u ON BINARY dn.created_by = BINARY u.id
        ORDER BY dn.created_at DESC`
     );
     res.json({ deliveryNotes: notes });
@@ -28,8 +49,8 @@ router.get('/:id', authenticateToken, requirePermission('delivery_notes', 'read'
     const note = await get(
       `SELECT dn.*, c.name as customer_name, u.name as created_by_name
        FROM delivery_notes dn
-       LEFT JOIN customers c ON dn.customer_id = c.id
-       LEFT JOIN users u ON dn.created_by = u.id
+       LEFT JOIN customers c ON BINARY dn.customer_id = BINARY c.id
+       LEFT JOIN users u ON BINARY dn.created_by = BINARY u.id
        WHERE dn.id = ?`,
       [id]
     );
@@ -45,14 +66,27 @@ router.get('/:id', authenticateToken, requirePermission('delivery_notes', 'read'
 // Create delivery note
 router.post('/', authenticateToken, requirePermission('delivery_notes', 'create'), async (req, res) => {
   try {
-    const { customer_id, invoice_id, delivery_date, recipient_name, signature, notes, items } = req.body;
+    const { customer_id, invoice_id, delivery_date, recipient_name, signature, notes, status, items } = req.body;
     if (!customer_id || !delivery_date || !items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: 'Customer, delivery date, and at least one item are required' });
     }
-    const noteId = Date.now().toString();
+    const noteId = Date.now().toString() + Math.random().toString(36).slice(2, 8);
+    const noteNumber = await generateNoteNumber();
     await run(
-      `INSERT INTO delivery_notes (id, customer_id, invoice_id, delivery_date, recipient_name, signature, notes, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [noteId, customer_id, invoice_id || null, delivery_date, recipient_name, signature, notes, req.user.id]
+      `INSERT INTO delivery_notes (id, note_number, customer_id, invoice_id, delivery_date, recipient_name, signature, notes, status, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        noteId,
+        noteNumber,
+        customer_id,
+        invoice_id || null,
+        delivery_date,
+        recipient_name || null,
+        signature || null,
+        notes || null,
+        status || 'draft',
+        req.user.id,
+      ]
     );
     for (const item of items) {
       const itemId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
@@ -73,12 +107,12 @@ router.post('/', authenticateToken, requirePermission('delivery_notes', 'create'
 router.put('/:id', authenticateToken, requirePermission('delivery_notes', 'update'), async (req, res) => {
   try {
     const { id } = req.params;
-    const { delivery_date, recipient_name, signature, notes, items } = req.body;
+    const { delivery_date, recipient_name, signature, notes, status, items } = req.body;
     const existing = await get('SELECT id FROM delivery_notes WHERE id = ?', [id]);
     if (!existing) return res.status(404).json({ error: 'Delivery note not found' });
     await run(
-      `UPDATE delivery_notes SET delivery_date = ?, recipient_name = ?, signature = ?, notes = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-      [delivery_date, recipient_name, signature, notes, id]
+      `UPDATE delivery_notes SET delivery_date = ?, recipient_name = ?, signature = ?, notes = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      [delivery_date, recipient_name || null, signature || null, notes || null, status || 'draft', id]
     );
     if (items && Array.isArray(items)) {
       await run('DELETE FROM delivery_note_items WHERE delivery_note_id = ?', [id]);

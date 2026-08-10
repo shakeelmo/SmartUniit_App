@@ -18,6 +18,8 @@ export function useDeliveryNotes() {
       const response = await api.getDeliveryNotes();
       const formattedNotes = response.deliveryNotes.map((note: any) => ({
         id: note.id,
+        noteNumber: note.note_number,
+        status: note.status || 'draft',
         customerId: note.customer_id,
         invoiceId: note.invoice_id,
         deliveryDate: new Date(note.delivery_date),

@@ -252,6 +252,19 @@ const initDatabase = async () => {
     `);
 
     await runQuery(`
+      CREATE TABLE IF NOT EXISTS delivery_note_items (
+        id TEXT PRIMARY KEY,
+        delivery_note_id TEXT NOT NULL,
+        description TEXT NOT NULL,
+        quantity REAL DEFAULT 1,
+        unit TEXT DEFAULT 'pcs',
+        remarks TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (delivery_note_id) REFERENCES delivery_notes(id) ON DELETE CASCADE
+      )
+    `);
+
+    await runQuery(`
       CREATE TABLE IF NOT EXISTS project_completion_reports (
         id TEXT PRIMARY KEY,
         report_number TEXT UNIQUE,

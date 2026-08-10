@@ -3,6 +3,8 @@ import { Plus, Search, Eye, Edit, Trash2, Download } from 'lucide-react';
 import { useDeliveryNotes } from '../hooks/useDeliveryNotes';
 import { useAuth } from '../contexts/AuthContext';
 import { formatDate } from '../utils/dateUtils';
+import { api } from '../lib/api';
+import { generateDeliveryNotePdf } from '../utils/deliveryNotePdf';
 import CreateDeliveryNoteModal from '../components/DeliveryNotes/CreateDeliveryNoteModal';
 import ViewDeliveryNoteModal from '../components/DeliveryNotes/ViewDeliveryNoteModal';
 import EditDeliveryNoteModal from '../components/DeliveryNotes/EditDeliveryNoteModal';
@@ -19,6 +21,7 @@ export default function DeliveryNotes() {
   const filteredNotes = deliveryNotes.filter(note =>
     note.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     note.recipientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    note.noteNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     note.id?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -39,6 +42,17 @@ export default function DeliveryNotes() {
       } catch (error) {
         console.error('Error deleting delivery note:', error);
       }
+    }
+  };
+
+  const handleDownloadPdf = async (note: any) => {
+    try {
+      const { deliveryNote } = await api.getDeliveryNote(note.id);
+      const pdf = await generateDeliveryNotePdf(deliveryNote);
+      pdf.save(`${deliveryNote.note_number || 'delivery-note'}.pdf`);
+    } catch (error) {
+      console.error('Error generating delivery note PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
     }
   };
 
@@ -110,6 +124,9 @@ export default function DeliveryNotes() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Note No
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Customer
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -132,6 +149,11 @@ export default function DeliveryNotes() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredNotes.map((note) => (
                   <tr key={note.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-semibold text-orange-600">
+                        {note.noteNumber || '-'}
+                      </div>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {note.customerName || 'Unknown Customer'}
@@ -159,6 +181,13 @@ export default function DeliveryNotes() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => handleDownloadPdf(note)}
+                          className="text-purple-600 hover:text-purple-900 p-1"
+                          title="Download PDF"
+                        >
+                          <Download size={16} />
+                        </button>
                         <button
                           onClick={() => handleView(note)}
                           className="text-blue-600 hover:text-blue-900 p-1"
