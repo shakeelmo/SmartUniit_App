@@ -43,6 +43,18 @@ const formatDate = (value?: string): string => {
   return format(date, 'dd/MM/yyyy');
 };
 
+const getImageDimensions = (dataUrl: string): Promise<{ w: number; h: number }> =>
+  new Promise((resolve) => {
+    if (typeof Image === 'undefined') {
+      resolve({ w: 4, h: 3 });
+      return;
+    }
+    const img = new Image();
+    img.onload = () => resolve({ w: img.naturalWidth || 4, h: img.naturalHeight || 3 });
+    img.onerror = () => resolve({ w: 4, h: 3 });
+    img.src = dataUrl;
+  });
+
 function drawChrome(ctx: Ctx) {
   const { pdf } = ctx;
   pdf.setFont('helvetica', 'bold');
@@ -385,38 +397,59 @@ export async function generateProjectCompletionReportPdf(report: ProjectCompleti
   // ================= 6. PROJECT PHOTOS =================
   sectionTitle(ctx, '6. Project Photos');
   if (photos.length) {
-    const cellW = (CONTENT_W - 6) / 2;
-    const cellH = 96;
-    const captionH = photos.some((p) => p.name) ? 10 : 2;
-    const rowH = cellH + captionH;
-    let rowIndex = 0;
+    ctx.y += 3;
+    const cols = 3;
+    const gap = 5;
+    const colW = (CONTENT_W - gap * (cols - 1)) / cols;
+    const mat = 2.5;
+    const shadow = 1.3;
+    const minH = 34;
+    const maxH = 82;
+    const colY = [ctx.y, ctx.y, ctx.y];
+    const colX = Array.from({ length: cols }, (_, c) => MARGIN + c * (colW + gap));
+
     for (const photo of photos) {
       if (!photo.dataUrl) continue;
-      if (rowIndex === 0) ensure(ctx, rowH + 2);
-      const x = MARGIN + rowIndex * (cellW + 6);
       const format = photo.dataUrl.includes('image/jpeg') || photo.dataUrl.includes('image/jpg') ? 'JPEG' : 'PNG';
+      const dims = await getImageDimensions(photo.dataUrl);
+      const aspect = dims.w / dims.h || 4 / 3;
+      let h = colW / aspect;
+      h = Math.min(Math.max(h, minH), maxH);
+
+      // Place into the shortest column (masonry style)
+      let col = 0;
+      for (let c = 1; c < cols; c++) {
+        if (colY[c] < colY[col]) col = c;
+      }
+      if (colY[col] + h + mat * 2 + 10 > BOTTOM) {
+        pdf.addPage();
+        ctx.page += 1;
+        drawChrome(ctx);
+        for (let c = 0; c < cols; c++) colY[c] = ctx.y;
+        col = 0;
+      }
+
+      const x = colX[col];
+      const y = colY[col];
+
       try {
-        pdf.setDrawColor(...LINE);
+        // Soft shadow behind the mat
+        pdf.setFillColor(214, 219, 228);
+        pdf.roundedRect(x + shadow, y + shadow, colW + mat * 2, h + mat * 2, 2, 2, 'F');
+        // White mat frame
+        pdf.setFillColor(255, 255, 255);
+        pdf.setDrawColor(226, 232, 240);
         pdf.setLineWidth(0.3);
-        pdf.rect(x, ctx.y, cellW, cellH, 'S');
-        pdf.addImage(photo.dataUrl, format, x + 1.5, ctx.y + 1.5, cellW - 3, cellH - 3);
-        if (photo.name) {
-          pdf.setFont('helvetica', 'italic');
-          pdf.setFontSize(7.5);
-          pdf.setTextColor(...MUTED);
-          pdf.text(photo.name, x, ctx.y + cellH + 3.5, { maxWidth: cellW, align: 'center' });
-        }
+        pdf.roundedRect(x, y, colW + mat * 2, h + mat * 2, 2, 2, 'FD');
+        // Photo inside the mat
+        pdf.addImage(photo.dataUrl, format, x + mat, y + mat, colW, h);
       } catch {
         // Skip photos that cannot be embedded
       }
-      rowIndex += 1;
-      if (rowIndex === 2) {
-        ctx.y += rowH;
-        rowIndex = 0;
-      }
+
+      colY[col] = y + h + mat * 2 + 8;
     }
-    if (rowIndex === 1) ctx.y += rowH;
-    ctx.y += 3;
+    ctx.y = Math.max(colY[0], colY[1], colY[2]) + 2;
   } else {
     paragraph(ctx, 'No project photos uploaded.', { italic: true, color: MUTED });
   }
