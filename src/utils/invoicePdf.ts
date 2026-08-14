@@ -3,6 +3,7 @@ import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import amiriFontUrl from '../../Amiri-Regular.ttf?url';
 import { SMART_UNIVERSE_LOGO_BASE64 } from './logoBase64';
+import { generateVatQrDataUrl } from './vatQr';
 
 type Counterparty = {
   name?: string;
@@ -384,6 +385,13 @@ export async function generateInvoicePDF(invoice: InvoicePdfData, customer: Coun
   const subtotal = normalizedLineItems.reduce((sum, item) => sum + Number(item.total || 0), 0);
   const vatAmount = Number((subtotal * 0.15).toFixed(2));
   const total = Number((subtotal + vatAmount).toFixed(2));
+  const vatQrDataUrl = await generateVatQrDataUrl({
+    sellerName: COMPANY_INFO.legalName,
+    vatNumber: COMPANY_INFO.vat,
+    timestamp: invoice.createdAt,
+    total,
+    vatAmount,
+  });
 
   drawHeader(doc, invoice, arabicHeaderImage);
 
@@ -519,6 +527,23 @@ export async function generateInvoicePDF(invoice: InvoicePdfData, customer: Coun
     iconH: 3.2,
     gap: 0.8,
   });
+
+  // ZATCA-compliant VAT QR code (same standard as Zoho invoice QR)
+  const qrSize = 22;
+  const qrX = summaryX + 80 - qrSize;
+  const qrY = summaryY + 34;
+  doc.setDrawColor(220, 226, 237);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(qrX - 3, qrY - 3, qrSize + 6, qrSize + 6, 2, 2);
+  try {
+    doc.addImage(vatQrDataUrl, 'PNG', qrX, qrY, qrSize, qrSize, undefined, 'FAST');
+  } catch (error) {
+    console.error('VAT QR image error:', error);
+  }
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(107, 114, 128);
+  doc.text('VAT QR', qrX + qrSize / 2, qrY + qrSize + 3.5, { align: 'center' });
 
   doc.setDrawColor(220, 226, 237);
   doc.roundedRect(bankingX, summaryY, bankingWidth, 35, 3, 3);
