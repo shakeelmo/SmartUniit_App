@@ -132,7 +132,7 @@ async function loadArabicHeaderImages(settings: any): Promise<{ full?: string; c
       ARABIC_COMPANY_NAME,
       companyInfo.addressAr || 'مكتب رقم 3، حي الديرة، ص.ب 12633، الرياض 11461، المملكة العربية السعودية',
       `رقم الضريبة المضافة: ${companyInfo.vatNumber || '314076518400003'}`,
-      `السجل التجاري: ${companyInfo.crNumber || '1010973808'}`,
+      `السجل التجاري: ${companyInfo.crNumber || '7037905580'}`,
     ];
     const compactLines = [ARABIC_COMPANY_NAME];
 
@@ -306,7 +306,7 @@ function drawCompanyHeader(
   const companyDetailsTop = 33.5;
   pdf.text(`Tel: ${companyInfo.phone || '011-4917295'}`, HEADER_LEFT_TEXT_X, companyDetailsTop);
   pdf.text(`VAT: ${companyInfo.vatNumber || '314076518400003'}`, HEADER_LEFT_TEXT_X, companyDetailsTop + 5.3);
-  pdf.text(`CR: ${companyInfo.crNumber || '1010973808'}`, HEADER_LEFT_TEXT_X, companyDetailsTop + 10.6);
+  pdf.text(`CR: ${companyInfo.crNumber || '7037905580'}`, HEADER_LEFT_TEXT_X, companyDetailsTop + 10.6);
 
   pdf.setDrawColor(219, 228, 240);
   pdf.setFillColor(255, 255, 255);

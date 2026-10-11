@@ -21,7 +21,7 @@ const COMPANY_INFO = {
   address: 'Office # 3 ln, Al Dirah Dist, P.O.Box 12633, Riyadh - 11461 KSA',
   addressAr: 'مكتب رقم 3، حي الديرة، ص.ب 12633، الرياض 11461، المملكة العربية السعودية',
   vat: '314076518400003',
-  cr: '1010973808',
+  cr: '7037905580',
   phone: '011-4917295',
   email: 'info@smartuniit.com',
 };

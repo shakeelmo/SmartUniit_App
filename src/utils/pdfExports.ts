@@ -141,14 +141,14 @@ export class PDFExportUtils {
               <div style="margin-top:8px; font-size:12px; color:#374151;">Office # 3 In, Al Dirah Dist, P.O.Box 12633, Riyadh - 11461 KSA</div>
               <div style="margin-top:4px; font-size:12px; color:#374151;">Tel: 011-4917295</div>
               <div style="margin-top:4px; font-size:12px; color:#374151;">VAT: 314076518400003</div>
-              <div style="margin-top:4px; font-size:12px; color:#374151;">CR: 1010973808</div>
+              <div style="margin-top:4px; font-size:12px; color:#374151;">CR: 7037905580</div>
             </div>
           </div>
 
           <div style="width:420px;">
             <div style="border:1px solid #d1d5db; border-radius:12px; padding:16px; margin-bottom:8px; text-align:right;">
               <div style="font-size:34px; line-height:1.18; color:#1d4ed8; font-weight:800;">شركة الكون الذكي<br/>للاتصالات و تقنيه<br/>المعلومات</div>
-              <div style="margin-top:10px; border-top:1px solid #e5e7eb; padding-top:8px; font-size:12px; color:#374151; font-weight:700;">رقم الضريبة المضافة: ٣١٤٠٧٦٥١٨٤٠٠٠٠٣<br/>السجل التجاري: ١٠١٠٩٧٣٨٠٨</div>
+              <div style="margin-top:10px; border-top:1px solid #e5e7eb; padding-top:8px; font-size:12px; color:#374151; font-weight:700;">رقم الضريبة المضافة: ٣١٤٠٧٦٥١٨٤٠٠٠٠٣<br/>السجل التجاري: ٧٠٣٧٩٠٥٥٨٠</div>
             </div>
             <div style="border:1px solid #d1d5db; border-radius:12px; overflow:hidden;">
               <div style="display:flex; align-items:stretch;">
